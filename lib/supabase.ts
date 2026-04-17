@@ -3,8 +3,21 @@ import * as SecureStore from 'expo-secure-store';
 import * as aesjs from 'aes-js';
 import 'react-native-get-random-values';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 const { supabaseUrl, supabasePublishableKey } = Constants.expoConfig?.extra ?? {};
+const FALLBACK_SUPABASE_URL = 'https://placeholder.supabase.co';
+const FALLBACK_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_placeholder';
+
+export const hasSupabaseEnv = Boolean(supabaseUrl && supabasePublishableKey);
+
+type SupabaseStorage = {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+  removeItem: (key: string) => Promise<void>;
+};
 
 class LargeSecureStore {
   private async _encrypt(key: string, value: string) {
@@ -42,11 +55,49 @@ class LargeSecureStore {
   }
 }
 
-export const supabase = createClient(supabaseUrl, supabasePublishableKey, {
-  auth: {
-    storage: new LargeSecureStore(),
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+class WebStorage implements SupabaseStorage {
+  async getItem(key: string) {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem(key);
+  }
+
+  async setItem(key: string, value: string) {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(key, value);
+  }
+
+  async removeItem(key: string) {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.removeItem(key);
+  }
+}
+
+const storage: SupabaseStorage =
+  Platform.OS === 'web' ? new WebStorage() : new LargeSecureStore();
+
+function createSupabaseClient() {
+  return createClient<Database>(
+    supabaseUrl ?? FALLBACK_SUPABASE_URL,
+    supabasePublishableKey ?? FALLBACK_SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        storage,
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: false,
+      },
+    },
+  );
+}
+
+declare global {
+  // eslint-disable-next-line no-var
+  var __hopeCenterSupabase__: SupabaseClient<Database> | undefined;
+}
+
+export const supabase =
+  globalThis.__hopeCenterSupabase__ ?? createSupabaseClient();
+
+if (!globalThis.__hopeCenterSupabase__) {
+  globalThis.__hopeCenterSupabase__ = supabase;
+}

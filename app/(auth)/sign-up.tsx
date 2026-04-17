@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Link, router } from 'expo-router';
-import { supabase } from '@/lib/supabase';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Colors } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +20,11 @@ export default function SignUp() {
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
+    if (!hasSupabaseEnv) {
+      Alert.alert('Supabase not configured', 'Add your project values to .env before creating an account.');
+      return;
+    }
+
     if (!fullName || !email || !password) {
       Alert.alert('Error', 'Please fill in all fields.');
       return;
@@ -65,6 +70,11 @@ export default function SignUp() {
         <Text style={styles.logo}>Hope Center CEU</Text>
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Start earning your CEU credits today</Text>
+        {!hasSupabaseEnv ? (
+          <Text style={styles.notice}>
+            Local config missing. Add Supabase values to .env to enable signup.
+          </Text>
+        ) : null}
 
         <Input
           label="Full Name"
@@ -139,6 +149,15 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 8,
     marginBottom: 24,
+  },
+  notice: {
+    marginBottom: 20,
+    borderRadius: 10,
+    padding: 12,
+    backgroundColor: Colors.surface,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
   },
   footer: {
     textAlign: 'center',

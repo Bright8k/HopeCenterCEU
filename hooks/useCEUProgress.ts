@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { ROLE_CEU_REQUIREMENTS } from '@/constants/roles';
 
@@ -16,7 +16,7 @@ export function useCEUProgress(): { progress: CEUProgress | null; loading: boole
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user || !role) {
+    if (!hasSupabaseEnv || !user || !role) {
       setLoading(false);
       return;
     }

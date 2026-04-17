@@ -9,10 +9,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { router } from 'expo-router';
-import { supabase } from '@/lib/supabase';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Colors } from '@/constants/Colors';
 import { ROLE_LABELS, ROLE_CEU_REQUIREMENTS, type UserRole } from '@/constants/roles';
+import type { Database } from '@/types/database';
 
 const ROLES: UserRole[] = ['RBT', 'BCBA', 'STUDENT'];
 
@@ -23,9 +24,14 @@ export default function Onboarding() {
 
   const handleContinue = async () => {
     if (!selected || !user) return;
+    if (!hasSupabaseEnv) {
+      Alert.alert('Supabase not configured', 'Add your project values to .env before saving a role.');
+      return;
+    }
 
     setSaving(true);
-    const { error } = await supabase.from('profiles').update({ role: selected }).eq('id', user.id);
+    const update: Database['public']['Tables']['profiles']['Update'] = { role: selected };
+    const { error } = await (supabase.from('profiles') as any).update(update).eq('id', user.id);
     setSaving(false);
 
     if (error) {

@@ -3,6 +3,7 @@ import {
   Text,
   ActivityIndicator,
   StyleSheet,
+  StyleProp,
   ViewStyle,
 } from 'react-native';
 import { Colors } from '@/constants/Colors';
@@ -12,7 +13,7 @@ type ButtonProps = {
   onPress: () => void;
   loading?: boolean;
   variant?: 'primary' | 'outline';
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
   disabled?: boolean;
 };
 

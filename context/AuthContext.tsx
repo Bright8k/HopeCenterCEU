@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import type { UserRole } from '@/constants/roles';
+import type { Database } from '@/types/database';
 
 type AuthContextType = {
   session: Session | null;
@@ -25,6 +26,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasSupabaseEnv) {
+      setLoading(false);
+      return;
+    }
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
@@ -55,11 +61,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .select('role')
       .eq('id', userId)
       .single();
-    setRole((data?.role as UserRole) ?? null);
+    const profile = data as Database['public']['Tables']['profiles']['Row'] | null;
+    setRole((profile?.role as UserRole) ?? null);
     setLoading(false);
   }
 
   const signOut = async () => {
+    if (!hasSupabaseEnv) return;
     await supabase.auth.signOut();
   };
 

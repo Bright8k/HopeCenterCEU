@@ -1,7 +1,17 @@
 import 'dotenv/config';
 
+const supabaseUrl =
+  process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '';
+const supabasePublishableKey =
+  process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+  process.env.SUPABASE_PUBLISHABLE_KEY ??
+  process.env.EXPO_PUBLIC_SUPABASE_KEY ??
+  '';
+const devAuthBypass = process.env.EXPO_PUBLIC_DEV_AUTH_BYPASS === 'true';
+
 export default {
   expo: {
+    owner: 'dbright34517',
     name: 'Hope Center CEU',
     slug: 'hope-center-ceu',
     version: '1.0.0',
@@ -24,8 +34,9 @@ export default {
       ['expo-notifications', { icon: './assets/notification-icon.png', color: '#8B1A8F' }],
     ],
     extra: {
-      supabaseUrl: process.env.SUPABASE_URL,
-      supabasePublishableKey: process.env.SUPABASE_PUBLISHABLE_KEY,
+      supabaseUrl,
+      supabasePublishableKey,
+      devAuthBypass,
       eas: { projectId: process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? '' },
     },
   },
