@@ -1,21 +1,37 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors } from '@/constants/Colors';
+import { Pressable } from 'react-native';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { usePreferences } from '@/context/PreferencesContext';
+import { AppBrand } from '@/components/ui/AppBrand';
+import { Typography } from '@/constants/theme';
 
 export default function TabLayout() {
   const { role } = useAuth();
+  const { colors } = usePreferences();
   const isStudent = role === 'STUDENT';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textSecondary,
-        tabBarStyle: { borderTopColor: Colors.border },
-        headerStyle: { backgroundColor: Colors.primary },
-        headerTintColor: Colors.white,
-        headerTitleStyle: { fontWeight: '700' },
+        sceneStyle: { backgroundColor: colors.background },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarStyle: {
+          borderTopColor: colors.border,
+          backgroundColor: colors.card,
+        },
+        headerStyle: { backgroundColor: colors.card },
+        headerTintColor: colors.text,
+        headerTitleStyle: {
+          fontFamily: Typography.bodyBold,
+          fontSize: 18,
+          color: colors.text,
+        },
+        headerTitleAlign: 'center',
+        headerLeft: () => <AppBrand compact logoOnly style={{ marginLeft: 12 }} />,
+        headerRight: () => <SettingsHeaderButton />,
       }}
     >
       <Tabs.Screen
@@ -56,5 +72,33 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+function SettingsHeaderButton() {
+  const { colors } = usePreferences();
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <Pressable
+      onPress={() => router.push('/settings')}
+      onHoverIn={() => setIsHovered(true)}
+      onHoverOut={() => setIsHovered(false)}
+      style={({ pressed }) => [
+        {
+          marginRight: 16,
+          width: 36,
+          height: 36,
+          borderRadius: 18,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: isHovered ? colors.surface : 'transparent',
+          opacity: pressed ? 0.8 : 1,
+          transform: [{ scale: pressed ? 0.96 : isHovered ? 1.03 : 1 }],
+        },
+      ]}
+    >
+      <Ionicons name="settings-outline" size={20} color={colors.text} />
+    </Pressable>
   );
 }

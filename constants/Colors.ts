@@ -1,18 +1,1 @@
-export const Colors = {
-  primary: '#8B1A8F',
-  primaryLight: '#B94DBE',
-  primaryDark: '#6A1270',
-  accent: '#D4A843',
-  accentDark: '#B0883A',
-  background: '#FFFFFF',
-  surface: '#F5F0F5',
-  text: '#1A1A1A',
-  textSecondary: '#6B6B6B',
-  textMuted: '#6B6B6B',
-  border: '#E8DCE8',
-  error: '#D32F2F',
-  success: '#388E3C',
-  warning: '#F57C00',
-  white: '#FFFFFF',
-  black: '#000000',
-};
+export { LightColors as Colors, DarkColors } from '@/constants/theme';

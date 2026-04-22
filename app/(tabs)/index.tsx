@@ -1,14 +1,17 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { useCEUProgress } from '@/hooks/useCEUProgress';
+import { useCourses } from '@/hooks/useCourses';
+import { usePreferences } from '@/context/PreferencesContext';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { Colors } from '@/constants/Colors';
+import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { ROLE_CEU_REQUIREMENTS, ROLE_LABELS } from '@/constants/roles';
 import { hasSupabaseEnv } from '@/lib/supabase';
+import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -29,6 +32,9 @@ function getRenewalMessage(role: keyof typeof ROLE_CEU_REQUIREMENTS | null) {
 export default function DashboardScreen() {
   const { user, role } = useAuth();
   const { progress, loading } = useCEUProgress();
+  const { displayCourses } = useCourses(role);
+  const { colors, textScale, preferences } = usePreferences();
+  const styles = createStyles(colors, textScale);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? 'there';
   const roleRequirement = role ? ROLE_CEU_REQUIREMENTS[role] : null;
@@ -127,7 +133,7 @@ export default function DashboardScreen() {
           </Text>
         ) : (
           <>
-            <ProgressBar value={earnedCeus} max={requiredCeus} color={Colors.primary} />
+            <ProgressBar value={earnedCeus} max={requiredCeus} color={colors.primary} />
             <Text style={styles.progressText}>
               {loading
                 ? 'Refreshing your current CEU totals.'
@@ -143,17 +149,17 @@ export default function DashboardScreen() {
         <MetricCard
           label={isStudent ? 'Study Sets' : 'Completed'}
           value={loading ? '--' : String(completedCourses)}
-          accent={Colors.primary}
+          accent={colors.primary}
         />
         <MetricCard
           label={isStudent ? 'Goal' : 'Earned'}
           value={isStudent ? 'Weekly' : loading ? '--' : earnedCeus.toFixed(1)}
-          accent={Colors.accentDark}
+          accent={colors.accentDark}
         />
         <MetricCard
           label={isStudent ? 'Focus' : 'Cycle'}
           value={isStudent ? 'Exam' : roleRequirement ? `${roleRequirement.cycleYears}yr` : '--'}
-          accent={Colors.primaryDark}
+          accent={colors.primaryLight}
         />
       </View>
 
@@ -165,22 +171,74 @@ export default function DashboardScreen() {
       </View>
 
       {nextSteps.map((step) => (
-        <TouchableOpacity
+        <InteractivePressable
           key={step.title}
-          activeOpacity={0.85}
           onPress={() => router.push(step.route)}
+          style={styles.actionPressable}
+          hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
         >
-          <Card variant="elevated" style={styles.actionCard}>
-            <View style={styles.actionIconWrap}>
-              <Ionicons name={step.icon} size={22} color={Colors.primary} />
-            </View>
-            <View style={styles.actionCopy}>
-              <Text style={styles.actionTitle}>{step.title}</Text>
-              <Text style={styles.actionDescription}>{step.description}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
-          </Card>
-        </TouchableOpacity>
+          {({ hovered }) => (
+            <Card
+              variant="elevated"
+              style={[styles.actionCard, hovered && styles.actionCardHovered]}
+            >
+              <View style={[styles.actionIconWrap, hovered && styles.actionIconWrapHovered]}>
+                <Ionicons name={step.icon} size={22} color={hovered ? colors.primaryLight : colors.primary} />
+              </View>
+              <View style={styles.actionCopy}>
+                <Text style={[styles.actionTitle, hovered && styles.actionTitleHovered]}>{step.title}</Text>
+                <Text style={styles.actionDescription}>{step.description}</Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={hovered ? colors.primary : colors.textSecondary}
+              />
+            </Card>
+          )}
+        </InteractivePressable>
+      ))}
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {isStudent ? 'Suggested study sets' : 'Recommended next courses'}
+        </Text>
+        <Text style={styles.sectionHint}>Fresh from your current library.</Text>
+      </View>
+
+      {displayCourses.slice(0, 2).map((course) => (
+        <InteractivePressable
+          key={course.id}
+          onPress={() => router.push('/(tabs)/courses')}
+          style={styles.actionPressable}
+          hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
+        >
+          {({ hovered }) => (
+            <Card
+              variant="elevated"
+              style={[styles.actionCard, hovered && styles.actionCardHovered]}
+            >
+              <View style={[styles.actionIconWrap, hovered && styles.actionIconWrapHovered]}>
+                <Ionicons
+                  name={isStudent ? 'school-outline' : 'play-circle-outline'}
+                  size={22}
+                  color={hovered ? colors.primaryLight : colors.primary}
+                />
+              </View>
+              <View style={styles.actionCopy}>
+                <Text style={[styles.actionTitle, hovered && styles.actionTitleHovered]}>{course.title}</Text>
+                <Text style={styles.actionDescription}>
+                  {course.description ?? 'Open the library to view the full course details.'}
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={20}
+                color={hovered ? colors.primary : colors.textSecondary}
+              />
+            </Card>
+          )}
+        </InteractivePressable>
       ))}
 
       <Card style={styles.supportCard}>
@@ -196,239 +254,270 @@ export default function DashboardScreen() {
       </Card>
     </ScrollView>
   );
+
+  function MetricCard({
+    label,
+    value,
+    accent,
+  }: {
+    label: string;
+    value: string;
+    accent: string;
+  }) {
+    return (
+      <View style={styles.metricCard}>
+        <View style={[styles.metricAccent, { backgroundColor: accent }]} />
+        <Text style={styles.metricValue}>{value}</Text>
+        <Text style={styles.metricLabel}>{label}</Text>
+      </View>
+    );
+  }
 }
 
-function MetricCard({
-  label,
-  value,
-  accent,
-}: {
-  label: string;
-  value: string;
-  accent: string;
-}) {
-  return (
-    <View style={styles.metricCard}>
-      <View style={[styles.metricAccent, { backgroundColor: accent }]} />
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 36,
-  },
-  hero: {
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 14,
-    backgroundColor: Colors.primary,
-  },
-  heroTop: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  heroCopy: {
-    flex: 1,
-  },
-  greeting: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#F9EAF9',
-    marginBottom: 10,
-  },
-  heroTitle: {
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: '800',
-    color: Colors.white,
-    marginBottom: 8,
-  },
-  heroText: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: '#F4E3F4',
-  },
-  heroSeal: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: `${Colors.accent}CC`,
-  },
-  heroSealText: {
-    color: Colors.primaryDark,
-    fontSize: 18,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-  },
-  heroFooter: {
-    marginTop: 18,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: `${Colors.white}22`,
-    gap: 10,
-  },
-  heroFooterText: {
-    color: '#F9EAF9',
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  noticeCard: {
-    marginBottom: 14,
-  },
-  noticeTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  noticeText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: Colors.textSecondary,
-  },
-  progressCard: {
-    marginBottom: 14,
-  },
-  progressHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 14,
-  },
-  progressEyebrow: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    color: Colors.primary,
-    marginBottom: 6,
-  },
-  progressTitle: {
-    fontSize: 20,
-    lineHeight: 26,
-    fontWeight: '800',
-    color: Colors.text,
-  },
-  progressBadge: {
-    minWidth: 70,
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    alignItems: 'center',
-    backgroundColor: `${Colors.accent}22`,
-  },
-  progressBadgeValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: Colors.accentDark,
-  },
-  progressText: {
-    marginTop: 12,
-    fontSize: 13,
-    lineHeight: 20,
-    color: Colors.textSecondary,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 22,
-  },
-  metricCard: {
-    flex: 1,
-    borderRadius: 18,
-    padding: 14,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  metricAccent: {
-    width: 26,
-    height: 4,
-    borderRadius: 999,
-    marginBottom: 12,
-  },
-  metricValue: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  metricLabel: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  sectionHeader: {
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 2,
-  },
-  sectionHint: {
-    fontSize: 13,
-    color: Colors.textSecondary,
-  },
-  actionCard: {
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  actionIconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: `${Colors.primary}10`,
-  },
-  actionCopy: {
-    flex: 1,
-  },
-  actionTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 4,
-  },
-  actionDescription: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: Colors.textSecondary,
-  },
-  supportCard: {
-    marginTop: 4,
-  },
-  supportTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: Colors.text,
-    marginBottom: 8,
-  },
-  supportText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: Colors.textSecondary,
-    marginBottom: 12,
-  },
-  supportTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-});
+const createStyles = (
+  colors: ReturnType<typeof usePreferences>['colors'],
+  textScale: number,
+) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      padding: 16,
+      paddingBottom: 36,
+    },
+    hero: {
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 14,
+      backgroundColor: colors.primary,
+    },
+    heroTop: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: 12,
+    },
+    heroCopy: {
+      flex: 1,
+    },
+    greeting: {
+      fontSize: 16 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.white,
+      marginBottom: 10,
+    },
+    heroTitle: {
+      fontSize: 28 * textScale,
+      lineHeight: 34,
+      fontFamily: Typography.heading,
+      color: colors.white,
+      marginBottom: 8,
+    },
+    heroText: {
+      fontSize: 14 * textScale,
+      lineHeight: 21,
+      color: colors.white,
+      fontFamily: Typography.body,
+    },
+    heroSeal: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.accent,
+    },
+    heroSealText: {
+      color: colors.primaryDark,
+      fontSize: 18,
+      fontWeight: '900',
+      letterSpacing: 0.8,
+    },
+    heroFooter: {
+      marginTop: 18,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: withAlpha(colors.white, '33'),
+      gap: 10,
+    },
+    heroFooterText: {
+      color: colors.white,
+      fontSize: 13 * textScale,
+      lineHeight: 20,
+      fontFamily: Typography.body,
+    },
+    noticeCard: {
+      marginBottom: 14,
+    },
+    noticeTitle: {
+      fontSize: 15 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    noticeText: {
+      fontSize: 13 * textScale,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
+    },
+    progressCard: {
+      marginBottom: 14,
+    },
+    progressHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: 12,
+      marginBottom: 14,
+    },
+    progressEyebrow: {
+      fontSize: 12 * textScale,
+      fontFamily: Typography.bodyBold,
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      color: colors.primary,
+      marginBottom: 6,
+    },
+    progressTitle: {
+      fontSize: 20 * textScale,
+      lineHeight: 26,
+      fontFamily: Typography.headingSemiBold,
+      color: colors.text,
+    },
+    progressBadge: {
+      minWidth: 70,
+      borderRadius: 18,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      alignItems: 'center',
+      backgroundColor: withAlpha(colors.accent, '26'),
+    },
+    progressBadgeValue: {
+      fontSize: 20 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.accentDark,
+    },
+    progressText: {
+      marginTop: 12,
+      fontSize: 13 * textScale,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
+    },
+    metricsRow: {
+      flexDirection: 'row',
+      gap: 10,
+      marginBottom: 22,
+    },
+    metricCard: {
+      flex: 1,
+      borderRadius: 18,
+      padding: 14,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    metricAccent: {
+      width: 26,
+      height: 4,
+      borderRadius: 999,
+      marginBottom: 12,
+    },
+    metricValue: {
+      fontSize: 22 * textScale,
+      fontFamily: Typography.headingSemiBold,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    metricLabel: {
+      fontSize: 12 * textScale,
+      color: colors.textSecondary,
+      fontFamily: Typography.bodySemiBold,
+    },
+    sectionHeader: {
+      marginBottom: 10,
+    },
+    sectionTitle: {
+      fontSize: 18 * textScale,
+      fontFamily: Typography.headingSemiBold,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    sectionHint: {
+      fontSize: 13 * textScale,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
+    },
+    actionPressable: {
+      marginBottom: 12,
+    },
+    actionCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    actionCardHovered: {
+      borderColor: withAlpha(colors.primary, '44'),
+      shadowColor: colors.primary,
+      shadowOpacity: 0.18,
+      shadowRadius: 18,
+      backgroundColor: colors.card,
+    },
+    liftHover: {
+      transform: [{ translateY: -2 }],
+    },
+    actionIconWrap: {
+      width: 46,
+      height: 46,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: withAlpha(colors.primary, '12'),
+    },
+    actionIconWrapHovered: {
+      backgroundColor: withAlpha(colors.primary, '1A'),
+    },
+    actionCopy: {
+      flex: 1,
+    },
+    actionTitle: {
+      fontSize: 16 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.text,
+      marginBottom: 4,
+      ...(getWebTransitionStyle('color') ?? {}),
+    },
+    actionTitleHovered: {
+      color: colors.primary,
+    },
+    actionDescription: {
+      fontSize: 13 * textScale,
+      lineHeight: 19,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
+    },
+    supportCard: {
+      marginTop: 4,
+    },
+    supportTitle: {
+      fontSize: 16 * textScale,
+      fontFamily: Typography.headingSemiBold,
+      color: colors.text,
+      marginBottom: 8,
+    },
+    supportText: {
+      fontSize: 13 * textScale,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      marginBottom: 12,
+      fontFamily: Typography.body,
+    },
+    supportTags: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+    },
+  });

@@ -1,37 +1,52 @@
 import { useState } from 'react';
 import {
-  Text,
-  StyleSheet,
   Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { Link, router } from 'expo-router';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
-import { Colors } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { InteractivePressable } from '@/components/ui/InteractivePressable';
+import { AppBrand } from '@/components/ui/AppBrand';
+import { usePreferences } from '@/context/PreferencesContext';
+import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 export default function SignUp() {
+  const { colors, textScale } = usePreferences();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
+  const styles = createStyles(colors, textScale);
 
   const handleSignUp = async () => {
+    if (devAuthBypass) {
+      router.replace('/(auth)/onboarding');
+      return;
+    }
+
     if (!hasSupabaseEnv) {
       Alert.alert('Supabase not configured', 'Add your project values to .env before creating an account.');
       return;
     }
 
     if (!fullName || !email || !password) {
-      Alert.alert('Error', 'Please fill in all fields.');
+      Alert.alert('Missing details', 'Please fill in your name, email, and password.');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters.');
+      Alert.alert('Password too short', 'Password must be at least 8 characters.');
       return;
     }
 
@@ -58,23 +73,79 @@ export default function SignUp() {
     ]);
   };
 
+  const handleSocialPress = async (provider: 'google' | 'apple') => {
+    if (devAuthBypass) {
+      router.replace('/(auth)/onboarding');
+      return;
+    }
+
+    if (!hasSupabaseEnv) {
+      Alert.alert('Supabase not configured', 'Add your project values to .env before using social sign up.');
+      return;
+    }
+
+    if (Platform.OS !== 'web') {
+      Alert.alert(
+        `${provider === 'google' ? 'Google' : 'Apple'} sign up`,
+        'This screen is ready for social auth wiring. For now, continue with the main account flow while we finish the product.',
+      );
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+
+    if (error) {
+      Alert.alert('Sign up unavailable', error.message);
+    }
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.logo}>Hope Center CEU</Text>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Start earning your CEU credits today</Text>
-        {!hasSupabaseEnv ? (
-          <Text style={styles.notice}>
-            Local config missing. Add Supabase values to .env to enable signup.
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+        <View style={styles.hero}>
+          <AppBrand style={styles.brandLockup} />
+          <View style={styles.logoOrb}>
+            <Image source={require('@/assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
+          </View>
+          <Text style={styles.title}>Create your learning account</Text>
+          <Text style={styles.subtitle}>
+            Start with a calm setup, then move straight into your role track, CEU plan, or exam-prep path.
           </Text>
-        ) : null}
+        </View>
+
+        <Text style={styles.notice}>
+          {devAuthBypass
+            ? 'Builder mode is enabled locally. Creating an account will move you straight into onboarding while we keep shipping safely.'
+            : !hasSupabaseEnv
+              ? 'Local config missing. Add Supabase values to `.env` before testing signup.'
+              : 'Create your account now, then choose your role to personalize the app.'}
+        </Text>
+
+        <View style={styles.socialGroup}>
+          <SocialButton
+            label="Continue with Google"
+            icon={<Ionicons name="logo-google" size={18} color={colors.text} />}
+            onPress={() => handleSocialPress('google')}
+            styles={styles}
+          />
+          <SocialButton
+            label="Continue with Apple"
+            icon={<Ionicons name="logo-apple" size={20} color={colors.text} />}
+            onPress={() => handleSocialPress('apple')}
+            styles={styles}
+          />
+        </View>
+
+        <View style={styles.dividerRow}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or create an account with email</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
         <Input
           label="Full Name"
@@ -97,13 +168,13 @@ export default function SignUp() {
           label="Password"
           value={password}
           onChangeText={setPassword}
-          placeholder="Min. 8 characters"
+          placeholder="At least 8 characters"
           secureTextEntry
           autoComplete="new-password"
         />
 
         <Button
-          title="Create Account"
+          title={devAuthBypass ? 'Continue to Onboarding' : 'Create Account'}
           onPress={handleSignUp}
           loading={loading}
           style={styles.button}
@@ -111,7 +182,7 @@ export default function SignUp() {
 
         <Link href="/(auth)/sign-in" asChild>
           <Text style={styles.footer}>
-            Already have an account? <Text style={styles.footerLink}>Sign In</Text>
+            Already have an account? <Text style={styles.footerLink}>Sign in</Text>
           </Text>
         </Link>
       </ScrollView>
@@ -119,53 +190,151 @@ export default function SignUp() {
   );
 }
 
-const styles = StyleSheet.create({
+function SocialButton({
+  label,
+  icon,
+  onPress,
+  styles,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  return (
+    <InteractivePressable
+      style={styles.socialButton}
+      hoverStyle={styles.socialButtonHover}
+      onPress={onPress}
+    >
+      <View style={styles.socialIcon}>{icon}</View>
+      <Text style={styles.socialText}>{label}</Text>
+    </InteractivePressable>
+  );
+}
+
+const createStyles = (
+  colors: ReturnType<typeof usePreferences>['colors'],
+  textScale: number,
+) =>
+  StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 24,
     justifyContent: 'center',
-    backgroundColor: Colors.background,
+    padding: 24,
+    backgroundColor: colors.background,
   },
-  logo: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.primary,
-    textAlign: 'center',
-    marginBottom: 8,
+  hero: {
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  brandLockup: {
+    alignSelf: 'flex-start',
+    marginBottom: 18,
+  },
+  logoOrb: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+    backgroundColor: withAlpha(colors.primary, '12'),
+    borderWidth: 1,
+    borderColor: withAlpha(colors.accent, '88'),
+  },
+  logoImage: {
+    width: 82,
+    height: 82,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.text,
-    textAlign: 'center',
+      fontSize: 30 * textScale,
+      fontFamily: Typography.heading,
+    color: colors.text,
     marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 32,
+  },
+    subtitle: {
+      fontSize: 15,
+      lineHeight: 22,
+      fontFamily: Typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    maxWidth: 320,
+  },
+    notice: {
+    marginBottom: 18,
+    borderRadius: 12,
+    padding: 14,
+    backgroundColor: colors.surface,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      fontFamily: Typography.body,
+    },
+  socialGroup: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    minHeight: 54,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
+    paddingHorizontal: 18,
+  },
+  socialButtonHover: {
+    transform: [{ translateY: -1 }],
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+  },
+  socialIcon: {
+    width: 24,
+    alignItems: 'center',
+  },
+  socialText: {
+    fontSize: 15,
+    fontFamily: Typography.bodySemiBold,
+    color: colors.text,
+    ...(getWebTransitionStyle('color') ?? {}),
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 18,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    fontSize: 12,
+    fontFamily: Typography.bodyBold,
+    letterSpacing: 0.4,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
   },
   button: {
-    marginTop: 8,
+    marginTop: 10,
     marginBottom: 24,
-  },
-  notice: {
-    marginBottom: 20,
-    borderRadius: 10,
-    padding: 12,
-    backgroundColor: Colors.surface,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
   },
   footer: {
     textAlign: 'center',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
+    fontFamily: Typography.body,
   },
   footerLink: {
-    color: Colors.primary,
-    fontWeight: '600',
+    color: colors.primary,
+    fontFamily: Typography.bodyBold,
   },
 });

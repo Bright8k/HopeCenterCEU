@@ -7,22 +7,26 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { Link, router } from 'expo-router';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
-import { Colors } from '@/constants/Colors';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { InteractivePressable } from '@/components/ui/InteractivePressable';
+import { AppBrand } from '@/components/ui/AppBrand';
+import { usePreferences } from '@/context/PreferencesContext';
+import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 export default function SignIn() {
+  const { colors, textScale } = usePreferences();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
+  const styles = createStyles(colors, textScale);
 
   const goToDashboard = () => {
     router.replace('/(tabs)');
@@ -94,10 +98,10 @@ export default function SignIn() {
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
+          <AppBrand style={styles.brandLockup} />
           <View style={styles.logoOrb}>
             <Image source={require('@/assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
           </View>
-          <Text style={styles.brand}>Hope Center CEU</Text>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>
             Training for ABA professionals with the Hope Center for Behavior Change color direction and feel.
@@ -121,13 +125,15 @@ export default function SignIn() {
         <View style={styles.socialGroup}>
           <SocialButton
             label="Continue with Google"
-            icon={<Ionicons name="logo-google" size={18} color={Colors.text} />}
+            icon={<Ionicons name="logo-google" size={18} color={colors.text} />}
             onPress={() => handleSocialPress('google')}
+            styles={styles}
           />
           <SocialButton
             label="Continue with Apple"
-            icon={<Ionicons name="logo-apple" size={20} color={Colors.text} />}
+            icon={<Ionicons name="logo-apple" size={20} color={colors.text} />}
             onPress={() => handleSocialPress('apple')}
+            styles={styles}
           />
         </View>
 
@@ -171,29 +177,43 @@ function SocialButton({
   label,
   icon,
   onPress,
+  styles,
 }: {
   label: string;
   icon: React.ReactNode;
   onPress: () => void;
+  styles: ReturnType<typeof createStyles>;
 }) {
   return (
-    <TouchableOpacity style={styles.socialButton} onPress={onPress} activeOpacity={0.85}>
+    <InteractivePressable
+      style={styles.socialButton}
+      hoverStyle={styles.socialButtonHover}
+      onPress={onPress}
+    >
       <View style={styles.socialIcon}>{icon}</View>
       <Text style={styles.socialText}>{label}</Text>
-    </TouchableOpacity>
+    </InteractivePressable>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (
+  colors: ReturnType<typeof usePreferences>['colors'],
+  textScale: number,
+) =>
+  StyleSheet.create({
   container: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: Colors.background,
+    backgroundColor: colors.background,
   },
   hero: {
     alignItems: 'center',
     marginBottom: 28,
+  },
+  brandLockup: {
+    alignSelf: 'flex-start',
+    marginBottom: 18,
   },
   logoOrb: {
     width: 96,
@@ -202,45 +222,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
-    backgroundColor: `${Colors.primary}12`,
+    backgroundColor: withAlpha(colors.primary, '12'),
     borderWidth: 1,
-    borderColor: `${Colors.accent}88`,
+    borderColor: withAlpha(colors.accent, '88'),
   },
   logoImage: {
     width: 82,
     height: 82,
   },
-  brand: {
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    color: Colors.primary,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
   title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: Colors.text,
+      fontSize: 30 * textScale,
+      fontFamily: Typography.heading,
+      color: colors.text,
     marginBottom: 8,
     textAlign: 'center',
   },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: Colors.textSecondary,
+    subtitle: {
+      fontSize: 15,
+      lineHeight: 22,
+      fontFamily: Typography.body,
+      color: colors.textSecondary,
     textAlign: 'center',
     maxWidth: 320,
   },
-  notice: {
+    notice: {
     marginBottom: 18,
     borderRadius: 12,
     padding: 14,
-    backgroundColor: Colors.surface,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
+    backgroundColor: colors.surface,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+      fontFamily: Typography.body,
+    },
   socialGroup: {
     gap: 10,
     marginBottom: 20,
@@ -253,9 +267,16 @@ const styles = StyleSheet.create({
     minHeight: 54,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.white,
+    borderColor: colors.border,
+    backgroundColor: colors.card,
     paddingHorizontal: 18,
+  },
+  socialButtonHover: {
+    transform: [{ translateY: -1 }],
+    borderColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
   },
   socialIcon: {
     width: 24,
@@ -263,8 +284,9 @@ const styles = StyleSheet.create({
   },
   socialText: {
     fontSize: 15,
-    fontWeight: '700',
-    color: Colors.text,
+    fontFamily: Typography.bodySemiBold,
+    color: colors.text,
+    ...(getWebTransitionStyle('color') ?? {}),
   },
   dividerRow: {
     flexDirection: 'row',
@@ -275,27 +297,27 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: colors.border,
   },
   dividerText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontFamily: Typography.bodyBold,
     letterSpacing: 0.4,
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     textTransform: 'uppercase',
   },
   button: {
     marginTop: 10,
     marginBottom: 24,
-    backgroundColor: Colors.primary,
   },
   footer: {
     textAlign: 'center',
-    color: Colors.textSecondary,
+    color: colors.textSecondary,
     fontSize: 14,
+    fontFamily: Typography.body,
   },
   footerLink: {
-    color: Colors.primary,
-    fontWeight: '700',
+    color: colors.primary,
+    fontFamily: Typography.bodyBold,
   },
 });

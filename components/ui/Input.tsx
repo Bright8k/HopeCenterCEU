@@ -1,5 +1,6 @@
 import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { usePreferences } from '@/context/PreferencesContext';
+import { Typography, getWebTransitionStyle } from '@/constants/theme';
 
 type InputProps = TextInputProps & {
   label?: string;
@@ -7,15 +8,26 @@ type InputProps = TextInputProps & {
 };
 
 export function Input({ label, error, style, ...props }: InputProps) {
+  const { colors } = usePreferences();
+
   return (
     <View style={styles.container}>
-      {label && <Text style={styles.label}>{label}</Text>}
+      {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
       <TextInput
-        style={[styles.input, error && styles.inputError, style]}
-        placeholderTextColor={Colors.textSecondary}
+        style={[
+          styles.input,
+          {
+            borderColor: error ? colors.error : colors.border,
+            color: colors.text,
+            backgroundColor: colors.card,
+            ...(getWebTransitionStyle('border-color, background-color, color') ?? {}),
+          },
+          style,
+        ]}
+        placeholderTextColor={colors.textSecondary}
         {...props}
       />
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
     </View>
   );
 }
@@ -26,26 +38,20 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text,
+    fontFamily: Typography.bodySemiBold,
     marginBottom: 6,
   },
   input: {
     borderWidth: 1.5,
-    borderColor: Colors.border,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: Colors.text,
-    backgroundColor: Colors.surface,
-  },
-  inputError: {
-    borderColor: Colors.error,
+    fontFamily: Typography.body,
   },
   error: {
     fontSize: 12,
-    color: Colors.error,
+    fontFamily: Typography.bodySemiBold,
     marginTop: 4,
   },
 });

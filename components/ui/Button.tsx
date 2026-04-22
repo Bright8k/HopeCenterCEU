@@ -1,12 +1,15 @@
 import {
-  TouchableOpacity,
+  Pressable,
   Text,
   ActivityIndicator,
   StyleSheet,
-  StyleProp,
   ViewStyle,
+  StyleProp,
+  TextStyle,
 } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { useState } from 'react';
+import { usePreferences } from '@/context/PreferencesContext';
+import { Typography, getWebTransitionStyle } from '@/constants/theme';
 
 type ButtonProps = {
   title: string;
@@ -14,6 +17,7 @@ type ButtonProps = {
   loading?: boolean;
   variant?: 'primary' | 'outline';
   style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   disabled?: boolean;
 };
 
@@ -23,30 +27,47 @@ export function Button({
   loading,
   variant = 'primary',
   style,
+  textStyle,
   disabled,
 }: ButtonProps) {
+  const { colors } = usePreferences();
   const isPrimary = variant === 'primary';
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <TouchableOpacity
-      style={[
+    <Pressable
+      style={({ pressed }) => [
         styles.base,
-        isPrimary ? styles.primary : styles.outline,
+        isPrimary
+          ? [styles.primary, { backgroundColor: colors.primary }, getWebTransitionStyle()]
+          : [styles.outline, { borderColor: colors.primary, backgroundColor: colors.card }, getWebTransitionStyle()],
+        isHovered && !disabled && !loading ? styles.hovered : null,
+        pressed && !disabled && !loading ? styles.pressed : null,
         (disabled || loading) && styles.disabled,
         style,
       ]}
       onPress={onPress}
+      onHoverIn={() => setIsHovered(true)}
+      onHoverOut={() => setIsHovered(false)}
       disabled={disabled || loading}
-      activeOpacity={0.8}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? Colors.white : Colors.primary} />
+        <ActivityIndicator color={isPrimary ? colors.white : colors.primary} />
       ) : (
-        <Text style={[styles.text, isPrimary ? styles.textPrimary : styles.textOutline]}>
+        <Text
+          style={[
+            styles.text,
+            isPrimary
+              ? { color: colors.white }
+              : { color: colors.primary },
+            getWebTransitionStyle('color, transform'),
+            textStyle,
+          ]}
+        >
           {title}
         </Text>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -60,24 +81,24 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   primary: {
-    backgroundColor: Colors.primary,
+    backgroundColor: 'transparent',
   },
   outline: {
     backgroundColor: 'transparent',
     borderWidth: 1.5,
-    borderColor: Colors.primary,
+    borderColor: 'transparent',
   },
   disabled: {
     opacity: 0.6,
   },
+  hovered: {
+    transform: [{ translateY: -1 }],
+  },
+  pressed: {
+    transform: [{ scale: 0.992 }],
+  },
   text: {
     fontSize: 16,
-    fontWeight: '600',
-  },
-  textPrimary: {
-    color: Colors.white,
-  },
-  textOutline: {
-    color: Colors.primary,
+    fontFamily: Typography.bodyBold,
   },
 });

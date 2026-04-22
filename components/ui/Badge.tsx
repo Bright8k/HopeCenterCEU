@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { usePreferences } from '@/context/PreferencesContext';
+import { Typography, withAlpha } from '@/constants/theme';
 
 type BadgeVariant = 'primary' | 'accent' | 'success' | 'muted';
 
@@ -8,15 +9,16 @@ type BadgeProps = {
   variant?: BadgeVariant;
 };
 
-const VARIANT_STYLES: Record<BadgeVariant, { bg: string; text: string }> = {
-  primary: { bg: `${Colors.primary}18`, text: Colors.primary },
-  accent: { bg: `${Colors.accent}22`, text: Colors.accentDark },
-  success: { bg: '#388E3C18', text: '#2E7D32' },
-  muted: { bg: Colors.border, text: Colors.textSecondary },
-};
-
 export function Badge({ label, variant = 'primary' }: BadgeProps) {
-  const { bg, text } = VARIANT_STYLES[variant];
+  const { colors } = usePreferences();
+  const variantStyles: Record<BadgeVariant, { bg: string; text: string }> = {
+    primary: { bg: withAlpha(colors.primary, '18'), text: colors.primary },
+    accent: { bg: withAlpha(colors.accent, '22'), text: colors.accentDark },
+    success: { bg: withAlpha(colors.success, '18'), text: colors.success },
+    muted: { bg: colors.surfaceMuted, text: colors.textSecondary },
+  };
+  const { bg, text } = variantStyles[variant];
+
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
       <Text style={[styles.label, { color: text }]}>{label}</Text>
@@ -33,7 +35,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
-    fontWeight: '700',
+    fontFamily: Typography.bodyBold,
     letterSpacing: 0.4,
   },
 });

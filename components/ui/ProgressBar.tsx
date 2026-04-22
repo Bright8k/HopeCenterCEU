@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { usePreferences } from '@/context/PreferencesContext';
 
 type ProgressBarProps = {
   value: number;
@@ -13,23 +13,25 @@ export function ProgressBar({
   value,
   max,
   showLabel = false,
-  color = Colors.primary,
+  color,
   height = 10,
 }: ProgressBarProps) {
+  const { colors } = usePreferences();
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  const fillColor = color ?? colors.primary;
 
   return (
     <View>
-      <View style={[styles.track, { height }]}>
+      <View style={[styles.track, { height, backgroundColor: colors.border }]}>
         <View
           style={[
             styles.fill,
-            { width: `${pct}%` as any, backgroundColor: color, height },
+            { width: `${pct}%` as const, backgroundColor: fillColor, height },
           ]}
         />
       </View>
       {showLabel && (
-        <Text style={styles.label}>
+        <Text style={[styles.label, { color: colors.textSecondary }]}>
           {value} / {max} ({Math.round(pct)}%)
         </Text>
       )}
@@ -39,7 +41,6 @@ export function ProgressBar({
 
 const styles = StyleSheet.create({
   track: {
-    backgroundColor: Colors.border,
     borderRadius: 999,
     overflow: 'hidden',
   },
@@ -49,7 +50,6 @@ const styles = StyleSheet.create({
   label: {
     marginTop: 4,
     fontSize: 12,
-    color: Colors.textSecondary,
     fontWeight: '500',
   },
 });
