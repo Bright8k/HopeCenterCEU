@@ -83,6 +83,9 @@ export default function Onboarding() {
             style={[styles.card, isSelected && styles.cardSelected]}
             hoverStyle={styles.cardHover}
             onPress={() => setSelected(role)}
+            accessibilityLabel={ROLE_LABELS[role]}
+            accessibilityHint={`Selects the ${role} learning track`}
+            accessibilityState={{ selected: isSelected }}
           >
             <View style={styles.cardHeader}>
               <View style={styles.cardCopy}>

@@ -189,6 +189,8 @@ function SocialButton({
       style={styles.socialButton}
       hoverStyle={styles.socialButtonHover}
       onPress={onPress}
+      accessibilityLabel={label}
+      accessibilityHint="Continues sign in with a social account provider"
     >
       <View style={styles.socialIcon}>{icon}</View>
       <Text style={styles.socialText}>{label}</Text>

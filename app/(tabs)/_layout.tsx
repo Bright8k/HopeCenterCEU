@@ -81,6 +81,9 @@ function SettingsHeaderButton() {
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Open settings"
+      accessibilityHint="Opens the settings screen"
       onPress={() => router.push('/settings')}
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}

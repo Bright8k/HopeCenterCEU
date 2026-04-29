@@ -176,6 +176,8 @@ export default function DashboardScreen() {
           onPress={() => router.push(step.route)}
           style={styles.actionPressable}
           hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
+          accessibilityLabel={step.title}
+          accessibilityHint={step.description}
         >
           {({ hovered }) => (
             <Card
@@ -212,6 +214,8 @@ export default function DashboardScreen() {
           onPress={() => router.push('/(tabs)/courses')}
           style={styles.actionPressable}
           hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
+          accessibilityLabel={course.title}
+          accessibilityHint="Opens the course library"
         >
           {({ hovered }) => (
             <Card

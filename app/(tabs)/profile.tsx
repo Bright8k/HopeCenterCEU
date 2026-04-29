@@ -257,6 +257,8 @@ export default function ProfileScreen() {
         onPress={onPress}
         style={styles.actionPressable}
         hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
+        accessibilityLabel={title}
+        accessibilityHint={description}
       >
         {({ hovered }) => (
           <Card variant="elevated" style={[styles.actionCard, hovered && styles.actionCardHovered]}>

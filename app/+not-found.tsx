@@ -29,7 +29,12 @@ export default function NotFoundScreen() {
             The screen you tried to open is not available right now. Head back to the Hope Center home flow and continue from there.
           </Text>
           <Link href="/" asChild>
-            <InteractivePressable style={styles.link} hoverStyle={styles.linkHover}>
+            <InteractivePressable
+              style={styles.link}
+              hoverStyle={styles.linkHover}
+              accessibilityLabel="Return to home"
+              accessibilityHint="Navigates back to the app home screen"
+            >
               <Text style={styles.linkText}>Return to home</Text>
             </InteractivePressable>
           </Link>

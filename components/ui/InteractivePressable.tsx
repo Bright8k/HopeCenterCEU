@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Pressable,
   StyleSheet,
+  type AccessibilityState,
   type AccessibilityRole,
   type GestureResponderEvent,
   type StyleProp,
@@ -20,6 +21,9 @@ type InteractivePressableProps = {
   pressedStyle?: StyleProp<ViewStyle>;
   disabled?: boolean;
   accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: AccessibilityState;
 };
 
 export function InteractivePressable({
@@ -30,6 +34,9 @@ export function InteractivePressable({
   pressedStyle,
   disabled = false,
   accessibilityRole = 'button',
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
 }: InteractivePressableProps) {
   const [isHovered, setIsHovered] = useState(false);
   const { preferences } = usePreferences();
@@ -37,6 +44,9 @@ export function InteractivePressable({
   return (
     <Pressable
       accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled, ...accessibilityState }}
       disabled={disabled}
       onPress={onPress}
       onHoverIn={() => setIsHovered(true)}

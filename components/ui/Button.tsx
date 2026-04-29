@@ -19,6 +19,8 @@ type ButtonProps = {
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   disabled?: boolean;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 };
 
 export function Button({
@@ -29,6 +31,8 @@ export function Button({
   style,
   textStyle,
   disabled,
+  accessibilityLabel,
+  accessibilityHint,
 }: ButtonProps) {
   const { colors } = usePreferences();
   const isPrimary = variant === 'primary';
@@ -36,6 +40,10 @@ export function Button({
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={({ pressed }) => [
         styles.base,
         isPrimary

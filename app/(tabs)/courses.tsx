@@ -154,6 +154,9 @@ export default function CoursesScreen() {
                   onPress={() => setSelectedTrack(item)}
                   style={[styles.filterChip, active && styles.filterChipActive]}
                   hoverStyle={!preferences.reducedMotion ? styles.filterChipHover : undefined}
+                  accessibilityLabel={item === 'ALL' ? 'All tracks' : `${item} track`}
+                  accessibilityHint="Filters the course library by learning track"
+                  accessibilityState={{ selected: active }}
                 >
                   {({ hovered }) => (
                     <Text
@@ -213,6 +216,8 @@ export default function CoursesScreen() {
         <InteractivePressable
           style={styles.coursePressable}
           hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
+          accessibilityLabel={item.title}
+          accessibilityHint="Highlights this course card"
         >
           {({ hovered }) => (
             <Card

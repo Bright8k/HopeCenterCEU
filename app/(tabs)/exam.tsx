@@ -60,6 +60,8 @@ export default function ExamPrepScreen() {
           key={domain.name}
           style={styles.domainPressable}
           hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
+          accessibilityLabel={domain.name}
+          accessibilityHint={domain.description}
         >
           {({ hovered }) => (
             <Card variant="elevated" style={[styles.domainCard, hovered && styles.domainCardHovered]}>
