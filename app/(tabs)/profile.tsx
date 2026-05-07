@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { useAuth } from '@/context/AuthContext';
+import { useAdminRole } from '@/hooks/useAdminRole';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useCEUProgress } from '@/hooks/useCEUProgress';
 import { useCertificates } from '@/hooks/useCertificates';
@@ -15,6 +16,7 @@ import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme'
 
 export default function ProfileScreen() {
   const { user, role, signOut } = useAuth();
+  const { isAdmin } = useAdminRole();
   const { colors, textScale, preferences } = usePreferences();
   const { progress, loading } = useCEUProgress();
   const { displayCertificates, usingPreviewData } = useCertificates();
@@ -205,6 +207,15 @@ export default function ProfileScreen() {
         description="Review your current pace, next steps, and encouragement at a glance."
         onPress={() => router.push('/(tabs)/index')}
       />
+
+      {isAdmin && (
+        <ActionCard
+          icon="shield-checkmark-outline"
+          title="Admin Portal"
+          description="Manage courses, question banks, and published content for Hope Center."
+          onPress={() => router.push('/(admin)/index')}
+        />
+      )}
 
       <Button title="Sign Out" onPress={handleSignOut} variant="outline" style={styles.signOutButton} />
     </ScrollView>

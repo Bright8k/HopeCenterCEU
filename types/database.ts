@@ -141,6 +141,23 @@ export type Database = {
           is_correct?: boolean | null;
         };
       };
+      admin_roles: {
+        Row: {
+          id: string;
+          user_id: string;
+          role: 'admin' | 'editor' | 'publisher';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          role: 'admin' | 'editor' | 'publisher';
+          created_at?: string;
+        };
+        Update: {
+          role?: 'admin' | 'editor' | 'publisher';
+        };
+      };
     };
   };
 };
