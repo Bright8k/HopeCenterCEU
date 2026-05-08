@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Badge } from '@/components/ui/Badge';
@@ -175,25 +176,33 @@ export default function CoursesScreen() {
           />
 
           {featuredCourse ? (
-            <Card variant="elevated" style={styles.featuredCard}>
-              <View style={styles.featuredHeader}>
-                <Badge label="Featured" variant="accent" />
-                <Text style={styles.featuredDuration}>
-                  {formatDuration(featuredCourse.duration_seconds)}
-                </Text>
-              </View>
-              <Text style={styles.featuredTitle}>{featuredCourse.title}</Text>
-              <Text style={styles.featuredDescription}>
-                {featuredCourse.description ?? 'New course available in your learning library.'}
-              </Text>
-              <View style={styles.featuredMeta}>
-                <Badge label={featuredCourse.track ?? 'General'} variant="primary" />
-                <Badge
-                  label={role === 'STUDENT' ? 'Board prep' : `${featuredCourse.ceu_value} CEU`}
-                  variant={role === 'STUDENT' ? 'muted' : 'success'}
-                />
-              </View>
-            </Card>
+            <InteractivePressable
+              onPress={() => router.push(`/course/${featuredCourse.id}`)}
+              accessibilityLabel={featuredCourse.title}
+              accessibilityHint="Tap to open this course"
+            >
+              {() => (
+                <Card variant="elevated" style={styles.featuredCard}>
+                  <View style={styles.featuredHeader}>
+                    <Badge label="Featured" variant="accent" />
+                    <Text style={styles.featuredDuration}>
+                      {formatDuration(featuredCourse.duration_seconds)}
+                    </Text>
+                  </View>
+                  <Text style={styles.featuredTitle}>{featuredCourse.title}</Text>
+                  <Text style={styles.featuredDescription}>
+                    {featuredCourse.description ?? 'New course available in your learning library.'}
+                  </Text>
+                  <View style={styles.featuredMeta}>
+                    <Badge label={featuredCourse.track ?? 'General'} variant="primary" />
+                    <Badge
+                      label={role === 'STUDENT' ? 'Board prep' : `${featuredCourse.ceu_value} CEU`}
+                      variant={role === 'STUDENT' ? 'muted' : 'success'}
+                    />
+                  </View>
+                </Card>
+              )}
+            </InteractivePressable>
           ) : null}
 
           <View style={styles.sectionHeader}>
@@ -214,10 +223,11 @@ export default function CoursesScreen() {
       }
       renderItem={({ item, index }) => (
         <InteractivePressable
+          onPress={() => router.push(`/course/${item.id}`)}
           style={styles.coursePressable}
           hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
           accessibilityLabel={item.title}
-          accessibilityHint="Highlights this course card"
+          accessibilityHint="Tap to open this course"
         >
           {({ hovered }) => (
             <Card

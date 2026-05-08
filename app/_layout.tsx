@@ -26,6 +26,8 @@ function AppNavigator() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="settings" />
+      <Stack.Screen name="course" />
+      <Stack.Screen name="quiz" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
