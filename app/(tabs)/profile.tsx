@@ -1,6 +1,7 @@
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -8,10 +9,11 @@ import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { usePreferences } from '@/context/PreferencesContext';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { useCEUProgress } from '@/hooks/useCEUProgress';
 import { useCertificates } from '@/hooks/useCertificates';
+import { useProfile, formatRenewalDate } from '@/hooks/useProfile';
 import { ROLE_CEU_REQUIREMENTS, ROLE_LABELS } from '@/constants/roles';
-import { hasSupabaseEnv } from '@/lib/supabase';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 export default function ProfileScreen() {
@@ -20,9 +22,20 @@ export default function ProfileScreen() {
   const { colors, textScale, preferences } = usePreferences();
   const { progress, loading } = useCEUProgress();
   const { displayCertificates, usingPreviewData } = useCertificates();
+  const { profile, refetch: refetchProfile } = useProfile();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const styles = createStyles(colors, textScale);
 
-  const fullName = user?.user_metadata?.full_name ?? 'Hope Center Learner';
+  useFocusEffect(
+    useCallback(() => {
+      refetchProfile();
+    }, [refetchProfile]),
+  );
+
+  const fullName =
+    profile?.display_name ??
+    (user?.user_metadata?.full_name as string | undefined) ??
+    'Hope Center Learner';
   const email = user?.email ?? 'No email connected yet';
   const initials = fullName
     .split(' ')
@@ -35,6 +48,25 @@ export default function ProfileScreen() {
   const isStudent = role === 'STUDENT';
   const earned = progress?.earned ?? 0;
   const completed = progress?.completedCourses ?? 0;
+
+  async function downloadCertificate(completionId: string) {
+    setDownloadingId(completionId);
+    const { data, error } = await supabase.functions.invoke('issue-certificate', {
+      body: { completionId },
+    });
+    setDownloadingId(null);
+
+    if (error || !data?.signedUrl) {
+      Alert.alert(
+        'Download failed',
+        'Unable to retrieve your certificate. Please try again shortly.',
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+
+    await Linking.openURL(data.signedUrl);
+  }
 
   const handleSignOut = () => {
     Alert.alert('Sign out', 'Are you sure you want to leave the Hope Center CEU app?', [
@@ -71,8 +103,40 @@ export default function ProfileScreen() {
               />
             </View>
           </View>
+          <Pressable
+            onPress={() => router.push('/profile-edit')}
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
+            style={styles.editBtn}
+          >
+            <Ionicons name="pencil-outline" size={16} color={colors.white} />
+          </Pressable>
         </View>
       </View>
+
+      {/* Completion prompt — shown when renewal date is missing for professionals */}
+      {hasSupabaseEnv && !isStudent && role && !profile?.renewal_date && (
+        <Card style={styles.completionCard}>
+          <View style={styles.completionRow}>
+            <Ionicons name="alert-circle-outline" size={20} color={colors.accent} accessibilityElementsHidden />
+            <View style={styles.completionCopy}>
+              <Text style={styles.completionTitle}>Add your renewal deadline</Text>
+              <Text style={styles.completionText}>
+                Set your CEU renewal date to track your pace and stay on schedule.
+              </Text>
+            </View>
+          </View>
+          <Pressable
+            onPress={() => router.push('/profile-edit')}
+            accessibilityRole="button"
+            accessibilityLabel="Set renewal date"
+            style={({ pressed }) => [styles.completionBtn, pressed && { opacity: 0.8 }]}
+          >
+            <Text style={styles.completionBtnText}>Set renewal date</Text>
+            <Ionicons name="arrow-forward" size={14} color={colors.primary} accessibilityElementsHidden />
+          </Pressable>
+        </Card>
+      )}
 
       <View style={styles.metricsRow}>
         <MetricCard
@@ -115,6 +179,12 @@ export default function ProfileScreen() {
               isStudent ? 'Board prep' : roleRequirement ? `${roleRequirement.total} CEUs` : '--'
             }
           />
+          {!isStudent && (
+            <SummaryRow
+              label="Renewal deadline"
+              value={profile?.renewal_date ? formatRenewalDate(profile.renewal_date) : 'Not set'}
+            />
+          )}
           <SummaryRow
             label="Organization"
             value="Hope Center for Behavior Change"
@@ -140,31 +210,55 @@ export default function ProfileScreen() {
           </View>
         </View>
         <Badge
-          label={displayCertificates.length > 0 ? `${displayCertificates.length} ready` : 'None yet'}
-          variant={completed > 0 ? 'success' : 'muted'}
+          label={(() => { const n = displayCertificates.filter((c) => c.passed).length; return n > 0 ? `${n} ready` : 'None yet'; })()}
+          variant={displayCertificates.some((c) => c.passed) ? 'success' : 'muted'}
         />
       </Card>
 
       <View style={styles.certificateList}>
-        {displayCertificates.slice(0, 3).map((certificate) => (
-          <Card key={certificate.id} style={styles.certificateCard}>
-            <View style={styles.certificateHeader}>
-              <View style={styles.certificateIconWrap}>
-                <Ionicons name="document-attach-outline" size={18} color={colors.accentDark} />
-              </View>
-              <View style={styles.certificateCopy}>
-                <Text style={styles.certificateTitle}>{certificate.title}</Text>
-                <Text style={styles.certificateMeta}>
-                  {formatDate(certificate.completedAt)} - {certificate.ceuValue} CEU
-                </Text>
-              </View>
-              <Badge
-                label={certificate.certUrl ? 'Available' : usingPreviewData ? 'Preview' : 'Pending'}
-                variant={certificate.certUrl ? 'success' : 'muted'}
-              />
-            </View>
-          </Card>
-        ))}
+        {displayCertificates
+          .filter((c) => c.passed)
+          .map((certificate) => {
+            const canDownload = hasSupabaseEnv && !usingPreviewData;
+            const isDownloading = downloadingId === certificate.id;
+
+            return (
+              <Card key={certificate.id} style={styles.certificateCard}>
+                <View style={styles.certificateHeader}>
+                  <View style={styles.certificateIconWrap}>
+                    <Ionicons name="document-attach-outline" size={18} color={colors.accentDark} />
+                  </View>
+                  <View style={styles.certificateCopy}>
+                    <Text style={styles.certificateTitle}>{certificate.title}</Text>
+                    <Text style={styles.certificateMeta}>
+                      {formatDate(certificate.completedAt)} · {certificate.ceuValue} CEU
+                    </Text>
+                  </View>
+                  {canDownload ? (
+                    <Pressable
+                      onPress={() => downloadCertificate(certificate.id)}
+                      disabled={isDownloading}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Download certificate for ${certificate.title}`}
+                      accessibilityState={{ disabled: isDownloading }}
+                      style={({ pressed }) => [
+                        styles.certDownloadBtn,
+                        pressed && { opacity: 0.7 },
+                      ]}
+                    >
+                      {isDownloading ? (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      ) : (
+                        <Ionicons name="download-outline" size={20} color={colors.primary} />
+                      )}
+                    </Pressable>
+                  ) : (
+                    <Badge label="Preview" variant="muted" />
+                  )}
+                </View>
+              </Card>
+            );
+          })}
       </View>
 
       <Card style={styles.recordCard}>
@@ -551,6 +645,62 @@ const createStyles = (
       fontSize: 12 * textScale,
       color: colors.textSecondary,
       fontFamily: Typography.body,
+    },
+    certDownloadBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: withAlpha(colors.primary, '12'),
+    },
+    editBtn: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: withAlpha(colors.white, '20'),
+      alignSelf: 'flex-start',
+    },
+    completionCard: {
+      marginBottom: 14,
+      borderColor: withAlpha(colors.accent, '66'),
+      borderWidth: 1,
+    },
+    completionRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 10,
+      marginBottom: 12,
+    },
+    completionCopy: { flex: 1 },
+    completionTitle: {
+      fontSize: 14 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.text,
+      marginBottom: 3,
+    },
+    completionText: {
+      fontSize: 13 * textScale,
+      lineHeight: 19,
+      fontFamily: Typography.body,
+      color: colors.textSecondary,
+    },
+    completionBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      alignSelf: 'flex-start',
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      backgroundColor: withAlpha(colors.primary, '0E'),
+    },
+    completionBtnText: {
+      fontSize: 13 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.primary,
     },
   });
 

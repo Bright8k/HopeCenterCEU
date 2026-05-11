@@ -211,11 +211,11 @@ export default function DashboardScreen() {
       {displayCourses.slice(0, 2).map((course) => (
         <InteractivePressable
           key={course.id}
-          onPress={() => router.push('/(tabs)/courses')}
+          onPress={() => router.push(`/course/${course.id}`)}
           style={styles.actionPressable}
           hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
           accessibilityLabel={course.title}
-          accessibilityHint="Opens the course library"
+          accessibilityHint="Opens the course"
         >
           {({ hovered }) => (
             <Card
