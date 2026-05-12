@@ -261,20 +261,37 @@ export default function ProfileScreen() {
           })}
       </View>
 
-      <Card style={styles.recordCard}>
-        <View style={styles.recordHeader}>
-          <View style={styles.recordIconWrap}>
-            <Ionicons name="time-outline" size={20} color={colors.primary} />
-          </View>
-          <View style={styles.recordCopy}>
-            <Text style={styles.recordTitle}>Renewal planning</Text>
-            <Text style={styles.recordText}>
-              Track deadlines, renewal pace, and CEU progress from one place as the app grows.
-            </Text>
-          </View>
-        </View>
-        <Badge label={isStudent ? 'Prep mode' : 'Planning'} variant="accent" />
-      </Card>
+      <InteractivePressable
+        onPress={() => router.push('/renewal-tracker')}
+        style={styles.actionPressable}
+        hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
+        accessibilityLabel="Open renewal tracker"
+        accessibilityHint="View your CEU renewal deadline, pace, and completed course timeline"
+      >
+        {({ hovered }) => (
+          <Card
+            variant="elevated"
+            style={[styles.recordCard, hovered && styles.actionCardHovered]}
+          >
+            <View style={styles.recordHeader}>
+              <View style={styles.recordIconWrap}>
+                <Ionicons name="time-outline" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.recordCopy}>
+                <Text style={styles.recordTitle}>Renewal tracker</Text>
+                <Text style={styles.recordText}>
+                  Deadline countdown, pace indicator, and completed course timeline.
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={hovered ? colors.primary : colors.textSecondary}
+              />
+            </View>
+          </Card>
+        )}
+      </InteractivePressable>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Account actions</Text>

@@ -29,6 +29,7 @@ function AppNavigator() {
       <Stack.Screen name="course" />
       <Stack.Screen name="quiz" />
       <Stack.Screen name="profile-edit" />
+      <Stack.Screen name="renewal-tracker" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
