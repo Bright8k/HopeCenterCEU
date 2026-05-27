@@ -1,10 +1,13 @@
 import { Stack } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { AppBrand } from '@/components/ui/AppBrand';
 import { usePreferences } from '@/context/PreferencesContext';
+import { useProfile } from '@/hooks/useProfile';
+import { useNotifications } from '@/hooks/useNotifications';
+import { scheduleRenewalReminders, cancelRenewalReminders } from '@/lib/notifications';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 type ThemeMode = 'system' | 'light' | 'dark';
@@ -12,7 +15,33 @@ type ThemeMode = 'system' | 'light' | 'dark';
 export default function SettingsScreen() {
   const { colors, preferences, resolvedTheme, setThemeMode, updatePreference, textScale } =
     usePreferences();
+  const { profile } = useProfile();
+  const { requestPermission } = useNotifications();
   const styles = createStyles(colors, textScale);
+
+  async function handlePushRemindersChange(enabled: boolean) {
+    if (!enabled) {
+      updatePreference('pushReminders', false);
+      await cancelRenewalReminders();
+      return;
+    }
+
+    const granted = await requestPermission();
+    if (!granted) {
+      Alert.alert(
+        'Notifications blocked',
+        'Enable notifications for Hope Center CEU in your device settings to receive renewal reminders.',
+        [{ text: 'OK' }],
+      );
+      return;
+    }
+
+    updatePreference('pushReminders', true);
+
+    if (profile?.renewal_date) {
+      await scheduleRenewalReminders(profile.renewal_date);
+    }
+  }
 
   return (
     <>
@@ -119,7 +148,7 @@ export default function SettingsScreen() {
               label="Push reminders"
               description="Receive reminders for upcoming CEU goals and deadlines."
               value={preferences.pushReminders}
-              onValueChange={(value) => updatePreference('pushReminders', value)}
+              onValueChange={handlePushRemindersChange}
             />
             <SettingRow
               label="Email updates"

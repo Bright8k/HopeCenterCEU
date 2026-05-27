@@ -1,9 +1,10 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { useCEUProgress } from '@/hooks/useCEUProgress';
 import { useCourses } from '@/hooks/useCourses';
+import { useStreak } from '@/hooks/useStreak';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
@@ -33,6 +34,7 @@ export default function DashboardScreen() {
   const { user, role } = useAuth();
   const { progress, loading } = useCEUProgress();
   const { displayCourses } = useCourses(role);
+  const { data: streak } = useStreak();
   const { colors, textScale, preferences } = usePreferences();
   const styles = createStyles(colors, textScale);
 
@@ -162,6 +164,33 @@ export default function DashboardScreen() {
           accent={colors.primaryLight}
         />
       </View>
+
+      {/* ── Streak card ── */}
+      <Pressable
+        onPress={() => router.push('/(tabs)/leaderboard')}
+        accessibilityRole="button"
+        accessibilityLabel={`Your current streak: ${streak?.currentStreak ?? 0} days. Tap to view the leaderboard.`}
+        style={({ pressed }) => [styles.streakCard, pressed && { opacity: 0.88 }]}
+      >
+        <View style={styles.streakLeft}>
+          <Text style={styles.streakEmoji}>
+            {(streak?.currentStreak ?? 0) > 0 ? '🔥' : '⚡'}
+          </Text>
+          <View>
+            <Text style={styles.streakTitle}>
+              {(streak?.currentStreak ?? 0) > 0
+                ? `${streak!.currentStreak}-day streak`
+                : 'Start your streak'}
+            </Text>
+            <Text style={styles.streakSub}>
+              {(streak?.currentStreak ?? 0) > 0
+                ? `Best: ${streak!.longestStreak} days · Pass a course to keep it going`
+                : 'Pass a course today to begin your streak'}
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+      </Pressable>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Next steps</Text>
@@ -414,7 +443,40 @@ const createStyles = (
     metricsRow: {
       flexDirection: 'row',
       gap: 10,
+      marginBottom: 14,
+    },
+    streakCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      borderRadius: 18,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
       marginBottom: 22,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    streakLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      flex: 1,
+    },
+    streakEmoji: {
+      fontSize: 26,
+      lineHeight: 30,
+    },
+    streakTitle: {
+      fontSize: 15 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.text,
+      marginBottom: 3,
+    },
+    streakSub: {
+      fontSize: 12 * textScale,
+      fontFamily: Typography.body,
+      color: colors.textSecondary,
     },
     metricCard: {
       flex: 1,

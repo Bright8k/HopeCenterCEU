@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
+import { updateStreak } from '@/lib/streaks';
 import { useAuth } from '@/context/AuthContext';
 import type { Database } from '@/types/database';
 
@@ -112,6 +113,11 @@ export function useQuiz(courseId: string) {
       result: { score, passed, correct, total },
       certGenerating: passed && !!completionId,
     }));
+
+    // Increment daily streak on any passing attempt
+    if (passed && hasSupabaseEnv) {
+      void updateStreak(user.id);
+    }
 
     // Generate certificate asynchronously after showing the result screen
     if (passed && completionId && hasSupabaseEnv) {

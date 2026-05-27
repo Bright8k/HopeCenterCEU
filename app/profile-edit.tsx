@@ -17,6 +17,7 @@ import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useProfile } from '@/hooks/useProfile';
+import { scheduleRenewalReminders, cancelRenewalReminders } from '@/lib/notifications';
 import { ROLE_LABELS, ROLE_CEU_REQUIREMENTS, type UserRole } from '@/constants/roles';
 import { Typography, withAlpha } from '@/constants/theme';
 
@@ -27,7 +28,7 @@ const RENEWAL_YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR + i);
 
 export default function ProfileEditScreen() {
   const { user } = useAuth();
-  const { colors, textScale } = usePreferences();
+  const { colors, textScale, preferences } = usePreferences();
   const { profile, loading } = useProfile();
   const styles = createStyles(colors, textScale);
 
@@ -89,6 +90,13 @@ export default function ProfileEditScreen() {
     if (error) {
       Alert.alert('Save failed', error.message);
       return;
+    }
+
+    // Sync notification schedule with the new renewal date
+    if (preferences.pushReminders && renewalDate) {
+      await scheduleRenewalReminders(renewalDate);
+    } else if (!renewalDate) {
+      await cancelRenewalReminders();
     }
 
     router.back();

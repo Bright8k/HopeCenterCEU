@@ -1,8 +1,10 @@
 import '../global.css';
-import { Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { Stack, router } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
+import * as Notifications from 'expo-notifications';
 import {
   Nunito_400Regular,
   Nunito_600SemiBold,
@@ -11,9 +13,26 @@ import {
 } from '@expo-google-fonts/nunito';
 import { AuthProvider } from '@/context/AuthContext';
 import { PreferencesProvider, usePreferences } from '@/context/PreferencesContext';
+import { setupNotificationHandler, setupAndroidChannel } from '@/lib/notifications';
 
 function AppNavigator() {
   const { colors } = usePreferences();
+
+  useEffect(() => {
+    // Configure foreground notification display behaviour and Android channel
+    setupNotificationHandler();
+    void setupAndroidChannel();
+
+    // Deep-link into the renewal tracker when a reminder notification is tapped
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const screen = response.notification.request.content.data?.screen as string | undefined;
+      if (screen === 'renewal-tracker') {
+        router.push('/renewal-tracker');
+      }
+    });
+
+    return () => sub.remove();
+  }, []);
 
   return (
     <Stack
