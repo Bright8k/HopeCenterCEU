@@ -163,6 +163,10 @@ export default function SignIn() {
 
         <Button title={devAuthBypass ? 'Enter Dashboard' : 'Sign In'} onPress={handleSignIn} loading={loading} style={styles.button} />
 
+        <Link href="/(auth)/forgot-password" asChild>
+          <Text style={styles.forgotLink}>Forgot your password?</Text>
+        </Link>
+
         <Link href="/(auth)/sign-up" asChild>
           <Text style={styles.footer}>
             Don&apos;t have an account yet? <Text style={styles.footerLink}>Create one</Text>
@@ -311,6 +315,13 @@ const createStyles = (
   button: {
     marginTop: 10,
     marginBottom: 24,
+  },
+  forgotLink: {
+    textAlign: 'center',
+    color: colors.primary,
+    fontSize: 14,
+    fontFamily: Typography.bodySemiBold,
+    marginBottom: 20,
   },
   footer: {
     textAlign: 'center',

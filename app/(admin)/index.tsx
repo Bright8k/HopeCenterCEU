@@ -77,6 +77,12 @@ export default function AdminOverview() {
         description="Add or edit questions linked to courses."
         onPress={() => router.push('/(admin)/questions')}
       />
+      <NavRow
+        icon="bar-chart-outline"
+        title="Analytics"
+        description="Completion rates, pass rates, and learner activity."
+        onPress={() => router.push('/(admin)/analytics')}
+      />
     </ScrollView>
   );
 
