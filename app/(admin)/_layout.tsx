@@ -36,6 +36,8 @@ export default function AdminLayout() {
       <Stack.Screen name="questions" options={{ title: 'Question Bank' }} />
       <Stack.Screen name="question-edit" options={{ title: 'Question' }} />
       <Stack.Screen name="analytics" options={{ title: 'Analytics' }} />
+      <Stack.Screen name="users" options={{ title: 'Learners' }} />
+      <Stack.Screen name="user-detail" options={{ title: 'Learner Detail' }} />
     </Stack>
   );
 }

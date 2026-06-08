@@ -83,6 +83,12 @@ export default function AdminOverview() {
         description="Completion rates, pass rates, and learner activity."
         onPress={() => router.push('/(admin)/analytics')}
       />
+      <NavRow
+        icon="people-outline"
+        title="Learners"
+        description="View all enrolled learners, their CEU progress, and activity history."
+        onPress={() => router.push('/(admin)/users')}
+      />
     </ScrollView>
   );
 

@@ -15,12 +15,14 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useCourse } from '@/hooks/useCourse';
+import { useOfflineCourse } from '@/hooks/useOfflineStorage';
 import { Typography, withAlpha } from '@/constants/theme';
 
 export default function CourseViewerScreen() {
   const { courseId } = useLocalSearchParams<{ courseId: string }>();
   const { colors, textScale } = usePreferences();
   const { course, loading, error } = useCourse(courseId);
+  const { isCached, saving, download, remove, available } = useOfflineCourse(courseId);
   const styles = createStyles(colors, textScale);
 
   // Always called unconditionally; source updates reactively as course loads
@@ -66,7 +68,27 @@ export default function CourseViewerScreen() {
         <Text style={styles.headerTitle} numberOfLines={1}>
           {course.title}
         </Text>
-        <View style={styles.headerRight} />
+        {available ? (
+          <Pressable
+            onPress={isCached ? remove : download}
+            disabled={saving}
+            accessibilityRole="button"
+            accessibilityLabel={isCached ? 'Remove offline copy' : 'Save course for offline use'}
+            style={styles.downloadBtn}
+          >
+            {saving ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Ionicons
+                name={isCached ? 'cloud-done-outline' : 'cloud-download-outline'}
+                size={22}
+                color={isCached ? colors.primary : colors.textSecondary}
+              />
+            )}
+          </Pressable>
+        ) : (
+          <View style={styles.headerRight} />
+        )}
       </View>
 
       {/* ── Scrollable content ──────────────────────────────────────────── */}
@@ -116,6 +138,7 @@ export default function CourseViewerScreen() {
               label={`${course.ceu_value} CEU${course.ceu_value !== 1 ? 's' : ''}`}
               variant="success"
             />
+            {isCached && <Badge label="Offline" variant="accent" />}
           </View>
 
           {/* Title */}
@@ -245,6 +268,14 @@ const createStyles = (
       color: colors.text,
     },
     headerRight: { width: 36 },
+    downloadBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.surface,
+    },
     content: { paddingBottom: 24 },
     videoSection: {
       width: '100%',
