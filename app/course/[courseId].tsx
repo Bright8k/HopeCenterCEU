@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,11 +33,37 @@ export default function CourseViewerScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading course...</Text>
+      <SafeAreaView style={styles.safeArea} accessibilityLabel="Loading course">
+        {/* Header */}
+        <View style={styles.header}>
+          <Skeleton width={36} height={36} borderRadius={12} />
+          <Skeleton width="58%" height={18} borderRadius={6} style={{ flex: 0 }} />
+          <Skeleton width={36} height={36} borderRadius={12} />
         </View>
+        {/* Video placeholder */}
+        <View style={[styles.videoSection, { opacity: 0.6 }]} />
+        {/* Body */}
+        <ScrollView
+          contentContainerStyle={{ padding: 20, gap: 14 }}
+          scrollEnabled={false}
+        >
+          {/* Meta badges */}
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <Skeleton width={68} height={24} borderRadius={12} />
+            <Skeleton width={58} height={24} borderRadius={12} />
+            <Skeleton width={78} height={24} borderRadius={12} />
+          </View>
+          {/* Title */}
+          <Skeleton width="82%" height={28} borderRadius={8} />
+          {/* Description */}
+          <View style={{ gap: 8 }}>
+            <Skeleton height={15} borderRadius={6} />
+            <Skeleton height={15} borderRadius={6} />
+            <Skeleton width="65%" height={15} borderRadius={6} />
+          </View>
+          {/* Requirements card */}
+          <Skeleton height={92} borderRadius={16} />
+        </ScrollView>
       </SafeAreaView>
     );
   }
