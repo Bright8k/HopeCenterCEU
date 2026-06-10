@@ -3,7 +3,6 @@ import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 're
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { AppBrand } from '@/components/ui/AppBrand';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -52,12 +51,11 @@ export default function SettingsScreen() {
           headerStyle: { backgroundColor: colors.card },
           headerTintColor: colors.text,
           headerTitleStyle: {
-            fontFamily: Typography.bodyBold,
+            fontFamily: Typography.heading,
             fontSize: 18,
             color: colors.text,
           },
           headerTitleAlign: 'center',
-          headerLeft: () => <AppBrand compact logoOnly style={{ marginLeft: 12 }} />,
           contentStyle: { backgroundColor: colors.background },
         }}
       />

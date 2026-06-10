@@ -25,7 +25,7 @@ export default function AdminLayout() {
       screenOptions={{
         headerStyle: { backgroundColor: colors.card },
         headerTintColor: colors.text,
-        headerTitleStyle: { fontFamily: Typography.bodyBold, fontSize: 18, color: colors.text },
+        headerTitleStyle: { fontFamily: Typography.heading, fontSize: 18, color: colors.text },
         headerTitleAlign: 'center',
         contentStyle: { backgroundColor: colors.background },
       }}

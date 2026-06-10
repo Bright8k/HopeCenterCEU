@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { usePreferences } from '@/context/PreferencesContext';
 import { HOPE_CENTER_LOGO_URI } from '@/constants/brand';
 import { Typography } from '@/constants/theme';
@@ -8,6 +8,7 @@ type AppBrandProps = {
   compact?: boolean;
   showSubtitle?: boolean;
   logoOnly?: boolean;
+  onPress?: () => void;
 };
 
 export function AppBrand({
@@ -15,12 +16,13 @@ export function AppBrand({
   compact = false,
   showSubtitle = true,
   logoOnly = false,
+  onPress,
 }: AppBrandProps) {
   const { colors, textScale } = usePreferences();
   const styles = createStyles(colors, textScale, compact);
 
-  return (
-    <View style={[styles.wrap, style]}>
+  const inner = (
+    <>
       <Image source={{ uri: HOPE_CENTER_LOGO_URI }} style={styles.logo} resizeMode="contain" />
       {!logoOnly ? (
         <View style={styles.copy}>
@@ -30,8 +32,24 @@ export function AppBrand({
           ) : null}
         </View>
       ) : null}
-    </View>
+    </>
   );
+
+  if (onPress) {
+    return (
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel="Go to dashboard"
+        accessibilityHint="Navigates to the home dashboard"
+        style={({ pressed }) => [styles.wrap, style, pressed && { opacity: 0.7 }]}
+      >
+        {inner}
+      </Pressable>
+    );
+  }
+
+  return <View style={[styles.wrap, style]}>{inner}</View>;
 }
 
 const createStyles = (

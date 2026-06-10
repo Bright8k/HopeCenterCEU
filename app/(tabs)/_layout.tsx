@@ -25,12 +25,19 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: colors.card },
         headerTintColor: colors.text,
         headerTitleStyle: {
-          fontFamily: Typography.bodyBold,
+          fontFamily: Typography.heading,
           fontSize: 18,
           color: colors.text,
         },
         headerTitleAlign: 'center',
-        headerLeft: () => <AppBrand compact logoOnly style={{ marginLeft: 12 }} />,
+        headerLeft: () => (
+          <AppBrand
+            compact
+            logoOnly
+            style={{ marginLeft: 12 }}
+            onPress={() => router.navigate('/(tabs)/index')}
+          />
+        ),
         headerRight: () => <SettingsHeaderButton />,
       }}
     >

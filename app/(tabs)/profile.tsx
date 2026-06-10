@@ -316,7 +316,7 @@ export default function ProfileScreen() {
         icon="pulse-outline"
         title="Return to dashboard"
         description="Review your current pace, next steps, and encouragement at a glance."
-        onPress={() => router.push('/(tabs)/index')}
+        onPress={() => router.navigate('/(tabs)/index')}
       />
 
       {isAdmin && (
