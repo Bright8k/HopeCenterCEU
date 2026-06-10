@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { updateStreak } from '@/lib/streaks';
+import { getCachedCourse, getCachedQuestions } from '@/lib/offline';
 import { useAuth } from '@/context/AuthContext';
 import type { Database } from '@/types/database';
 
@@ -43,28 +44,57 @@ export function useQuiz(courseId: string) {
   useEffect(() => {
     let active = true;
 
-    if (!hasSupabaseEnv) {
-      setState((s) => ({ ...s, loading: false }));
-      return;
-    }
+    async function load() {
+      // Try network first when Supabase is configured
+      if (hasSupabaseEnv) {
+        const [courseRes, questionsRes] = await Promise.all([
+          supabase.from('courses').select('*').eq('id', courseId).single(),
+          supabase.from('questions').select('*').eq('course_id', courseId).order('domain'),
+        ]);
 
-    Promise.all([
-      supabase.from('courses').select('*').eq('id', courseId).single(),
-      supabase.from('questions').select('*').eq('course_id', courseId).order('domain'),
-    ]).then(([courseRes, questionsRes]) => {
+        if (!active) return;
+
+        if (!courseRes.error && !questionsRes.error) {
+          setState((s) => ({
+            ...s,
+            course: courseRes.data as Course | null,
+            questions: (questionsRes.data as Question[]) ?? [],
+            loading: false,
+          }));
+          return;
+        }
+      }
+
+      // Network unavailable or failed — try offline cache
+      const [offlineCourse, offlineQuestions] = await Promise.all([
+        getCachedCourse(courseId),
+        getCachedQuestions(courseId),
+      ]);
+
       if (!active) return;
+
+      if (offlineCourse && offlineQuestions.length > 0) {
+        setState((s) => ({
+          ...s,
+          // Offline types are a strict subset of the DB row types — cast is safe for quiz use
+          course: offlineCourse as unknown as Course,
+          questions: offlineQuestions as unknown as Question[],
+          loading: false,
+        }));
+        return;
+      }
+
       setState((s) => ({
         ...s,
-        course: courseRes.data as Course | null,
-        questions: (questionsRes.data as Question[]) ?? [],
         loading: false,
-        error: questionsRes.error?.message ?? null,
+        error: hasSupabaseEnv
+          ? 'Unable to load this course. Check your connection and try again.'
+          : 'Download this course while online to take the quiz offline.',
       }));
-    });
+    }
 
-    return () => {
-      active = false;
-    };
+    void load();
+    return () => { active = false; };
   }, [courseId]);
 
   const setAnswer = useCallback((questionId: string, selectedIndex: number) => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 
 export interface AdminUserSummary {
@@ -91,6 +91,9 @@ export function useAdminUsers() {
 export function useAdminUserDetail(userId: string) {
   const [detail, setDetail] = useState<AdminUserDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
+
+  const refetch = useCallback(() => setTick((t) => t + 1), []);
 
   useEffect(() => {
     if (!hasSupabaseEnv || !userId) { setLoading(false); return; }
@@ -135,7 +138,7 @@ export function useAdminUserDetail(userId: string) {
 
     void run();
     return () => { active = false; };
-  }, [userId]);
+  }, [userId, tick]);
 
-  return { detail, loading };
+  return { detail, loading, refetch };
 }

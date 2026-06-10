@@ -1,20 +1,58 @@
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams } from 'expo-router';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useAdminUserDetail, type AdminUserCompletion } from '@/hooks/useAdminUsers';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { formatRenewalDate } from '@/hooks/useProfile';
-import { ROLE_CEU_REQUIREMENTS } from '@/constants/roles';
+import { ROLE_CEU_REQUIREMENTS, ROLE_LABELS, type UserRole } from '@/constants/roles';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Typography, withAlpha } from '@/constants/theme';
+
+const ROLES: UserRole[] = ['RBT', 'BCBA', 'STUDENT'];
 
 export default function AdminUserDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { colors, textScale } = usePreferences();
-  const { detail, loading } = useAdminUserDetail(id ?? '');
+  const { detail, loading, refetch } = useAdminUserDetail(id ?? '');
+  const [roleModal, setRoleModal] = useState(false);
+  const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
+  const [roleSaving, setRoleSaving] = useState(false);
   const styles = createStyles(colors, textScale);
+
+  async function handleSaveRole() {
+    if (!pendingRole || !id || !hasSupabaseEnv) return;
+    setRoleSaving(true);
+    const { error } = await supabase.functions.invoke('set-user-role', {
+      body: { userId: id, role: pendingRole },
+    });
+    setRoleSaving(false);
+    if (error) {
+      Alert.alert('Could not update role', 'Please try again shortly.');
+      return;
+    }
+    setRoleModal(false);
+    setPendingRole(null);
+    refetch();
+  }
+
+  function openRoleModal() {
+    setPendingRole((detail?.role as UserRole) ?? null);
+    setRoleModal(true);
+  }
 
   if (loading) {
     return (
@@ -40,79 +78,153 @@ export default function AdminUserDetailScreen() {
   const ceuPercent = requiredCeus > 0 ? Math.min(100, (earnedCeus / requiredCeus) * 100) : 0;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Header card */}
-      <Card variant="elevated" style={styles.headerCard}>
-        <View style={styles.headerRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{detail.displayName[0]?.toUpperCase() ?? '?'}</Text>
-          </View>
-          <View style={styles.headerCopy}>
-            <Text style={styles.displayName}>{detail.displayName}</Text>
-            <View style={styles.badgeRow}>
-              <Badge label={detail.role} variant="primary" />
-              {detail.currentStreak > 0 && (
-                <Badge label={`🔥 ${detail.currentStreak}-day streak`} variant="accent" />
-              )}
+    <>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        {/* Header card */}
+        <Card variant="elevated" style={styles.headerCard}>
+          <View style={styles.headerRow}>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{detail.displayName[0]?.toUpperCase() ?? '?'}</Text>
+            </View>
+            <View style={styles.headerCopy}>
+              <Text style={styles.displayName}>{detail.displayName}</Text>
+              <View style={styles.badgeRow}>
+                <Badge label={detail.role} variant="primary" />
+                {detail.currentStreak > 0 && (
+                  <Badge label={`🔥 ${detail.currentStreak}-day streak`} variant="accent" />
+                )}
+                <Pressable
+                  onPress={openRoleModal}
+                  style={styles.editRoleBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Change user role"
+                  accessibilityHint="Opens a dialog to reassign this learner's role"
+                >
+                  <Ionicons name="pencil-outline" size={14} color={colors.primary} />
+                  <Text style={styles.editRoleText}>Change role</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
 
-        <View style={styles.metaGrid}>
-          <MetaTile
-            label="Renewal"
-            value={detail.renewalDate ? formatRenewalDate(detail.renewalDate) : 'Not set'}
-            icon="calendar-outline"
-            colors={colors}
-            textScale={textScale}
-          />
-          <MetaTile
-            label="Completions"
-            value={String(passedCompletions.length)}
-            icon="checkmark-circle-outline"
-            colors={colors}
-            textScale={textScale}
-          />
-          <MetaTile
-            label="Best streak"
-            value={`${detail.longestStreak} days`}
-            icon="flame-outline"
-            colors={colors}
-            textScale={textScale}
-          />
-        </View>
-      </Card>
-
-      {/* CEU progress (professional roles only) */}
-      {req && (
-        <Card variant="elevated" style={styles.ceuCard}>
-          <View style={styles.ceuHeader}>
-            <Text style={styles.ceuTitle}>CEU Progress</Text>
-            <Text style={styles.ceuCount}>{earnedCeus.toFixed(1)} / {requiredCeus}</Text>
+          <View style={styles.metaGrid}>
+            <MetaTile
+              label="Renewal"
+              value={detail.renewalDate ? formatRenewalDate(detail.renewalDate) : 'Not set'}
+              icon="calendar-outline"
+              colors={colors}
+              textScale={textScale}
+            />
+            <MetaTile
+              label="Completions"
+              value={String(passedCompletions.length)}
+              icon="checkmark-circle-outline"
+              colors={colors}
+              textScale={textScale}
+            />
+            <MetaTile
+              label="Best streak"
+              value={`${detail.longestStreak} days`}
+              icon="flame-outline"
+              colors={colors}
+              textScale={textScale}
+            />
           </View>
-          <ProgressBar value={earnedCeus} max={requiredCeus} color={colors.primary} />
-          <Text style={styles.ceuSub}>
-            {Math.round(ceuPercent)}% complete · {req.cycleYears}-year renewal cycle
-          </Text>
         </Card>
-      )}
 
-      {/* Completion history */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Activity history</Text>
-        <Text style={styles.sectionCount}>{detail.completions.length}</Text>
-      </View>
+        {/* CEU progress (professional roles only) */}
+        {req && (
+          <Card variant="elevated" style={styles.ceuCard}>
+            <View style={styles.ceuHeader}>
+              <Text style={styles.ceuTitle}>CEU Progress</Text>
+              <Text style={styles.ceuCount}>{earnedCeus.toFixed(1)} / {requiredCeus}</Text>
+            </View>
+            <ProgressBar value={earnedCeus} max={requiredCeus} color={colors.primary} />
+            <Text style={styles.ceuSub}>
+              {Math.round(ceuPercent)}% complete · {req.cycleYears}-year renewal cycle
+            </Text>
+          </Card>
+        )}
 
-      {detail.completions.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <Text style={styles.emptyText}>No quiz attempts yet.</Text>
-        </Card>
-      ) : (
-        detail.completions.map((c) => (
-          <CompletionRow key={c.id} item={c} colors={colors} textScale={textScale} styles={styles} />
-        ))
-      )}
-    </ScrollView>
+        {/* Completion history */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Activity history</Text>
+          <Text style={styles.sectionCount}>{detail.completions.length}</Text>
+        </View>
+
+        {detail.completions.length === 0 ? (
+          <Card style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No quiz attempts yet.</Text>
+          </Card>
+        ) : (
+          detail.completions.map((c) => (
+            <CompletionRow key={c.id} item={c} colors={colors} styles={styles} />
+          ))
+        )}
+      </ScrollView>
+
+      {/* Role change modal */}
+      <Modal
+        visible={roleModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRoleModal(false)}
+        accessibilityViewIsModal
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setRoleModal(false)}
+          accessibilityLabel="Close dialog"
+        >
+          <Pressable style={styles.modalCard} onPress={() => {/* stop propagation */}}>
+            <Text style={styles.modalTitle}>Change role</Text>
+            <Text style={styles.modalSub}>{detail.displayName}</Text>
+
+            <View style={styles.roleList}>
+              {ROLES.map((r) => {
+                const selected = (pendingRole ?? detail.role) === r;
+                return (
+                  <Pressable
+                    key={r}
+                    onPress={() => setPendingRole(r)}
+                    style={[styles.roleRow, selected && styles.roleRowSelected]}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: selected }}
+                    accessibilityLabel={ROLE_LABELS[r]}
+                  >
+                    <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
+                      {selected && <View style={styles.radioInner} />}
+                    </View>
+                    <View style={styles.roleCopy}>
+                      <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>
+                        {r}
+                      </Text>
+                      <Text style={styles.roleDesc}>{ROLE_LABELS[r]}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Button
+              title={roleSaving ? 'Saving…' : 'Save role'}
+              onPress={handleSaveRole}
+              disabled={roleSaving || pendingRole === detail.role}
+              style={styles.saveBtn}
+              accessibilityLabel="Save role change"
+            />
+            <Pressable
+              onPress={() => setRoleModal(false)}
+              style={styles.cancelBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -136,11 +248,10 @@ function MetaTile({
 }
 
 function CompletionRow({
-  item, colors, textScale, styles,
+  item, colors, styles,
 }: {
   item: AdminUserCompletion;
   colors: ReturnType<typeof usePreferences>['colors'];
-  textScale: number;
   styles: ReturnType<typeof createStyles>;
 }) {
   const date = new Date(item.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -181,7 +292,13 @@ const createStyles = (
     avatarText: { fontSize: 22 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
     headerCopy: { flex: 1, gap: 6 },
     displayName: { fontSize: 20 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
-    badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
+    badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center' },
+    editRoleBtn: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
+      backgroundColor: withAlpha(colors.primary, '12'),
+    },
+    editRoleText: { fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold, color: colors.primary },
     metaGrid: {
       flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border,
       paddingTop: 14, gap: 8,
@@ -207,4 +324,34 @@ const createStyles = (
     compRight: { alignItems: 'flex-end' },
     compScore: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold },
     compCeu: { fontSize: 11 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
+    // Modal
+    modalOverlay: {
+      flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+      alignItems: 'center', justifyContent: 'center', padding: 24,
+    },
+    modalCard: {
+      width: '100%', maxWidth: 400, borderRadius: 24,
+      backgroundColor: colors.card, padding: 24, gap: 4,
+    },
+    modalTitle: { fontSize: 20 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text, marginBottom: 2 },
+    modalSub: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 16 },
+    roleList: { gap: 8, marginBottom: 20 },
+    roleRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 14,
+      padding: 14, borderRadius: 14, borderWidth: 1.5, borderColor: colors.border,
+    },
+    roleRowSelected: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '0A') },
+    radioOuter: {
+      width: 20, height: 20, borderRadius: 10, borderWidth: 2,
+      borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
+    },
+    radioOuterSelected: { borderColor: colors.primary },
+    radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
+    roleCopy: { flex: 1 },
+    roleLabel: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.textSecondary },
+    roleLabelSelected: { color: colors.text },
+    roleDesc: { fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginTop: 1 },
+    saveBtn: { marginTop: 4 },
+    cancelBtn: { alignItems: 'center', paddingVertical: 14 },
+    cancelText: { fontSize: 15 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
   });

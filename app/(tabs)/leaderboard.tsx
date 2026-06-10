@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -30,7 +30,15 @@ export default function LeaderboardScreen() {
   const { data: streak } = useStreak();
   const [period, setPeriod] = useState<LeaderboardPeriod>('all');
   const [roleFilter, setRoleFilter] = useState<LeaderboardRole>('ALL');
-  const { entries, loading } = useLeaderboard(roleFilter, period);
+  const [refreshing, setRefreshing] = useState(false);
+  const { entries, loading, refetch } = useLeaderboard(roleFilter, period);
+
+  async function onRefresh() {
+    setRefreshing(true);
+    refetch();
+    // Give the RPC time to complete before clearing the spinner
+    setTimeout(() => setRefreshing(false), 1200);
+  }
   const styles = createStyles(colors, textScale);
 
   const userRank = entries.findIndex((e) => e.userId === user?.id) + 1;
@@ -41,6 +49,13 @@ export default function LeaderboardScreen() {
       data={entries}
       keyExtractor={(item) => item.userId}
       contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+        />
+      }
       ListHeaderComponent={
         <>
           {/* ── My rank card ── */}

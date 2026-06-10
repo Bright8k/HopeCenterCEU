@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
+import { updateStreak } from '@/lib/streaks';
 import type { UserRole } from '@/constants/roles';
 import type { Database } from '@/types/database';
 
@@ -64,6 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const profile = data as Database['public']['Tables']['profiles']['Row'] | null;
     setRole((profile?.role as UserRole) ?? null);
     setLoading(false);
+    // Record a daily login streak — no-op if already updated today
+    void updateStreak(userId);
   }
 
   const signOut = async () => {

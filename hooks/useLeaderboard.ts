@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 
 export interface LeaderboardEntry {
@@ -28,7 +28,10 @@ export function useLeaderboard(
 ) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
+  const refetch = useCallback(() => setTick((t) => t + 1), []);
 
+  // Re-fetch on filter change or when completions/streaks are written
   useEffect(() => {
     if (!hasSupabaseEnv) {
       setLoading(false);
@@ -61,10 +64,24 @@ export function useLeaderboard(
         setLoading(false);
       });
 
-    return () => {
-      active = false;
-    };
-  }, [roleFilter, period]);
+    return () => { active = false; };
+  }, [roleFilter, period, tick]);
 
-  return { entries, loading };
+  // Realtime — any new completion or streak update triggers a leaderboard refresh
+  useEffect(() => {
+    if (!hasSupabaseEnv) return;
+
+    const bump = () => setTick((t) => t + 1);
+
+    const channel = supabase
+      .channel('leaderboard-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'completions' }, bump)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'streaks' }, bump)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'streaks' }, bump)
+      .subscribe();
+
+    return () => { void supabase.removeChannel(channel); };
+  }, []);
+
+  return { entries, loading, refetch };
 }
