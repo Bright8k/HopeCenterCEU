@@ -4,6 +4,8 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -105,7 +107,16 @@ export default function SignUp() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <SafeAreaView style={styles.safeArea}>
+      <Pressable
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Go back to sign in"
+        style={styles.backBtn}
+      >
+        <Ionicons name="arrow-back" size={22} color={colors.text} />
+      </Pressable>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <AppBrand style={styles.brandLockup} />
@@ -187,6 +198,7 @@ export default function SignUp() {
         </Link>
       </ScrollView>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -220,6 +232,15 @@ const createStyles = (
   textScale: number,
 ) =>
   StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: colors.background },
+  backBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    marginTop: 4,
+  },
   container: {
     flexGrow: 1,
     justifyContent: 'center',

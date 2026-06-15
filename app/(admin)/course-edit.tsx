@@ -36,6 +36,7 @@ export default function CourseEdit() {
 
   const [initialLoading, setInitialLoading] = useState(isEditing);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [track, setTrack] = useState<Track>(null);
@@ -79,6 +80,32 @@ export default function CourseEdit() {
     if (isNaN(pass) || pass < 0 || pass > 100) errs.passScore = 'Must be between 0 and 100';
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete course',
+      `"${title}" and all its questions, completions, and attempts will be permanently removed. This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            const { error } = await supabase.functions.invoke('delete-course', {
+              body: { courseId: id },
+            });
+            setDeleting(false);
+            if (error) {
+              Alert.alert('Delete failed', 'Unable to delete this course. Please try again.');
+              return;
+            }
+            router.back();
+          },
+        },
+      ],
+    );
   };
 
   const handleSave = async () => {
@@ -214,6 +241,18 @@ export default function CourseEdit() {
           style={styles.saveBtn}
           accessibilityLabel={isEditing ? 'Save course changes' : 'Create new course'}
         />
+
+        {isEditing && (
+          <Button
+            title={deleting ? 'Deleting…' : 'Delete Course'}
+            onPress={handleDelete}
+            disabled={deleting || saving}
+            variant="outline"
+            style={styles.deleteBtn}
+            textStyle={{ color: colors.error }}
+            accessibilityLabel="Delete this course permanently"
+          />
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -248,5 +287,6 @@ const createStyles = (
     chipText: { fontSize: 14 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text },
     multiline: { minHeight: 80, textAlignVertical: 'top', paddingTop: 12 },
     saveBtn: { marginTop: 8 },
+    deleteBtn: { marginTop: 10, borderColor: colors.error },
   });
 

@@ -2,13 +2,15 @@ import { useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -52,73 +54,83 @@ export default function ForgotPasswordScreen() {
     setSent(true);
   }
 
-  if (sent) {
-    return (
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.successOrb}>
-          <Ionicons name="mail-outline" size={36} color={colors.primary} />
-        </View>
-        <Text style={styles.title}>Check your inbox</Text>
-        <Text style={styles.subtitle}>
-          We sent a reset link to{' '}
-          <Text style={styles.emailHighlight}>{email.trim().toLowerCase()}</Text>
-          . Open the link on your device to set a new password.
-        </Text>
-        <Text style={styles.hint}>
-          Didn&apos;t get it? Check your spam folder, or wait a minute before trying again.
-        </Text>
-        <Link href="/(auth)/sign-in" asChild>
-          <Text style={styles.backLink}>Back to sign in</Text>
-        </Link>
-      </ScrollView>
-    );
-  }
-
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-        <View style={styles.iconWrap}>
-          <Ionicons name="lock-open-outline" size={32} color={colors.primary} />
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      {/* Back button */}
+      <Pressable
+        onPress={() => router.back()}
+        accessibilityRole="button"
+        accessibilityLabel="Go back to sign in"
+        style={styles.backBtn}
+      >
+        <Ionicons name="arrow-back" size={22} color={colors.text} />
+      </Pressable>
 
-        <Text style={styles.title}>Forgot your password?</Text>
-        <Text style={styles.subtitle}>
-          Enter your account email and we&apos;ll send you a link to reset your password.
-        </Text>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {sent ? (
+          <ScrollView contentContainerStyle={styles.container}>
+            <View style={styles.successOrb}>
+              <Ionicons name="mail-outline" size={36} color={colors.primary} />
+            </View>
+            <Text style={styles.title}>Check your inbox</Text>
+            <Text style={styles.subtitle}>
+              We sent a reset link to{' '}
+              <Text style={styles.emailHighlight}>{email.trim().toLowerCase()}</Text>
+              . Open the link on your device to set a new password.
+            </Text>
+            <Text style={styles.hint}>
+              Didn&apos;t get it? Check your spam folder, or wait a minute before trying again.
+            </Text>
+            <Link href="/(auth)/sign-in" asChild>
+              <Text style={styles.backLink}>Back to sign in</Text>
+            </Link>
+          </ScrollView>
+        ) : (
+          <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
+            <View style={styles.iconWrap}>
+              <Ionicons name="lock-open-outline" size={32} color={colors.primary} />
+            </View>
 
-        {error && (
-          <View style={styles.errorCard}>
-            <Ionicons name="alert-circle-outline" size={16} color={colors.error} />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
+            <Text style={styles.title}>Forgot your password?</Text>
+            <Text style={styles.subtitle}>
+              Enter your account email and we&apos;ll send you a link to reset your password.
+            </Text>
+
+            {error && (
+              <View style={styles.errorCard}>
+                <Ionicons name="alert-circle-outline" size={16} color={colors.error} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
+
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={(t) => { setEmail(t); setError(null); }}
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
+
+            <Button
+              title="Send reset link"
+              onPress={handleSubmit}
+              loading={loading}
+              style={styles.button}
+              accessibilityLabel="Send password reset link"
+            />
+
+            <Link href="/(auth)/sign-in" asChild>
+              <Text style={styles.backLink}>Back to sign in</Text>
+            </Link>
+          </ScrollView>
         )}
-
-        <Input
-          label="Email"
-          value={email}
-          onChangeText={(t) => { setEmail(t); setError(null); }}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-        />
-
-        <Button
-          title="Send reset link"
-          onPress={handleSubmit}
-          loading={loading}
-          style={styles.button}
-          accessibilityLabel="Send password reset link"
-        />
-
-        <Link href="/(auth)/sign-in" asChild>
-          <Text style={styles.backLink}>Back to sign in</Text>
-        </Link>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -127,6 +139,15 @@ const createStyles = (
   textScale: number,
 ) =>
   StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.background },
+    backBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: 8,
+      marginTop: 4,
+    },
     container: {
       flexGrow: 1,
       justifyContent: 'center',

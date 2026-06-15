@@ -124,10 +124,10 @@ export default function ProfileEditScreen() {
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
-          accessibilityLabel="Cancel and go back"
+          accessibilityLabel="Go back"
           style={styles.headerBtn}
         >
-          <Ionicons name="close" size={22} color={colors.text} />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Edit Profile</Text>
         <View style={styles.headerRight} />

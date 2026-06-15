@@ -118,10 +118,14 @@ export function useQuiz(courseId: string) {
     let completionId: string | null = null;
 
     if (hasSupabaseEnv) {
-      // cast required: supabase client lacks Database generic, insert types resolve to never
+      // cast required: supabase client lacks Database generic, insert/upsert types resolve to never
+      // upsert so retry-after-fail updates the existing row and still returns the id
       const completionsTable = supabase.from('completions') as any;
       const { data: inserted } = await completionsTable
-        .insert({ user_id: user.id, course_id: courseId, score, passed })
+        .upsert(
+          { user_id: user.id, course_id: courseId, score, passed },
+          { onConflict: 'user_id,course_id', ignoreDuplicates: false },
+        )
         .select('id')
         .single();
       completionId = inserted?.id ?? null;
