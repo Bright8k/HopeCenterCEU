@@ -1,4 +1,4 @@
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -87,7 +87,15 @@ export default function ProfileScreen() {
       <View style={styles.hero}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+            {profile?.avatar_url ? (
+              <Image
+                source={{ uri: profile.avatar_url }}
+                style={styles.avatarImage}
+                accessibilityLabel={`${fullName} profile photo`}
+              />
+            ) : (
+              <Text style={styles.avatarText}>{initials}</Text>
+            )}
           </View>
           <View style={styles.heroCopy}>
             <Text style={styles.name}>{fullName}</Text>
@@ -434,6 +442,11 @@ const createStyles = (
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: colors.accent,
+    },
+    avatarImage: {
+      width: 78,
+      height: 78,
+      borderRadius: 39,
     },
     avatarText: {
       fontSize: 26 * textScale,

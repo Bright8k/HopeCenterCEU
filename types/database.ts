@@ -8,6 +8,7 @@ export type Database = {
           role: 'RBT' | 'BCBA' | 'STUDENT' | null;
           renewal_date: string | null;
           org_id: string | null;
+          avatar_url: string | null;
           created_at: string;
         };
         Insert: {
@@ -16,6 +17,7 @@ export type Database = {
           role?: 'RBT' | 'BCBA' | 'STUDENT' | null;
           renewal_date?: string | null;
           org_id?: string | null;
+          avatar_url?: string | null;
           created_at?: string;
         };
         Update: {
@@ -23,6 +25,7 @@ export type Database = {
           role?: 'RBT' | 'BCBA' | 'STUDENT' | null;
           renewal_date?: string | null;
           org_id?: string | null;
+          avatar_url?: string | null;
         };
       };
       courses: {

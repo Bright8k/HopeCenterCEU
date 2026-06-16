@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, Stack } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Input } from '@/components/ui/Input';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
@@ -36,6 +39,8 @@ export default function ProfileEditScreen() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [renewalMonth, setRenewalMonth] = useState<number | null>(null);
   const [renewalYear, setRenewalYear] = useState<number | null>(null);
+  const [avatarUri, setAvatarUri] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Pre-fill form once profile is loaded
@@ -47,12 +52,62 @@ export default function ProfileEditScreen() {
         '',
     );
     setSelectedRole((profile.role as UserRole) ?? null);
+    setAvatarUri(profile.avatar_url ?? null);
     if (profile.renewal_date) {
       const [year, month] = profile.renewal_date.split('-').map(Number);
       setRenewalYear(year);
       setRenewalMonth(month);
     }
   }, [profile, user]);
+
+  async function pickAvatar() {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission required', 'Allow photo library access to change your avatar.');
+        return;
+      }
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+
+    if (!user || !hasSupabaseEnv) {
+      setAvatarUri(asset.uri);
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      const storagePath = `${user.id}/avatar.jpg`;
+
+      const { error: uploadErr } = await supabase.storage
+        .from('avatars')
+        .upload(storagePath, blob, { contentType: 'image/jpeg', upsert: true });
+
+      if (uploadErr) {
+        Alert.alert('Upload failed', 'Unable to upload your photo. Please try again.');
+        return;
+      }
+
+      const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(storagePath);
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      await (supabase.from('profiles') as any).update({ avatar_url: publicUrl }).eq('id', user.id);
+      setAvatarUri(publicUrl);
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
 
   async function handleSave() {
     if (!user) return;
@@ -138,6 +193,34 @@ export default function ProfileEditScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Avatar */}
+        <View style={styles.avatarSection}>
+          <Pressable
+            onPress={pickAvatar}
+            disabled={uploadingAvatar}
+            accessibilityRole="button"
+            accessibilityLabel="Change profile photo"
+            accessibilityHint="Opens your photo library to choose an avatar"
+            style={({ pressed }) => [styles.avatarWrap, pressed && { opacity: 0.8 }]}
+          >
+            {avatarUri ? (
+              <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person-outline" size={36} color={colors.primary} />
+              </View>
+            )}
+            <View style={styles.avatarOverlay}>
+              {uploadingAvatar ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <Ionicons name="camera" size={16} color={colors.white} />
+              )}
+            </View>
+          </Pressable>
+          <Text style={styles.avatarHint}>Tap to change photo</Text>
+        </View>
+
         {/* Display name */}
         <Text style={styles.sectionLabel}>Display name</Text>
         <Text style={styles.sectionHint}>Appears on your certificates.</Text>
@@ -296,6 +379,53 @@ const createStyles = (
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: colors.background },
     loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+    avatarSection: {
+      alignItems: 'center',
+      paddingVertical: 20,
+      marginBottom: 8,
+    },
+    avatarWrap: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      position: 'relative',
+    },
+    avatarImage: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      borderWidth: 2,
+      borderColor: colors.border,
+    },
+    avatarPlaceholder: {
+      width: 90,
+      height: 90,
+      borderRadius: 45,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: withAlpha(colors.primary, '12'),
+      borderWidth: 2,
+      borderColor: colors.border,
+    },
+    avatarOverlay: {
+      position: 'absolute',
+      bottom: 0,
+      right: 0,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 2,
+      borderColor: colors.card,
+    },
+    avatarHint: {
+      marginTop: 10,
+      fontSize: 13,
+      fontFamily: Typography.body,
+      color: colors.textSecondary,
+    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
