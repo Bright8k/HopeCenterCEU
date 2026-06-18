@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import * as Network from 'expo-network';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
+import { usePreferences } from '@/context/PreferencesContext';
 import {
   isCourseDownloaded,
   saveCourseOffline,
@@ -15,6 +17,7 @@ export function useOfflineCourse(courseId: string) {
   const [isCached, setIsCached] = useState(false);
   const [saving, setSaving] = useState(false);
   const available = Platform.OS !== 'web';
+  const { preferences } = usePreferences();
 
   useEffect(() => {
     if (!available || !courseId) return;
@@ -23,6 +26,19 @@ export function useOfflineCourse(courseId: string) {
 
   const download = useCallback(async (): Promise<boolean> => {
     if (!available || !hasSupabaseEnv || !courseId) return false;
+
+    if (!preferences.downloadOverCellular) {
+      const { type } = await Network.getNetworkStateAsync();
+      if (type === Network.NetworkStateType.CELLULAR) {
+        Alert.alert(
+          'Mobile data required',
+          "Enable 'Download over cellular' in Settings to download courses on mobile data.",
+          [{ text: 'OK' }],
+        );
+        return false;
+      }
+    }
+
     setSaving(true);
 
     // Fetch course + questions from Supabase
@@ -47,7 +63,7 @@ export function useOfflineCourse(courseId: string) {
         video_url: c.video_url ?? null, is_published: c.is_published ?? true,
       },
       qs.map((q) => ({
-        id: q.id, course_id: q.course_id, question: q.question,
+        id: q.id, course_id: q.course_id, stem: q.stem,
         options: Array.isArray(q.options) ? q.options : JSON.parse(q.options ?? '[]'),
         answer: q.answer, domain: q.domain ?? null,
       })),
@@ -56,7 +72,7 @@ export function useOfflineCourse(courseId: string) {
     setIsCached(true);
     setSaving(false);
     return true;
-  }, [available, courseId]);
+  }, [available, courseId, preferences.downloadOverCellular]);
 
   const remove = useCallback(async (): Promise<void> => {
     if (!available || !courseId) return;

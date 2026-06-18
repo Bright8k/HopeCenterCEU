@@ -1,11 +1,14 @@
 import { Stack } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useOfflineCourseList } from '@/hooks/useOfflineStorage';
+import { removeCourseOffline } from '@/lib/offline';
 import { scheduleRenewalReminders, cancelRenewalReminders } from '@/lib/notifications';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
@@ -16,6 +19,7 @@ export default function SettingsScreen() {
     usePreferences();
   const { profile } = useProfile();
   const { requestPermission } = useNotifications();
+  const { courses: cachedCourses, refresh: refreshCachedCourses } = useOfflineCourseList();
   const styles = createStyles(colors, textScale);
 
   async function handlePushRemindersChange(enabled: boolean) {
@@ -163,6 +167,55 @@ export default function SettingsScreen() {
           </Card>
         </SettingsSection>
 
+        {Platform.OS !== 'web' && (
+          <SettingsSection
+            title="Downloaded Courses"
+            description="Courses saved to your device for offline use."
+          >
+            <Card variant="elevated">
+              {cachedCourses.length === 0 ? (
+                <View style={styles.emptyDownloads}>
+                  <Ionicons name="cloud-download-outline" size={28} color={colors.textMuted} />
+                  <Text style={styles.emptyDownloadsText}>No courses saved offline yet.</Text>
+                  <Text style={styles.emptyDownloadsHint}>
+                    Open a course and tap the download icon to save it for offline use.
+                  </Text>
+                </View>
+              ) : (
+                cachedCourses.map((course, index) => (
+                  <View
+                    key={course.id}
+                    style={[
+                      styles.downloadItem,
+                      index < cachedCourses.length - 1 && styles.downloadItemBorder,
+                    ]}
+                  >
+                    <View style={styles.downloadItemInfo}>
+                      <Text style={styles.downloadItemTitle} numberOfLines={1}>
+                        {course.title}
+                      </Text>
+                      <Text style={styles.downloadItemDate}>
+                        Saved {formatCachedDate(course.cached_at)}
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={async () => {
+                        await removeCourseOffline(course.id);
+                        await refreshCachedCourses();
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${course.title} from offline storage`}
+                      style={styles.removeBtn}
+                    >
+                      <Ionicons name="trash-outline" size={20} color={colors.error} />
+                    </Pressable>
+                  </View>
+                ))
+              )}
+            </Card>
+          </SettingsSection>
+        )}
+
         <SettingsSection title="Privacy" description="Choose how much learning activity is shown and stored locally.">
           <Card variant="elevated">
             <SettingRow
@@ -233,6 +286,18 @@ export default function SettingsScreen() {
         />
       </View>
     );
+  }
+}
+
+function formatCachedDate(isoString: string): string {
+  try {
+    return new Date(isoString).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return isoString;
   }
 }
 
@@ -374,5 +439,53 @@ const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textS
       lineHeight: 19,
       color: colors.textSecondary,
       fontFamily: Typography.body,
+    },
+    emptyDownloads: {
+      alignItems: 'center',
+      paddingVertical: 20,
+      gap: 8,
+    },
+    emptyDownloadsText: {
+      fontSize: 14 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.textMuted,
+      textAlign: 'center',
+    },
+    emptyDownloadsHint: {
+      fontSize: 12 * textScale,
+      lineHeight: 18,
+      color: colors.textMuted,
+      textAlign: 'center',
+      fontFamily: Typography.body,
+    },
+    downloadItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+      paddingVertical: 12,
+    },
+    downloadItemBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    downloadItemInfo: {
+      flex: 1,
+    },
+    downloadItemTitle: {
+      fontSize: 14 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    downloadItemDate: {
+      fontSize: 12 * textScale,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
+    },
+    removeBtn: {
+      width: 44,
+      height: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
   });

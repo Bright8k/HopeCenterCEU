@@ -29,12 +29,19 @@ async function getDb(): Promise<SQLite.SQLiteDatabase | null> {
     CREATE TABLE IF NOT EXISTS offline_questions (
       id        TEXT PRIMARY KEY,
       course_id TEXT NOT NULL,
-      question  TEXT NOT NULL,
+      stem      TEXT NOT NULL,
       options   TEXT NOT NULL,
       answer    INTEGER NOT NULL,
       domain    TEXT
     );
   `);
+
+  // Rename legacy 'question' column to 'stem' if the old schema exists
+  try {
+    await _db.execAsync('ALTER TABLE offline_questions RENAME COLUMN question TO stem');
+  } catch {
+    // Column already named 'stem' or table was freshly created — no action needed
+  }
 
   return _db;
 }
@@ -57,7 +64,7 @@ export interface OfflineCourse {
 export interface OfflineQuestion {
   id: string;
   course_id: string;
-  question: string;
+  stem: string;
   options: string[];
   answer: number;
   domain: string | null;
@@ -90,9 +97,9 @@ export async function saveCourseOffline(
 
   for (const q of questions) {
     await db.runAsync(
-      `INSERT OR REPLACE INTO offline_questions (id, course_id, question, options, answer, domain)
+      `INSERT OR REPLACE INTO offline_questions (id, course_id, stem, options, answer, domain)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [q.id, q.course_id, q.question, JSON.stringify(q.options), q.answer, q.domain ?? null],
+      [q.id, q.course_id, q.stem, JSON.stringify(q.options), q.answer, q.domain ?? null],
     );
   }
 }
@@ -135,7 +142,7 @@ export async function getCachedQuestions(courseId: string): Promise<OfflineQuest
   return rows.map((r) => ({
     id: r.id as string,
     course_id: r.course_id as string,
-    question: r.question as string,
+    stem: r.stem as string,
     options: JSON.parse(r.options as string) as string[],
     answer: r.answer as number,
     domain: (r.domain as string | null) ?? null,

@@ -28,7 +28,8 @@ export function useCourses(role: UserRole | null) {
       .order('created_at', { ascending: false });
 
     if (role) {
-      request = request.eq('track', role);
+      // Include both role-specific courses and null-track (general) courses
+      request = request.or(`track.eq.${role},track.is.null`);
     }
 
     const { data, error } = await request;

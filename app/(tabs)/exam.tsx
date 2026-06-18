@@ -1,10 +1,12 @@
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { useExamPrep } from '@/hooks/useExamPrep';
 import { usePreferences } from '@/context/PreferencesContext';
+import { hasSupabaseEnv } from '@/lib/supabase';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 export default function ExamPrepScreen() {
@@ -58,10 +60,19 @@ export default function ExamPrepScreen() {
       {displayDomains.map((domain) => (
         <InteractivePressable
           key={domain.name}
+          onPress={
+            hasSupabaseEnv && !usingPreviewData
+              ? () => router.push({ pathname: '/exam/[domain]', params: { domain: domain.name } })
+              : undefined
+          }
           style={styles.domainPressable}
           hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
           accessibilityLabel={domain.name}
-          accessibilityHint={domain.description}
+          accessibilityHint={
+            hasSupabaseEnv && !usingPreviewData
+              ? `Start ${domain.name} practice session`
+              : domain.description
+          }
         >
           {({ hovered }) => (
             <Card variant="elevated" style={[styles.domainCard, hovered && styles.domainCardHovered]}>
@@ -93,9 +104,11 @@ export default function ExamPrepScreen() {
       ))}
 
       <Card style={styles.footerCard}>
-        <Text style={styles.footerTitle}>Next milestone</Text>
+        <Text style={styles.footerTitle}>How practice works</Text>
         <Text style={styles.footerText}>
-          The next build can turn these domain cards into playable question sessions with score review and spaced practice loops.
+          {hasSupabaseEnv && !usingPreviewData
+            ? 'Tap a domain to start a practice session. Each attempt is logged so your accuracy updates over time.'
+            : 'Practice sessions are available when connected to a live question bank. Domain cards are shown as a preview.'}
         </Text>
       </Card>
     </ScrollView>

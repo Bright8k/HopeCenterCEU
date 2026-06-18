@@ -17,7 +17,7 @@ export interface OfflineCourse {
 export interface OfflineQuestion {
   id: string;
   course_id: string;
-  question: string;
+  stem: string;
   options: string[];
   answer: number;
   domain: string | null;
