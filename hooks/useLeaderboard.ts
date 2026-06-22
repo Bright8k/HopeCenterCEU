@@ -4,6 +4,7 @@ import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 export interface LeaderboardEntry {
   userId: string;
   displayName: string;
+  avatarUrl: string | null;
   role: string;
   totalCeus: number;
   completionsCount: number;
@@ -53,6 +54,7 @@ export function useLeaderboard(
             data.map((row) => ({
               userId: row.user_id as string,
               displayName: row.display_name as string,
+              avatarUrl: (row.avatar_url as string | null) ?? null,
               role: row.role as string,
               totalCeus: row.total_ceus as number,
               completionsCount: row.completions_count as number,

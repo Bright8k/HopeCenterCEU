@@ -34,6 +34,7 @@ export type Database = {
           title: string;
           description: string | null;
           track: 'RBT' | 'BCBA' | 'STUDENT' | null;
+          category: 'ethics' | 'supervision' | 'general' | null;
           ceu_value: number;
           video_url: string | null;
           thumbnail_url: string | null;
@@ -47,6 +48,7 @@ export type Database = {
           title: string;
           description?: string | null;
           track?: 'RBT' | 'BCBA' | 'STUDENT' | null;
+          category?: 'ethics' | 'supervision' | 'general' | null;
           ceu_value?: number;
           video_url?: string | null;
           thumbnail_url?: string | null;
@@ -59,6 +61,7 @@ export type Database = {
           title?: string;
           description?: string | null;
           track?: 'RBT' | 'BCBA' | 'STUDENT' | null;
+          category?: 'ethics' | 'supervision' | 'general' | null;
           ceu_value?: number;
           video_url?: string | null;
           thumbnail_url?: string | null;

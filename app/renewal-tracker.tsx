@@ -14,7 +14,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
-import { useCEURenewal, type RenewalStatus } from '@/hooks/useCEURenewal';
+import { useCEURenewal, type RenewalStatus, type CategoryBreakdown } from '@/hooks/useCEURenewal';
 import { ROLE_CEU_REQUIREMENTS, ROLE_LABELS } from '@/constants/roles';
 import { formatRenewalDate } from '@/hooks/useProfile';
 import { Typography, withAlpha } from '@/constants/theme';
@@ -216,13 +216,29 @@ export default function RenewalTrackerScreen() {
           <Card style={styles.reqCard}>
             <Text style={styles.reqTitle}>BACB category requirements</Text>
             <Text style={styles.reqHint}>
-              Track ethics and supervision CEUs manually — category data will be added to courses soon.
+              CEU category is set per course. Courses without a category count toward General.
             </Text>
-            <View style={styles.reqList}>
-              <ReqRow label="Ethics" required={4} />
-              <ReqRow label="Supervision" required={3} />
-              <ReqRow label="General / other" required={25} note="(32 − 4 ethics − 3 supervision)" />
-            </View>
+            <CategoryRow
+              label="Ethics"
+              required={4}
+              earned={data?.categoryBreakdown.ethics ?? 0}
+              colors={colors}
+              textScale={textScale}
+            />
+            <CategoryRow
+              label="Supervision"
+              required={3}
+              earned={data?.categoryBreakdown.supervision ?? 0}
+              colors={colors}
+              textScale={textScale}
+            />
+            <CategoryRow
+              label="General / other"
+              required={25}
+              earned={data?.categoryBreakdown.general ?? 0}
+              colors={colors}
+              textScale={textScale}
+            />
           </Card>
         )}
 
@@ -289,24 +305,38 @@ export default function RenewalTrackerScreen() {
     );
   }
 
-  function ReqRow({
-    label,
-    required,
-    note,
-  }: {
-    label: string;
-    required: number;
-    note?: string;
-  }) {
-    return (
-      <View style={styles.reqRow}>
-        <Text style={styles.reqLabel}>{label}</Text>
-        <Text style={styles.reqValue}>
-          {required} required{note ? ` ${note}` : ''}
+}
+
+function CategoryRow({
+  label,
+  required,
+  earned,
+  colors,
+  textScale,
+}: {
+  label: string;
+  required: number;
+  earned: number;
+  colors: ReturnType<typeof usePreferences>['colors'];
+  textScale: number;
+}) {
+  const capped = Math.min(earned, required);
+  const met = capped >= required;
+  const barColor = met ? colors.success : colors.primary;
+
+  return (
+    <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, marginTop: 12, gap: 8 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text }}>
+          {label}
+        </Text>
+        <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: met ? colors.success : colors.textSecondary }}>
+          {earned.toFixed(1)} / {required}
         </Text>
       </View>
-    );
-  }
+      <ProgressBar value={capped} max={required} height={5} color={barColor} />
+    </View>
+  );
 }
 
 function formatDate(iso: string): string {

@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { usePreferences } from '@/context/PreferencesContext';
@@ -34,15 +34,22 @@ export default function AnalyticsScreen() {
             {PERIOD_OPTIONS.map((opt) => {
               const active = period === opt.value;
               return (
-                <Text
+                <Pressable
                   key={opt.value}
                   onPress={() => setPeriod(opt.value)}
                   accessibilityRole="button"
+                  accessibilityLabel={opt.label}
                   accessibilityState={{ selected: active }}
-                  style={[styles.periodChip, active && styles.periodChipActive]}
+                  style={({ pressed }) => [
+                    styles.periodChip,
+                    active && styles.periodChipActive,
+                    pressed && { opacity: 0.75 },
+                  ]}
                 >
-                  {opt.label}
-                </Text>
+                  <Text style={[styles.periodChipText, active && styles.periodChipTextActive]}>
+                    {opt.label}
+                  </Text>
+                </Pressable>
               );
             })}
           </View>
@@ -210,10 +217,11 @@ const createStyles = (
     periodChip: {
       borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
       borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
-      fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary,
       overflow: 'hidden',
     },
-    periodChipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14'), color: colors.primary },
+    periodChipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14') },
+    periodChipText: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    periodChipTextActive: { color: colors.primary },
     summaryRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
     summaryTile: {
       flex: 1, borderRadius: 16, padding: 12, alignItems: 'center', gap: 6,

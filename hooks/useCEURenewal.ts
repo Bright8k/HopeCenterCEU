@@ -10,7 +10,14 @@ export type RenewalCompletion = {
   id: string;
   title: string;
   ceuValue: number;
+  category: 'ethics' | 'supervision' | 'general' | null;
   completedAt: string;
+};
+
+export type CategoryBreakdown = {
+  ethics: number;
+  supervision: number;
+  general: number;
 };
 
 export type CEURenewalData = {
@@ -22,6 +29,7 @@ export type CEURenewalData = {
   ceuPercent: number;
   status: RenewalStatus;
   completions: RenewalCompletion[];
+  categoryBreakdown: CategoryBreakdown;
 };
 
 export function useCEURenewal() {
@@ -64,10 +72,10 @@ export function useCEURenewal() {
         timeElapsedPercent = Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
       }
 
-      // Fetch passed completions in this cycle
+      // Fetch passed completions in this cycle (include category for BCBA breakdown)
       let query = (supabase as any)
         .from('completions')
-        .select('id, completed_at, courses(title, ceu_value)')
+        .select('id, completed_at, courses(title, ceu_value, category)')
         .eq('user_id', user!.id)
         .eq('passed', true)
         .order('completed_at', { ascending: false });
@@ -82,10 +90,18 @@ export function useCEURenewal() {
         id: c.id,
         title: c.courses?.title ?? 'Untitled course',
         ceuValue: c.courses?.ceu_value ?? 0,
+        category: (c.courses?.category as RenewalCompletion['category']) ?? null,
         completedAt: c.completed_at,
       }));
 
       const earnedCeus = completions.reduce((sum, c) => sum + c.ceuValue, 0);
+
+      const categoryBreakdown: CategoryBreakdown = { ethics: 0, supervision: 0, general: 0 };
+      for (const c of completions) {
+        if (c.category === 'ethics') categoryBreakdown.ethics += c.ceuValue;
+        else if (c.category === 'supervision') categoryBreakdown.supervision += c.ceuValue;
+        else categoryBreakdown.general += c.ceuValue;
+      }
       const requiredCeus = req.total;
       const ceuPercent = requiredCeus > 0 ? Math.min(100, (earnedCeus / requiredCeus) * 100) : 0;
 
@@ -105,7 +121,7 @@ export function useCEURenewal() {
       }
 
       if (active) {
-        setData({ renewalDate, daysRemaining, timeElapsedPercent, earnedCeus, requiredCeus, ceuPercent, status, completions });
+        setData({ renewalDate, daysRemaining, timeElapsedPercent, earnedCeus, requiredCeus, ceuPercent, status, completions, categoryBreakdown });
         setLoading(false);
       }
     }

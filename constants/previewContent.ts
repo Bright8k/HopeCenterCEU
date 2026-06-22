@@ -9,6 +9,7 @@ export const PREVIEW_COURSES: Course[] = [
     description:
       'A practical walkthrough of instruction, modeling, rehearsal, and feedback for frontline ABA teams.',
     track: 'RBT',
+    category: null,
     ceu_value: 1,
     video_url: null,
     thumbnail_url: null,
@@ -23,6 +24,7 @@ export const PREVIEW_COURSES: Course[] = [
     description:
       'Case-based review of documentation, scope, and supervisory judgment for practicing BCBAs.',
     track: 'BCBA',
+    category: 'ethics',
     ceu_value: 2,
     video_url: null,
     thumbnail_url: null,
@@ -37,6 +39,7 @@ export const PREVIEW_COURSES: Course[] = [
     description:
       'Targeted question set designed to mirror board-style prompts and pacing for student analysts.',
     track: 'STUDENT',
+    category: null,
     ceu_value: 0,
     video_url: null,
     thumbnail_url: null,

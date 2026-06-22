@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -67,9 +67,17 @@ export default function LeaderboardScreen() {
           >
             <View style={styles.myCardRow}>
               <View style={styles.myAvatar}>
-                <Text style={styles.myAvatarText}>
-                  {(user?.user_metadata?.full_name as string | undefined)?.[0]?.toUpperCase() ?? '?'}
-                </Text>
+                {userEntry?.avatarUrl ? (
+                  <Image
+                    source={{ uri: userEntry.avatarUrl }}
+                    style={styles.myAvatarImage}
+                    accessibilityLabel="Your profile photo"
+                  />
+                ) : (
+                  <Text style={styles.myAvatarText}>
+                    {(user?.user_metadata?.full_name as string | undefined)?.[0]?.toUpperCase() ?? '?'}
+                  </Text>
+                )}
               </View>
               <View style={styles.myInfo}>
                 <Text style={styles.myName} numberOfLines={1}>
@@ -212,7 +220,15 @@ function RankRow({
 
       {/* Avatar */}
       <View style={[styles.avatar, isCurrentUser && styles.avatarMe]}>
-        <Text style={styles.avatarText}>{entry.displayName[0]?.toUpperCase() ?? '?'}</Text>
+        {entry.avatarUrl ? (
+          <Image
+            source={{ uri: entry.avatarUrl }}
+            style={styles.avatarImage}
+            accessibilityLabel={`${entry.displayName} profile photo`}
+          />
+        ) : (
+          <Text style={styles.avatarText}>{entry.displayName[0]?.toUpperCase() ?? '?'}</Text>
+        )}
       </View>
 
       {/* Name + role */}
@@ -272,6 +288,11 @@ const createStyles = (
       fontSize: 18 * textScale,
       fontFamily: Typography.bodyBold,
       color: '#FFFFFF',
+    },
+    myAvatarImage: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
     },
     myInfo: { flex: 1 },
     myName: {
@@ -415,6 +436,11 @@ const createStyles = (
       fontSize: 15 * textScale,
       fontFamily: Typography.bodyBold,
       color: colors.primary,
+    },
+    avatarImage: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
     },
     nameCopy: { flex: 1 },
     name: {

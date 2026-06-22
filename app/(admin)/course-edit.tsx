@@ -20,12 +20,19 @@ import { Typography } from '@/constants/theme';
 
 type CourseRow = Database['public']['Tables']['courses']['Row'];
 type Track = 'RBT' | 'BCBA' | 'STUDENT' | null;
+type Category = 'ethics' | 'supervision' | 'general' | null;
 
 const TRACKS: { label: string; value: Track }[] = [
   { label: 'All', value: null },
   { label: 'RBT', value: 'RBT' },
   { label: 'BCBA', value: 'BCBA' },
   { label: 'Student', value: 'STUDENT' },
+];
+
+const CATEGORIES: { label: string; value: Category }[] = [
+  { label: 'General', value: 'general' },
+  { label: 'Ethics', value: 'ethics' },
+  { label: 'Supervision', value: 'supervision' },
 ];
 
 export default function CourseEdit() {
@@ -40,6 +47,7 @@ export default function CourseEdit() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [track, setTrack] = useState<Track>(null);
+  const [category, setCategory] = useState<Category>(null);
   const [ceuValue, setCeuValue] = useState('1.0');
   const [passScore, setPassScore] = useState('80');
   const [durationSeconds, setDurationSeconds] = useState('');
@@ -58,6 +66,7 @@ export default function CourseEdit() {
       setTitle(c.title);
       setDescription(c.description ?? '');
       setTrack(c.track as Track);
+      setCategory((c.category as Category) ?? null);
       setCeuValue(String(c.ceu_value));
       setPassScore(String(c.pass_score));
       setDurationSeconds(c.duration_seconds ? String(c.duration_seconds) : '');
@@ -119,6 +128,7 @@ export default function CourseEdit() {
       title: title.trim(),
       description: description.trim() || null,
       track,
+      category,
       ceu_value: parseFloat(ceuValue),
       pass_score: parseInt(passScore, 10),
       duration_seconds: durationSeconds ? parseInt(durationSeconds, 10) : null,
@@ -188,6 +198,34 @@ export default function CourseEdit() {
               ]}
             >
               <Text style={[styles.chipText, track === value && { color: colors.white }]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.fieldLabel}>CEU Category</Text>
+        <Text style={styles.fieldHint}>
+          Used to track BACB sub-requirements (ethics, supervision) for BCBA renewals.
+        </Text>
+        <View style={styles.chipRow}>
+          <Pressable
+            onPress={() => setCategory(null)}
+            accessibilityRole="button"
+            accessibilityLabel="No category"
+            accessibilityState={{ selected: category === null }}
+            style={[styles.chip, category === null && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+          >
+            <Text style={[styles.chipText, category === null && { color: colors.white }]}>None</Text>
+          </Pressable>
+          {CATEGORIES.map(({ label, value }) => (
+            <Pressable
+              key={String(value)}
+              onPress={() => setCategory(value)}
+              accessibilityRole="button"
+              accessibilityLabel={`Category: ${label}`}
+              accessibilityState={{ selected: category === value }}
+              style={[styles.chip, category === value && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+            >
+              <Text style={[styles.chipText, category === value && { color: colors.white }]}>{label}</Text>
             </Pressable>
           ))}
         </View>
@@ -274,7 +312,8 @@ const createStyles = (
       marginBottom: 12,
       marginTop: 8,
     },
-    fieldLabel: { fontSize: 14, fontFamily: Typography.bodySemiBold, color: colors.text, marginBottom: 8 },
+    fieldLabel: { fontSize: 14, fontFamily: Typography.bodySemiBold, color: colors.text, marginBottom: 4 },
+    fieldHint: { fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 10, lineHeight: 17 },
     chipRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
     chip: {
       paddingHorizontal: 16,
