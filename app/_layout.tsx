@@ -50,6 +50,7 @@ function AppNavigator() {
       <Stack.Screen name="profile-edit" />
       <Stack.Screen name="renewal-tracker" />
       <Stack.Screen name="exam" />
+      <Stack.Screen name="certificate" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

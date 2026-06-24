@@ -35,7 +35,7 @@ export default function TabLayout() {
             compact
             logoOnly
             style={{ marginLeft: 12 }}
-            onPress={() => router.navigate('/(tabs)/index')}
+            onPress={() => router.navigate('/(tabs)')}
           />
         ),
         headerRight: () => <SettingsHeaderButton />,

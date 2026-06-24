@@ -1,7 +1,7 @@
-import { ActivityIndicator, Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -9,7 +9,7 @@ import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { usePreferences } from '@/context/PreferencesContext';
-import { hasSupabaseEnv, supabase } from '@/lib/supabase';
+import { hasSupabaseEnv } from '@/lib/supabase';
 import { useCEUProgress } from '@/hooks/useCEUProgress';
 import { useCertificates } from '@/hooks/useCertificates';
 import { useProfile, formatRenewalDate } from '@/hooks/useProfile';
@@ -23,7 +23,6 @@ export default function ProfileScreen() {
   const { progress, loading } = useCEUProgress();
   const { displayCertificates, usingPreviewData } = useCertificates();
   const { profile, refetch: refetchProfile } = useProfile();
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const styles = createStyles(colors, textScale);
 
   useFocusEffect(
@@ -49,24 +48,7 @@ export default function ProfileScreen() {
   const earned = progress?.earned ?? 0;
   const completed = progress?.completedCourses ?? 0;
 
-  async function downloadCertificate(completionId: string) {
-    setDownloadingId(completionId);
-    const { data, error } = await supabase.functions.invoke('issue-certificate', {
-      body: { completionId },
-    });
-    setDownloadingId(null);
 
-    if (error || !data?.signedUrl) {
-      Alert.alert(
-        'Download failed',
-        'Unable to retrieve your certificate. Please try again shortly.',
-        [{ text: 'OK' }],
-      );
-      return;
-    }
-
-    await Linking.openURL(data.signedUrl);
-  }
 
   const handleSignOut = () => {
     Alert.alert('Sign out', 'Are you sure you want to leave the Hope Center CEU app?', [
@@ -227,44 +209,39 @@ export default function ProfileScreen() {
         {displayCertificates
           .filter((c) => c.passed)
           .map((certificate) => {
-            const canDownload = hasSupabaseEnv && !usingPreviewData;
-            const isDownloading = downloadingId === certificate.id;
+            const canView = hasSupabaseEnv && !usingPreviewData;
 
             return (
-              <Card key={certificate.id} style={styles.certificateCard}>
-                <View style={styles.certificateHeader}>
-                  <View style={styles.certificateIconWrap}>
-                    <Ionicons name="document-attach-outline" size={18} color={colors.accentDark} />
+              <Pressable
+                key={certificate.id}
+                onPress={() =>
+                  canView
+                    ? router.push(`/certificate/${certificate.id}`)
+                    : undefined
+                }
+                accessibilityRole="button"
+                accessibilityLabel={`View certificate for ${certificate.title}`}
+                style={({ pressed }) => [pressed && canView && { opacity: 0.8 }]}
+              >
+                <Card style={styles.certificateCard}>
+                  <View style={styles.certificateHeader}>
+                    <View style={styles.certificateIconWrap}>
+                      <Ionicons name="document-attach-outline" size={18} color={colors.accentDark} />
+                    </View>
+                    <View style={styles.certificateCopy}>
+                      <Text style={styles.certificateTitle}>{certificate.title}</Text>
+                      <Text style={styles.certificateMeta}>
+                        {formatDate(certificate.completedAt)} · {certificate.ceuValue} CEU
+                      </Text>
+                    </View>
+                    {canView ? (
+                      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+                    ) : (
+                      <Badge label="Preview" variant="muted" />
+                    )}
                   </View>
-                  <View style={styles.certificateCopy}>
-                    <Text style={styles.certificateTitle}>{certificate.title}</Text>
-                    <Text style={styles.certificateMeta}>
-                      {formatDate(certificate.completedAt)} · {certificate.ceuValue} CEU
-                    </Text>
-                  </View>
-                  {canDownload ? (
-                    <Pressable
-                      onPress={() => downloadCertificate(certificate.id)}
-                      disabled={isDownloading}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Download certificate for ${certificate.title}`}
-                      accessibilityState={{ disabled: isDownloading }}
-                      style={({ pressed }) => [
-                        styles.certDownloadBtn,
-                        pressed && { opacity: 0.7 },
-                      ]}
-                    >
-                      {isDownloading ? (
-                        <ActivityIndicator size="small" color={colors.primary} />
-                      ) : (
-                        <Ionicons name="download-outline" size={20} color={colors.primary} />
-                      )}
-                    </Pressable>
-                  ) : (
-                    <Badge label="Preview" variant="muted" />
-                  )}
-                </View>
-              </Card>
+                </Card>
+              </Pressable>
             );
           })}
       </View>
@@ -324,7 +301,7 @@ export default function ProfileScreen() {
         icon="pulse-outline"
         title="Return to dashboard"
         description="Review your current pace, next steps, and encouragement at a glance."
-        onPress={() => router.navigate('/(tabs)/index')}
+        onPress={() => router.navigate('/(tabs)')}
       />
 
       {isAdmin && (

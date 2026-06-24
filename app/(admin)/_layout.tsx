@@ -18,7 +18,7 @@ export default function AdminLayout() {
     );
   }
 
-  if (!isAdmin) return <Redirect href="/(tabs)/index" />;
+  if (!isAdmin) return <Redirect href="/(tabs)" />;
 
   return (
     <Stack

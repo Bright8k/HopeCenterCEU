@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  ImageBackground,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -142,6 +143,22 @@ export default function CourseViewerScreen() {
               allowsFullscreen
               accessibilityLabel={`Video: ${course.title}`}
             />
+          ) : course.thumbnail_url ? (
+            <ImageBackground
+              source={{ uri: course.thumbnail_url }}
+              style={styles.videoPlaceholder}
+              resizeMode="cover"
+              accessibilityElementsHidden
+            >
+              <View style={styles.thumbnailDim} />
+              <View style={[styles.playIconWrap, { backgroundColor: withAlpha('#000000', '44') }]}>
+                <Ionicons name="play-circle-outline" size={64} color={colors.white} />
+              </View>
+              <Text style={styles.placeholderText}>Video coming soon</Text>
+              <Text style={styles.placeholderSubtext}>
+                Complete the quiz below to earn your CEUs
+              </Text>
+            </ImageBackground>
           ) : (
             <View style={styles.videoPlaceholder}>
               <View style={[styles.playIconWrap, { backgroundColor: withAlpha(colors.white, '18') }]}>
@@ -318,6 +335,10 @@ const createStyles = (
       alignItems: 'center',
       justifyContent: 'center',
       gap: 12,
+    },
+    thumbnailDim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: withAlpha('#000000', '44'),
     },
     playIconWrap: {
       width: 100,
