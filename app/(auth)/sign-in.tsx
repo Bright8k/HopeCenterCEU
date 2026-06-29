@@ -16,9 +16,9 @@ import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
-import { AppBrand } from '@/components/ui/AppBrand';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
+import { HOPE_CENTER_LOGO_URI } from '@/constants/brand';
 
 export default function SignIn() {
   const { colors, textScale } = usePreferences();
@@ -98,13 +98,18 @@ export default function SignIn() {
     >
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
-          <AppBrand style={styles.brandLockup} />
-          <View style={styles.logoOrb}>
-            <Image source={require('@/assets/icon.png')} style={styles.logoImage} resizeMode="contain" />
-          </View>
+          <Image
+            source={{ uri: HOPE_CENTER_LOGO_URI }}
+            style={styles.heroLogo}
+            resizeMode="contain"
+            accessibilityLabel="Hope Center for Behavior Change logo"
+          />
+          <Text style={styles.brandName}>Hope Center</Text>
+          <Text style={styles.brandSub}>for Behavior Change</Text>
+          <View style={styles.dividerAccent} />
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>
-            Training for ABA professionals with the Hope Center for Behavior Change color direction and feel.
+            Sign in to access your CEU courses, track your progress, and earn certificates.
           </Text>
         </View>
 
@@ -215,41 +220,53 @@ const createStyles = (
   },
   hero: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 32,
+    paddingTop: 12,
   },
-  brandLockup: {
-    alignSelf: 'flex-start',
-    marginBottom: 18,
+  heroLogo: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    marginBottom: 20,
   },
-  logoOrb: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    backgroundColor: withAlpha(colors.primary, '12'),
-    borderWidth: 1,
-    borderColor: withAlpha(colors.accent, '88'),
+  brandName: {
+    fontSize: 36 * textScale,
+    fontFamily: Typography.heading,
+    color: colors.primary,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    lineHeight: 42,
   },
-  logoImage: {
-    width: 82,
-    height: 82,
+  brandSub: {
+    fontSize: 18 * textScale,
+    fontFamily: Typography.headingItalic,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+    marginBottom: 20,
+  },
+  dividerAccent: {
+    width: 48,
+    height: 2,
+    backgroundColor: colors.accent,
+    borderRadius: 1,
+    marginBottom: 20,
   },
   title: {
-      fontSize: 30 * textScale,
-      fontFamily: Typography.heading,
-      color: colors.text,
+    fontSize: 28 * textScale,
+    fontFamily: Typography.headingSemiBold,
+    color: colors.text,
     marginBottom: 8,
     textAlign: 'center',
+    letterSpacing: 0.3,
   },
-    subtitle: {
-      fontSize: 15,
-      lineHeight: 22,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
+  subtitle: {
+    fontSize: 15,
+    lineHeight: 23,
+    fontFamily: Typography.body,
+    color: colors.textSecondary,
     textAlign: 'center',
-    maxWidth: 320,
+    maxWidth: 300,
   },
     notice: {
     marginBottom: 18,

@@ -9,7 +9,7 @@ import { usePreferences } from '@/context/PreferencesContext';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Typography, withAlpha } from '@/constants/theme';
 
-type Stats = { totalCourses: number; publishedCourses: number; totalQuestions: number };
+type Stats = { totalCourses: number; publishedCourses: number; totalQuestions: number; totalLearners: number };
 
 export default function AdminOverview() {
   const { colors, textScale } = usePreferences();
@@ -23,11 +23,13 @@ export default function AdminOverview() {
       supabase.from('courses').select('*', { count: 'exact', head: true }),
       supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_published', true),
       supabase.from('questions').select('*', { count: 'exact', head: true }),
-    ]).then(([all, pub, q]) => {
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+    ]).then(([all, pub, q, learners]) => {
       setStats({
         totalCourses: all.count ?? 0,
         publishedCourses: pub.count ?? 0,
         totalQuestions: q.count ?? 0,
+        totalLearners: learners.count ?? 0,
       });
     });
   }, []);
@@ -60,6 +62,12 @@ export default function AdminOverview() {
           label="Questions"
           value={stats ? String(stats.totalQuestions) : '--'}
           accent={colors.accent}
+        />
+        <StatTile
+          icon="people-outline"
+          label="Learners"
+          value={stats ? String(stats.totalLearners) : '--'}
+          accent={colors.success}
         />
       </View>
 

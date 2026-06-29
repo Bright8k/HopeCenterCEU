@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { usePreferences } from '@/context/PreferencesContext';
@@ -38,57 +38,79 @@ export default function AdminUsersScreen() {
   }
 
   return (
-    <FlatList
-      data={filtered}
-      keyExtractor={(u) => u.id}
-      contentContainerStyle={styles.content}
-      ListHeaderComponent={
-        <>
-          <View style={styles.searchWrap}>
-            <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search by name…"
-              placeholderTextColor={colors.textSecondary}
-              style={styles.searchInput}
-              autoCapitalize="none"
-            />
-          </View>
-          <View style={styles.filterRow}>
-            {ROLE_FILTERS.map((r) => {
-              const active = r === roleFilter;
-              return (
-                <Text
-                  key={r}
-                  onPress={() => setRoleFilter(r)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  style={[styles.chip, active && styles.chipActive]}
-                >
-                  {r === 'ALL' ? 'All' : r}
-                </Text>
-              );
-            })}
-          </View>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Learners</Text>
-            <Text style={styles.sectionCount}>{filtered.length}</Text>
-          </View>
-        </>
-      }
-      ListEmptyComponent={
-        <Card style={styles.emptyCard}>
-          <Text style={styles.emptyTitle}>No learners found</Text>
-          <Text style={styles.emptyText}>
-            Learners appear here once they complete onboarding and set a role.
-          </Text>
-        </Card>
-      }
-      renderItem={({ item }) => (
-        <UserRow user={item} colors={colors} textScale={textScale} styles={styles} />
-      )}
-    />
+    <View style={styles.screen}>
+      <FlatList
+        data={filtered}
+        keyExtractor={(u) => u.id}
+        contentContainerStyle={styles.content}
+        ListHeaderComponent={
+          <>
+            <View style={styles.searchWrap}>
+              <Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder="Search by name…"
+                placeholderTextColor={colors.textSecondary}
+                style={styles.searchInput}
+                autoCapitalize="none"
+                accessibilityLabel="Search learners"
+              />
+            </View>
+            <View style={styles.filterRow} accessibilityRole="radiogroup" accessibilityLabel="Filter by role">
+              {ROLE_FILTERS.map((r) => {
+                const active = r === roleFilter;
+                return (
+                  <Pressable
+                    key={r}
+                    onPress={() => setRoleFilter(r)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: active }}
+                    accessibilityLabel={r === 'ALL' ? 'All roles' : r}
+                    style={({ pressed }) => [
+                      styles.chip,
+                      active && styles.chipActive,
+                      pressed && { opacity: 0.75 },
+                    ]}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                      {r === 'ALL' ? 'All' : r}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Learners</Text>
+              <Text style={styles.sectionCount}>{filtered.length}</Text>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
+          <Card style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>No learners found</Text>
+            <Text style={styles.emptyText}>
+              Learners appear here once they complete onboarding and set a role.
+            </Text>
+          </Card>
+        }
+        renderItem={({ item }) => (
+          <UserRow user={item} colors={colors} textScale={textScale} styles={styles} />
+        )}
+      />
+
+      {/* Invite learner FAB */}
+      <Pressable
+        onPress={() => router.push('/(admin)/invite')}
+        style={({ pressed }) => [styles.fab, pressed && { opacity: 0.8, transform: [{ scale: 0.96 }] }]}
+        accessibilityRole="button"
+        accessibilityLabel="Invite a new learner"
+        accessibilityHint="Opens a form to send an account invitation by email"
+      >
+        <Ionicons name="person-add-outline" size={20} color="#fff" />
+        <Text style={styles.fabLabel}>Invite</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -143,8 +165,9 @@ const createStyles = (
   textScale: number,
 ) =>
   StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-    content: { padding: 16, paddingBottom: 40, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 100 },
     searchWrap: {
       flexDirection: 'row', alignItems: 'center', gap: 10,
       borderWidth: 1, borderColor: colors.border, borderRadius: 14,
@@ -158,10 +181,11 @@ const createStyles = (
     chip: {
       borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
       borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
-      fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary,
-      overflow: 'hidden',
+      overflow: 'hidden', minHeight: 36, alignItems: 'center', justifyContent: 'center',
     },
-    chipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14'), color: colors.primary },
+    chipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14') },
+    chipText: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    chipTextActive: { color: colors.primary },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
     sectionTitle: { fontSize: 17 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
     sectionCount: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
@@ -183,4 +207,13 @@ const createStyles = (
     statMain: { fontSize: 17 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
     statSub: { fontSize: 10 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 },
     streak: { fontSize: 11 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    fab: {
+      position: 'absolute', bottom: 24, right: 20,
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      backgroundColor: colors.primary, borderRadius: 28,
+      paddingHorizontal: 20, paddingVertical: 14,
+      shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.18, shadowRadius: 8, elevation: 6,
+    },
+    fabLabel: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: '#fff' },
   });

@@ -2,7 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, withAlpha } from '@/constants/theme';
 
-type BadgeVariant = 'primary' | 'accent' | 'success' | 'muted';
+type BadgeVariant = 'primary' | 'accent' | 'success' | 'muted' | 'error';
 
 type BadgeProps = {
   label: string;
@@ -16,6 +16,7 @@ export function Badge({ label, variant = 'primary' }: BadgeProps) {
     accent: { bg: withAlpha(colors.accent, '22'), text: colors.accentDark },
     success: { bg: withAlpha(colors.success, '18'), text: colors.success },
     muted: { bg: colors.surfaceMuted, text: colors.textSecondary },
+    error: { bg: withAlpha(colors.error, '18'), text: colors.error },
   };
   const { bg, text } = variantStyles[variant];
 

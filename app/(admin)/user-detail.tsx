@@ -8,9 +8,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useAdminUserDetail, type AdminUserCompletion } from '@/hooks/useAdminUsers';
 import { Card } from '@/components/ui/Card';
@@ -31,7 +31,27 @@ export default function AdminUserDetailScreen() {
   const [roleModal, setRoleModal] = useState(false);
   const [pendingRole, setPendingRole] = useState<UserRole | null>(null);
   const [roleSaving, setRoleSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminChecked, setAdminChecked] = useState(false);
+  const [adminToggling, setAdminToggling] = useState(false);
+  const [resetSending, setResetSending] = useState(false);
+  const [deleteConfirmModal, setDeleteConfirmModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const styles = createStyles(colors, textScale);
+
+  // Check whether this user has an admin_roles entry
+  useEffect(() => {
+    if (!id || !hasSupabaseEnv) return;
+    supabase
+      .from('admin_roles')
+      .select('role')
+      .eq('user_id', id)
+      .limit(1)
+      .then(({ data }) => {
+        setIsAdmin((data ?? []).length > 0);
+        setAdminChecked(true);
+      });
+  }, [id]);
 
   async function handleSaveRole() {
     if (!pendingRole || !id || !hasSupabaseEnv) return;
@@ -47,6 +67,51 @@ export default function AdminUserDetailScreen() {
     setRoleModal(false);
     setPendingRole(null);
     refetch();
+  }
+
+  async function handleSendReset() {
+    if (!id || !hasSupabaseEnv) return;
+    setResetSending(true);
+    const { error } = await supabase.functions.invoke('send-password-reset', {
+      body: { userId: id },
+    });
+    setResetSending(false);
+    if (error) {
+      Alert.alert('Could not send reset email', error.message ?? 'Please try again.');
+      return;
+    }
+    Alert.alert('Reset email sent', `A password reset link has been sent to ${detail?.displayName}.`);
+  }
+
+  async function handleToggleAdmin() {
+    if (!id || !hasSupabaseEnv) return;
+    const grant = !isAdmin;
+    setAdminToggling(true);
+    const { error } = await supabase.functions.invoke('toggle-admin', {
+      body: { userId: id, grant },
+    });
+    setAdminToggling(false);
+    if (error) {
+      Alert.alert('Could not update admin status', error.message ?? 'Please try again.');
+      return;
+    }
+    setIsAdmin(grant);
+  }
+
+  async function handleDeleteUser() {
+    if (!id || !hasSupabaseEnv) return;
+    setDeleting(true);
+    const { error } = await supabase.functions.invoke('delete-user', {
+      body: { userId: id },
+    });
+    setDeleting(false);
+    if (error) {
+      Alert.alert('Could not delete user', error.message ?? 'Please try again.');
+      setDeleteConfirmModal(false);
+      return;
+    }
+    setDeleteConfirmModal(false);
+    router.back();
   }
 
   function openRoleModal() {
@@ -93,6 +158,9 @@ export default function AdminUserDetailScreen() {
                 {detail.currentStreak > 0 && (
                   <Badge label={`🔥 ${detail.currentStreak}-day streak`} variant="accent" />
                 )}
+                {adminChecked && isAdmin && (
+                  <Badge label="Admin" variant="error" />
+                )}
                 <Pressable
                   onPress={openRoleModal}
                   style={styles.editRoleBtn}
@@ -129,6 +197,57 @@ export default function AdminUserDetailScreen() {
               colors={colors}
               textScale={textScale}
             />
+          </View>
+        </Card>
+
+        {/* Admin actions */}
+        <Card variant="elevated" style={styles.actionsCard}>
+          <Text style={styles.actionsTitle}>Account actions</Text>
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={handleSendReset}
+              disabled={resetSending}
+              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Send password reset email"
+              accessibilityHint="Sends a password reset link to this user's email address"
+            >
+              <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.primary, '14') }]}>
+                <Ionicons name="key-outline" size={18} color={colors.primary} />
+              </View>
+              <Text style={styles.actionLabel}>{resetSending ? 'Sending…' : 'Reset password'}</Text>
+            </Pressable>
+
+            {adminChecked && (
+              <Pressable
+                onPress={handleToggleAdmin}
+                disabled={adminToggling}
+                style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
+                accessibilityRole="button"
+                accessibilityLabel={isAdmin ? 'Revoke admin access' : 'Grant admin access'}
+                accessibilityHint={isAdmin ? 'Removes admin portal access from this user' : 'Gives this user admin portal access'}
+              >
+                <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.accent, '14') }]}>
+                  <Ionicons name={isAdmin ? 'shield-outline' : 'shield-checkmark-outline'} size={18} color={colors.accent} />
+                </View>
+                <Text style={styles.actionLabel}>
+                  {adminToggling ? 'Updating…' : isAdmin ? 'Revoke admin' : 'Grant admin'}
+                </Text>
+              </Pressable>
+            )}
+
+            <Pressable
+              onPress={() => setDeleteConfirmModal(true)}
+              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Delete learner account"
+              accessibilityHint="Permanently deletes this user and all their data"
+            >
+              <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.error, '14') }]}>
+                <Ionicons name="trash-outline" size={18} color={colors.error} />
+              </View>
+              <Text style={[styles.actionLabel, { color: colors.error }]}>Delete account</Text>
+            </Pressable>
           </View>
         </Card>
 
@@ -176,7 +295,7 @@ export default function AdminUserDetailScreen() {
           onPress={() => setRoleModal(false)}
           accessibilityLabel="Close dialog"
         >
-          <Pressable style={styles.modalCard} onPress={() => {/* stop propagation */}}>
+          <Pressable style={styles.modalCard} onPress={() => { /* stops propagation */ }}>
             <Text style={styles.modalTitle}>Change role</Text>
             <Text style={styles.modalSub}>{detail.displayName}</Text>
 
@@ -196,9 +315,7 @@ export default function AdminUserDetailScreen() {
                       {selected && <View style={styles.radioInner} />}
                     </View>
                     <View style={styles.roleCopy}>
-                      <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>
-                        {r}
-                      </Text>
+                      <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>{r}</Text>
                       <Text style={styles.roleDesc}>{ROLE_LABELS[r]}</Text>
                     </View>
                   </Pressable>
@@ -215,6 +332,49 @@ export default function AdminUserDetailScreen() {
             />
             <Pressable
               onPress={() => setRoleModal(false)}
+              style={styles.cancelBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* Delete confirmation modal */}
+      <Modal
+        visible={deleteConfirmModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDeleteConfirmModal(false)}
+        accessibilityViewIsModal
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setDeleteConfirmModal(false)}
+          accessibilityLabel="Close dialog"
+        >
+          <Pressable style={styles.modalCard} onPress={() => { /* stops propagation */ }}>
+            <View style={styles.deleteIconWrap}>
+              <Ionicons name="warning-outline" size={28} color={colors.error} />
+            </View>
+            <Text style={styles.modalTitle}>Delete account?</Text>
+            <Text style={styles.deleteWarning}>
+              This will permanently delete{' '}
+              <Text style={{ fontFamily: Typography.bodyBold }}>{detail.displayName}</Text>'s account,
+              all completions, quiz history, and certificates. This cannot be undone.
+            </Text>
+
+            <Button
+              title={deleting ? 'Deleting…' : 'Yes, delete account'}
+              onPress={handleDeleteUser}
+              disabled={deleting}
+              style={styles.deleteBtn}
+              accessibilityLabel="Confirm delete account"
+            />
+            <Pressable
+              onPress={() => setDeleteConfirmModal(false)}
               style={styles.cancelBtn}
               accessibilityRole="button"
               accessibilityLabel="Cancel"
@@ -303,6 +463,17 @@ const createStyles = (
       flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border,
       paddingTop: 14, gap: 8,
     },
+    // Admin actions card
+    actionsCard: { gap: 12 },
+    actionsTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
+    actionRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
+    actionBtn: {
+      flex: 1, minWidth: 90, alignItems: 'center', gap: 8,
+      paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: colors.border,
+    },
+    actionIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    actionLabel: { fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text, textAlign: 'center' },
+    // CEU card
     ceuCard: { gap: 10 },
     ceuHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     ceuTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
@@ -324,7 +495,7 @@ const createStyles = (
     compRight: { alignItems: 'flex-end' },
     compScore: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold },
     compCeu: { fontSize: 11 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
-    // Modal
+    // Modals
     modalOverlay: {
       flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
       alignItems: 'center', justifyContent: 'center', padding: 24,
@@ -354,4 +525,15 @@ const createStyles = (
     saveBtn: { marginTop: 4 },
     cancelBtn: { alignItems: 'center', paddingVertical: 14 },
     cancelText: { fontSize: 15 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    // Delete modal
+    deleteIconWrap: {
+      width: 56, height: 56, borderRadius: 28,
+      backgroundColor: withAlpha(colors.error, '14'),
+      alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 8,
+    },
+    deleteWarning: {
+      fontSize: 14 * textScale, fontFamily: Typography.body,
+      color: colors.textSecondary, lineHeight: 22, marginBottom: 20, marginTop: 6,
+    },
+    deleteBtn: { marginTop: 4, backgroundColor: colors.error },
   });

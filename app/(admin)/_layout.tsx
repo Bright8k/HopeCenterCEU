@@ -38,6 +38,7 @@ export default function AdminLayout() {
       <Stack.Screen name="analytics" options={{ title: 'Analytics' }} />
       <Stack.Screen name="users" options={{ title: 'Learners' }} />
       <Stack.Screen name="user-detail" options={{ title: 'Learner Detail' }} />
+      <Stack.Screen name="invite" options={{ title: 'Invite Learner' }} />
     </Stack>
   );
 }

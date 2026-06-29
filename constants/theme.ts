@@ -91,8 +91,13 @@ export const Radius = {
 };
 
 export const Typography = {
-  heading: 'Nunito_800ExtraBold',
-  headingSemiBold: 'Nunito_700Bold',
+  // Cormorant Garamond — for all large headings and brand moments
+  heading: 'CormorantGaramond_700Bold',
+  headingSemiBold: 'CormorantGaramond_600SemiBold',
+  headingMedium: 'CormorantGaramond_500Medium',
+  headingRegular: 'CormorantGaramond_400Regular',
+  headingItalic: 'CormorantGaramond_400Regular_Italic',
+  // Nunito — for UI labels, body copy, and interactive elements
   body: 'Nunito_400Regular',
   bodySemiBold: 'Nunito_600SemiBold',
   bodyBold: 'Nunito_700Bold',
