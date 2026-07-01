@@ -1,5 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '@/components/ui/Badge';
@@ -7,90 +16,126 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { usePreferences } from '@/context/PreferencesContext';
-import { hasSupabaseEnv, supabase } from '@/lib/supabase';
-import type { Database } from '@/types/database';
+import { useAdminCourses, type CourseSort } from '@/hooks/useAdminCourses';
 import { Typography, withAlpha } from '@/constants/theme';
 
-type Course = Database['public']['Tables']['courses']['Row'];
+const SORT_OPTIONS: { label: string; value: CourseSort }[] = [
+  { label: 'Newest', value: 'recent' },
+  { label: 'Title', value: 'title' },
+  { label: 'CEU', value: 'ceu' },
+];
 
 export default function AdminCourses() {
   const { colors, textScale } = usePreferences();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { courses, loading, refetch, togglePublish } = useAdminCourses();
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<CourseSort>('recent');
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const styles = createStyles(colors, textScale);
 
-  const fetchCourses = useCallback(async () => {
-    if (!hasSupabaseEnv) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    const { data } = await supabase
-      .from('courses')
-      .select('*')
-      .order('created_at', { ascending: false });
-    setCourses((data as Course[]) ?? []);
-    setLoading(false);
-  }, []);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    let list = q
+      ? courses.filter((c) => c.title.toLowerCase().includes(q))
+      : [...courses];
 
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
+    if (sort === 'title') list.sort((a, b) => a.title.localeCompare(b.title));
+    else if (sort === 'ceu') list.sort((a, b) => b.ceu_value - a.ceu_value);
+    // 'recent' is already ordered by created_at desc from the hook
 
-  const togglePublish = async (course: Course) => {
-    if (!hasSupabaseEnv) return;
+    return list;
+  }, [courses, query, sort]);
+
+  async function handleToggle(course: Parameters<typeof togglePublish>[0]) {
     setTogglingId(course.id);
-    const { error } = await supabase.functions.invoke('publish-course', {
-      body: { courseId: course.id, isPublished: !course.is_published },
-    });
-    if (error) {
-      Alert.alert('Error', 'Could not update publish status. Ensure the Edge Function is deployed.');
-    } else {
-      setCourses((prev) =>
-        prev.map((c) => (c.id === course.id ? { ...c, is_published: !c.is_published } : c)),
-      );
-    }
+    const { error } = await togglePublish(course);
     setTogglingId(null);
-  };
+    if (error) Alert.alert('Could not update', 'Unable to change publish status.');
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.count}>
-          {loading ? '...' : `${courses.length} course${courses.length !== 1 ? 's' : ''}`}
-        </Text>
+      <View style={styles.toolbar}>
+        <View style={styles.searchWrap}>
+          <Ionicons name="search-outline" size={16} color={colors.textSecondary} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search courses…"
+            placeholderTextColor={colors.textSecondary}
+            style={styles.searchInput}
+            autoCapitalize="none"
+            accessibilityLabel="Search courses"
+          />
+          {query.length > 0 && (
+            <Pressable onPress={() => setQuery('')} accessibilityLabel="Clear search">
+              <Ionicons name="close-circle" size={16} color={colors.textSecondary} />
+            </Pressable>
+          )}
+        </View>
         <Button
-          title="+ New Course"
+          title="+ New"
           onPress={() => router.push('/(admin)/course-edit')}
           style={styles.newBtn}
           accessibilityLabel="Create new course"
         />
       </View>
 
+      <View style={styles.sortRow}>
+        {SORT_OPTIONS.map((opt) => {
+          const active = sort === opt.value;
+          return (
+            <Pressable
+              key={opt.value}
+              onPress={() => setSort(opt.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: active }}
+              accessibilityLabel={`Sort by ${opt.label}`}
+              style={({ pressed }) => [
+                styles.sortChip,
+                active && styles.sortChipActive,
+                pressed && { opacity: 0.75 },
+              ]}
+            >
+              <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+        <Text style={styles.countLabel}>
+          {loading ? '…' : `${filtered.length} / ${courses.length}`}
+        </Text>
+      </View>
+
       {loading ? (
         <ActivityIndicator color={colors.primary} style={styles.loader} />
-      ) : courses.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="book-outline" size={48} color={colors.textMuted} />
-          <Text style={styles.emptyText}>No courses yet. Tap "+ New Course" to create one.</Text>
+          <Text style={styles.emptyTitle}>
+            {query ? 'No matches' : 'No courses yet'}
+          </Text>
+          <Text style={styles.emptyText}>
+            {query
+              ? `No courses match "${query}".`
+              : 'Tap "+ New" to create your first course.'}
+          </Text>
         </View>
       ) : (
         <FlatList
-          data={courses}
+          data={filtered}
           keyExtractor={(c) => c.id}
           contentContainerStyle={styles.list}
           refreshing={loading}
-          onRefresh={fetchCourses}
+          onRefresh={refetch}
           renderItem={({ item }) => (
             <Card style={styles.card}>
               <View style={styles.cardRow}>
                 <View style={styles.cardMeta}>
-                  <Text style={styles.cardTitle} numberOfLines={2}>
-                    {item.title}
-                  </Text>
+                  <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
                   <View style={styles.badgeRow}>
-                    <Badge label={item.track ?? 'All tracks'} variant="primary" />
+                    <Badge label={item.track ?? 'All'} variant="primary" />
                     <Badge label={`${item.ceu_value} CEU`} variant="accent" />
                     <Badge
                       label={item.is_published ? 'Published' : 'Draft'}
@@ -101,10 +146,7 @@ export default function AdminCourses() {
                 <View style={styles.cardActions}>
                   <InteractivePressable
                     onPress={() =>
-                      router.push({
-                        pathname: '/(admin)/course-edit',
-                        params: { id: item.id },
-                      })
+                      router.push({ pathname: '/(admin)/course-edit', params: { id: item.id } })
                     }
                     accessibilityLabel={`Edit ${item.title}`}
                   >
@@ -115,7 +157,7 @@ export default function AdminCourses() {
                     )}
                   </InteractivePressable>
                   <InteractivePressable
-                    onPress={() => togglePublish(item)}
+                    onPress={() => handleToggle(item)}
                     accessibilityLabel={item.is_published ? `Unpublish ${item.title}` : `Publish ${item.title}`}
                     disabled={togglingId === item.id}
                   >
@@ -158,25 +200,39 @@ const createStyles = (
 ) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: 16,
-      paddingBottom: 8,
+    toolbar: {
+      flexDirection: 'row', alignItems: 'center', gap: 10,
+      paddingHorizontal: 16, paddingVertical: 12,
     },
-    count: { fontSize: 14 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
-    newBtn: { paddingVertical: 8, paddingHorizontal: 16, minHeight: 44 },
+    searchWrap: {
+      flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
+      borderWidth: 1, borderColor: colors.border, borderRadius: 12,
+      paddingHorizontal: 12, paddingVertical: 9,
+      backgroundColor: colors.surface,
+    },
+    searchInput: {
+      flex: 1, fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.text,
+    },
+    newBtn: { paddingVertical: 10, paddingHorizontal: 14, minHeight: 44 },
+    sortRow: {
+      flexDirection: 'row', alignItems: 'center', gap: 6,
+      paddingHorizontal: 16, paddingBottom: 10, flexWrap: 'wrap',
+    },
+    sortChip: {
+      borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6,
+      borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
+      minHeight: 32, alignItems: 'center', justifyContent: 'center',
+    },
+    sortChipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14') },
+    sortChipText: { fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    sortChipTextActive: { color: colors.primary },
+    countLabel: { marginLeft: 'auto' as any, fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
     loader: { marginTop: 60 },
-    list: { padding: 16, paddingTop: 8 },
-    empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 40 },
-    emptyText: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textMuted,
-      textAlign: 'center',
-    },
-    card: { marginBottom: 12 },
+    list: { padding: 16, paddingTop: 4 },
+    empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 40 },
+    emptyTitle: { fontSize: 17 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
+    emptyText: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textMuted, textAlign: 'center' },
+    card: { marginBottom: 10 },
     cardRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
     cardMeta: { flex: 1, gap: 8 },
     cardTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text },

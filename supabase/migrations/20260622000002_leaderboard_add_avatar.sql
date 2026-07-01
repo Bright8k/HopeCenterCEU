@@ -1,5 +1,8 @@
 -- Add avatar_url to the leaderboard RPC so the client can show profile photos.
 -- Replaces the original function from 20260527000001_streaks_and_leaderboard.sql.
+-- Must drop first because PostgreSQL rejects CREATE OR REPLACE when the return type changes.
+drop function if exists public.get_leaderboard(text, date);
+
 create or replace function public.get_leaderboard(
   p_role  text  default null,
   p_since date  default null

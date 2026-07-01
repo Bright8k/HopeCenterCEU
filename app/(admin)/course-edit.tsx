@@ -50,7 +50,7 @@ export default function CourseEdit() {
   const [category, setCategory] = useState<Category>(null);
   const [ceuValue, setCeuValue] = useState('1.0');
   const [passScore, setPassScore] = useState('80');
-  const [durationSeconds, setDurationSeconds] = useState('');
+  const [durationMinutes, setDurationMinutes] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -69,7 +69,7 @@ export default function CourseEdit() {
       setCategory((c.category as Category) ?? null);
       setCeuValue(String(c.ceu_value));
       setPassScore(String(c.pass_score));
-      setDurationSeconds(c.duration_seconds ? String(c.duration_seconds) : '');
+      setDurationMinutes(c.duration_seconds ? String(Math.round(c.duration_seconds / 60)) : '');
       setVideoUrl(c.video_url ?? '');
       setThumbnailUrl(c.thumbnail_url ?? '');
     }
@@ -131,7 +131,7 @@ export default function CourseEdit() {
       category,
       ceu_value: parseFloat(ceuValue),
       pass_score: parseInt(passScore, 10),
-      duration_seconds: durationSeconds ? parseInt(durationSeconds, 10) : null,
+      duration_seconds: durationMinutes ? Math.round(parseFloat(durationMinutes) * 60) : null,
       video_url: videoUrl.trim() || null,
       thumbnail_url: thumbnailUrl.trim() || null,
     };
@@ -184,50 +184,52 @@ export default function CourseEdit() {
         />
 
         <Text style={styles.fieldLabel}>Track</Text>
-        <View style={styles.chipRow}>
-          {TRACKS.map(({ label, value }) => (
-            <Pressable
-              key={String(value)}
-              onPress={() => setTrack(value)}
-              accessibilityRole="button"
-              accessibilityLabel={`Track: ${label}`}
-              accessibilityState={{ selected: track === value }}
-              style={[
-                styles.chip,
-                track === value && { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
-            >
-              <Text style={[styles.chipText, track === value && { color: colors.white }]}>{label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.chipRow} accessibilityRole="radiogroup" accessibilityLabel="Track">
+          {TRACKS.map(({ label, value }) => {
+            const selected = track === value;
+            return (
+              <Pressable
+                key={String(value)}
+                onPress={() => setTrack(value)}
+                accessibilityRole="radio"
+                accessibilityLabel={label}
+                accessibilityState={{ checked: selected }}
+                style={({ pressed }) => [
+                  styles.chip,
+                  selected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                  pressed && { opacity: 0.75 },
+                ]}
+              >
+                <Text style={[styles.chipText, selected && { color: colors.white }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <Text style={styles.fieldLabel}>CEU Category</Text>
         <Text style={styles.fieldHint}>
           Used to track BACB sub-requirements (ethics, supervision) for BCBA renewals.
         </Text>
-        <View style={styles.chipRow}>
-          <Pressable
-            onPress={() => setCategory(null)}
-            accessibilityRole="button"
-            accessibilityLabel="No category"
-            accessibilityState={{ selected: category === null }}
-            style={[styles.chip, category === null && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-          >
-            <Text style={[styles.chipText, category === null && { color: colors.white }]}>None</Text>
-          </Pressable>
-          {CATEGORIES.map(({ label, value }) => (
-            <Pressable
-              key={String(value)}
-              onPress={() => setCategory(value)}
-              accessibilityRole="button"
-              accessibilityLabel={`Category: ${label}`}
-              accessibilityState={{ selected: category === value }}
-              style={[styles.chip, category === value && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-            >
-              <Text style={[styles.chipText, category === value && { color: colors.white }]}>{label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.chipRow} accessibilityRole="radiogroup" accessibilityLabel="CEU category">
+          {[{ label: 'None', value: null as Category }, ...CATEGORIES].map(({ label, value }) => {
+            const selected = category === value;
+            return (
+              <Pressable
+                key={String(value)}
+                onPress={() => setCategory(value)}
+                accessibilityRole="radio"
+                accessibilityLabel={label}
+                accessibilityState={{ checked: selected }}
+                style={({ pressed }) => [
+                  styles.chip,
+                  selected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                  pressed && { opacity: 0.75 },
+                ]}
+              >
+                <Text style={[styles.chipText, selected && { color: colors.white }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <Input
@@ -245,11 +247,11 @@ export default function CourseEdit() {
           error={errors.passScore}
         />
         <Input
-          label="Duration (seconds)"
-          value={durationSeconds}
-          onChangeText={setDurationSeconds}
-          keyboardType="number-pad"
-          placeholder="e.g. 3600 for 1 hour"
+          label="Duration (minutes)"
+          value={durationMinutes}
+          onChangeText={setDurationMinutes}
+          keyboardType="decimal-pad"
+          placeholder="e.g. 60 for 1 hour"
         />
 
         <Text style={styles.sectionLabel}>Media</Text>

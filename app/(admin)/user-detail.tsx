@@ -39,16 +39,16 @@ export default function AdminUserDetailScreen() {
   const [deleting, setDeleting] = useState(false);
   const styles = createStyles(colors, textScale);
 
-  // Check whether this user has an admin_roles entry
+  // Check whether the target user has admin status via a security-definer RPC.
+  // Direct admin_roles queries are blocked by RLS for cross-user reads.
+  // Cast needed: is_user_admin is a new migration not yet reflected in generated types.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useEffect(() => {
     if (!id || !hasSupabaseEnv) return;
-    supabase
-      .from('admin_roles')
-      .select('role')
-      .eq('user_id', id)
-      .limit(1)
-      .then(({ data }) => {
-        setIsAdmin((data ?? []).length > 0);
+    (supabase as any)
+      .rpc('is_user_admin', { target_user_id: id })
+      .then(({ data }: { data: boolean | null }) => {
+        setIsAdmin(data === true);
         setAdminChecked(true);
       });
   }, [id]);
@@ -497,7 +497,7 @@ const createStyles = (
     compCeu: { fontSize: 11 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
     // Modals
     modalOverlay: {
-      flex: 1, backgroundColor: 'rgba(0,0,0,0.55)',
+      flex: 1, backgroundColor: withAlpha(colors.shadow, '8C'),
       alignItems: 'center', justifyContent: 'center', padding: 24,
     },
     modalCard: {

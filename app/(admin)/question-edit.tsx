@@ -163,43 +163,51 @@ export default function QuestionEdit() {
         ))}
 
         <Text style={styles.fieldLabel}>Correct answer</Text>
-        <View style={styles.chipRow}>
-          {ANSWER_LABELS.map((label, i) => (
-            <Pressable
-              key={label}
-              onPress={() => setAnswer(i)}
-              accessibilityRole="button"
-              accessibilityLabel={`Correct answer: option ${label}`}
-              accessibilityState={{ selected: answer === i }}
-              style={[
-                styles.answerChip,
-                answer === i && { backgroundColor: colors.success, borderColor: colors.success },
-              ]}
-            >
-              <Text style={[styles.answerChipText, answer === i && { color: colors.white }]}>
-                {label}
-              </Text>
-            </Pressable>
-          ))}
+        <View style={styles.chipRow} accessibilityRole="radiogroup" accessibilityLabel="Correct answer">
+          {ANSWER_LABELS.map((label, i) => {
+            const selected = answer === i;
+            return (
+              <Pressable
+                key={label}
+                onPress={() => setAnswer(i)}
+                accessibilityRole="radio"
+                accessibilityLabel={`Option ${label}`}
+                accessibilityState={{ checked: selected }}
+                style={({ pressed }) => [
+                  styles.answerChip,
+                  selected && { backgroundColor: colors.success, borderColor: colors.success },
+                  pressed && { opacity: 0.75 },
+                ]}
+              >
+                <Text style={[styles.answerChipText, selected && { color: colors.white }]}>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <Text style={styles.sectionLabel}>Track</Text>
-        <View style={styles.chipRow}>
-          {TRACK_OPTIONS.map(({ label, value }) => (
-            <Pressable
-              key={String(value)}
-              onPress={() => setTrack(value)}
-              accessibilityRole="button"
-              accessibilityLabel={`Track: ${label}`}
-              accessibilityState={{ selected: track === value }}
-              style={[
-                styles.chip,
-                track === value && { backgroundColor: colors.primary, borderColor: colors.primary },
-              ]}
-            >
-              <Text style={[styles.chipText, track === value && { color: colors.white }]}>{label}</Text>
-            </Pressable>
-          ))}
+        <View style={styles.chipRow} accessibilityRole="radiogroup" accessibilityLabel="Track">
+          {TRACK_OPTIONS.map(({ label, value }) => {
+            const selected = track === value;
+            return (
+              <Pressable
+                key={String(value)}
+                onPress={() => setTrack(value)}
+                accessibilityRole="radio"
+                accessibilityLabel={label}
+                accessibilityState={{ checked: selected }}
+                style={({ pressed }) => [
+                  styles.chip,
+                  selected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                  pressed && { opacity: 0.75 },
+                ]}
+              >
+                <Text style={[styles.chipText, selected && { color: colors.white }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         <Text style={styles.sectionLabel}>Explanation</Text>

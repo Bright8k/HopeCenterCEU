@@ -1,25 +1,43 @@
-import { View, Text, TextInput, StyleSheet, TextInputProps } from 'react-native';
+import { View, Text, TextInput, StyleSheet, type TextInputProps } from 'react-native';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, getWebTransitionStyle } from '@/constants/theme';
 
 type InputProps = TextInputProps & {
   label?: string;
   error?: string;
+  hint?: string;
 };
 
-export function Input({ label, error, style, ...props }: InputProps) {
-  const { colors } = usePreferences();
+export function Input({ label, error, hint, style, ...props }: InputProps) {
+  const { colors, textScale } = usePreferences();
+
+  // Strip trailing " *" for the accessibility label so screen readers say
+  // "Email address" not "Email address asterisk".
+  const a11yLabel = label?.replace(/\s*\*+\s*$/, '').trim();
+  const isRequired = label?.includes('*') ?? false;
 
   return (
     <View style={styles.container}>
-      {label && <Text style={[styles.label, { color: colors.text }]}>{label}</Text>}
+      {label && (
+        <Text
+          style={[styles.label, { color: colors.text, fontSize: 14 * textScale }]}
+          nativeID={a11yLabel}
+        >
+          {label}
+        </Text>
+      )}
       <TextInput
+        accessibilityLabel={a11yLabel}
+        aria-required={isRequired}
+        accessibilityHint={hint}
+        accessibilityState={{ disabled: props.editable === false }}
         style={[
           styles.input,
           {
             borderColor: error ? colors.error : colors.border,
             color: colors.text,
             backgroundColor: colors.card,
+            fontSize: 16 * textScale,
             ...(getWebTransitionStyle('border-color, background-color, color') ?? {}),
           },
           style,
@@ -27,7 +45,20 @@ export function Input({ label, error, style, ...props }: InputProps) {
         placeholderTextColor={colors.textSecondary}
         {...props}
       />
-      {error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
+      {hint && !error && (
+        <Text style={[styles.hint, { color: colors.textSecondary, fontSize: 12 * textScale }]}>
+          {hint}
+        </Text>
+      )}
+      {error && (
+        <Text
+          style={[styles.error, { color: colors.error, fontSize: 12 * textScale }]}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Text>
+      )}
     </View>
   );
 }
@@ -37,7 +68,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
     fontFamily: Typography.bodySemiBold,
     marginBottom: 6,
   },
@@ -46,11 +76,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    fontSize: 16,
     fontFamily: Typography.body,
+    minHeight: 48,
+  },
+  hint: {
+    fontFamily: Typography.body,
+    marginTop: 4,
+    lineHeight: 18,
   },
   error: {
-    fontSize: 12,
     fontFamily: Typography.bodySemiBold,
     marginTop: 4,
   },

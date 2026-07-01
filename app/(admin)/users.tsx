@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { usePreferences } from '@/context/PreferencesContext';
@@ -13,21 +13,35 @@ import { Typography, withAlpha } from '@/constants/theme';
 type RoleFilter = 'ALL' | 'RBT' | 'BCBA' | 'STUDENT';
 const ROLE_FILTERS: RoleFilter[] = ['ALL', 'RBT', 'BCBA', 'STUDENT'];
 
+type UserSort = 'activity' | 'name' | 'ceu' | 'streak';
+const SORT_OPTIONS: { label: string; value: UserSort; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { label: 'Active', value: 'activity', icon: 'trending-up-outline' },
+  { label: 'Name', value: 'name', icon: 'text-outline' },
+  { label: 'CEU', value: 'ceu', icon: 'ribbon-outline' },
+  { label: 'Streak', value: 'streak', icon: 'flame-outline' },
+];
+
 export default function AdminUsersScreen() {
   const { colors, textScale } = usePreferences();
   const { users, loading } = useAdminUsers();
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
+  const [sort, setSort] = useState<UserSort>('activity');
   const styles = createStyles(colors, textScale);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return users.filter((u) => {
+    let list = users.filter((u) => {
       const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
       const matchQ = !q || u.displayName.toLowerCase().includes(q);
       return matchRole && matchQ;
     });
-  }, [users, query, roleFilter]);
+    if (sort === 'name') list = [...list].sort((a, b) => a.displayName.localeCompare(b.displayName));
+    else if (sort === 'ceu') list = [...list].sort((a, b) => b.totalCeus - a.totalCeus);
+    else if (sort === 'streak') list = [...list].sort((a, b) => b.currentStreak - a.currentStreak);
+    // 'activity' keeps the default sort from hook (most completions first)
+    return list;
+  }, [users, query, roleFilter, sort]);
 
   if (loading) {
     return (
@@ -80,6 +94,42 @@ export default function AdminUsersScreen() {
                 );
               })}
             </View>
+
+            {/* Sort strip */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.sortRow}
+              accessibilityLabel="Sort learners"
+            >
+              {SORT_OPTIONS.map((opt) => {
+                const active = sort === opt.value;
+                return (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => setSort(opt.value)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ checked: active }}
+                    accessibilityLabel={`Sort by ${opt.label}`}
+                    style={({ pressed }) => [
+                      styles.sortChip,
+                      active && styles.sortChipActive,
+                      pressed && { opacity: 0.75 },
+                    ]}
+                  >
+                    <Ionicons
+                      name={opt.icon}
+                      size={12}
+                      color={active ? colors.primary : colors.textSecondary}
+                    />
+                    <Text style={[styles.sortChipText, active && styles.sortChipTextActive]}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Learners</Text>
               <Text style={styles.sectionCount}>{filtered.length}</Text>
@@ -186,6 +236,16 @@ const createStyles = (
     chipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14') },
     chipText: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
     chipTextActive: { color: colors.primary },
+    sortRow: { gap: 6, paddingRight: 4, marginBottom: 14 },
+    sortChip: {
+      flexDirection: 'row', alignItems: 'center', gap: 4,
+      borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6,
+      borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card,
+      minHeight: 30,
+    },
+    sortChipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14') },
+    sortChipText: { fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    sortChipTextActive: { color: colors.primary },
     sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
     sectionTitle: { fontSize: 17 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
     sectionCount: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
@@ -215,5 +275,5 @@ const createStyles = (
       shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.18, shadowRadius: 8, elevation: 6,
     },
-    fabLabel: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: '#fff' },
+    fabLabel: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.white },
   });

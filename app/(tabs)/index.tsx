@@ -77,7 +77,11 @@ export default function DashboardScreen() {
       ];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      accessibilityLabel="Dashboard"
+    >
       <View style={styles.hero}>
         <View style={styles.heroTop}>
           <View style={styles.heroCopy}>
@@ -89,7 +93,11 @@ export default function DashboardScreen() {
               {role ? ROLE_LABELS[role] : 'Choose your track to personalize your dashboard.'}
             </Text>
           </View>
-          <View style={styles.heroSeal}>
+          <View
+            style={styles.heroSeal}
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+          >
             <Text style={styles.heroSealText}>HC</Text>
           </View>
         </View>
@@ -152,16 +160,19 @@ export default function DashboardScreen() {
           label={isStudent ? 'Study Sets' : 'Completed'}
           value={loading ? '--' : String(completedCourses)}
           accent={colors.primary}
+          styles={styles}
         />
         <MetricCard
           label={isStudent ? 'Goal' : 'Earned'}
           value={isStudent ? 'Weekly' : loading ? '--' : earnedCeus.toFixed(1)}
           accent={colors.accentDark}
+          styles={styles}
         />
         <MetricCard
           label={isStudent ? 'Focus' : 'Cycle'}
           value={isStudent ? 'Exam' : roleRequirement ? `${roleRequirement.cycleYears}yr` : '--'}
           accent={colors.primaryLight}
+          styles={styles}
         />
       </View>
 
@@ -189,7 +200,7 @@ export default function DashboardScreen() {
             </Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        <Ionicons name="chevron-forward-outline" size={18} color={colors.textSecondary} />
       </Pressable>
 
       <View style={styles.sectionHeader}>
@@ -288,23 +299,30 @@ export default function DashboardScreen() {
     </ScrollView>
   );
 
-  function MetricCard({
-    label,
-    value,
-    accent,
-  }: {
-    label: string;
-    value: string;
-    accent: string;
-  }) {
-    return (
-      <View style={styles.metricCard}>
-        <View style={[styles.metricAccent, { backgroundColor: accent }]} />
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricLabel}>{label}</Text>
-      </View>
-    );
-  }
+}
+
+function MetricCard({
+  label,
+  value,
+  accent,
+  styles,
+}: {
+  label: string;
+  value: string;
+  accent: string;
+  styles: ReturnType<typeof createStyles>;
+}) {
+  return (
+    <View
+      style={styles.metricCard}
+      accessibilityRole="text"
+      accessibilityLabel={`${label}: ${value}`}
+    >
+      <View style={[styles.metricAccent, { backgroundColor: accent }]} />
+      <Text style={styles.metricValue}>{value}</Text>
+      <Text style={styles.metricLabel}>{label}</Text>
+    </View>
+  );
 }
 
 const createStyles = (
@@ -365,7 +383,7 @@ const createStyles = (
     heroSealText: {
       color: colors.primaryDark,
       fontSize: 18,
-      fontWeight: '900',
+      fontFamily: Typography.bodyBold,
       letterSpacing: 0.8,
     },
     heroFooter: {

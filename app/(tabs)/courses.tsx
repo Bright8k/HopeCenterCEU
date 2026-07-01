@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -164,10 +165,11 @@ export default function CoursesScreen() {
                 : 'Preview the library layout while local Supabase values are being finalized.'}
             </Text>
             <View style={styles.heroStats}>
-              <StatPill label="Courses" value={String(filteredCourses.length)} />
+              <StatPill label="Courses" value={String(filteredCourses.length)} styles={styles} />
               <StatPill
                 label={role === 'STUDENT' ? 'Practice Sets' : 'Total CEUs'}
                 value={role === 'STUDENT' ? String(filteredCourses.length) : totalCeus.toFixed(1)}
+                styles={styles}
               />
             </View>
           </View>
@@ -202,25 +204,42 @@ export default function CoursesScreen() {
               placeholderTextColor={colors.textSecondary}
               style={styles.searchInput}
               autoCapitalize="none"
+              returnKeyType="search"
+              accessibilityLabel={role === 'STUDENT' ? 'Search study sets' : 'Search CEU courses'}
+              accessibilityHint="Filters the list by title or description"
             />
+            {query.length > 0 && (
+              <Pressable
+                onPress={() => setQuery('')}
+                accessibilityLabel="Clear search"
+                accessibilityRole="button"
+                hitSlop={8}
+              >
+                <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+              </Pressable>
+            )}
           </View>
 
-          <FlatList
-            data={TRACK_FILTERS}
-            keyExtractor={(item) => item}
+          {/* Use ScrollView, not FlatList — nesting FlatList inside ListHeaderComponent causes scroll conflicts */}
+          <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterRow}
-            renderItem={({ item }) => {
+            accessibilityRole="radiogroup"
+            accessibilityLabel="Filter by learning track"
+          >
+            {TRACK_FILTERS.map((item) => {
               const active = item === selectedTrack;
               return (
                 <InteractivePressable
+                  key={item}
                   onPress={() => setSelectedTrack(item)}
                   style={[styles.filterChip, active && styles.filterChipActive]}
                   hoverStyle={!preferences.reducedMotion ? styles.filterChipHover : undefined}
+                  accessibilityRole="radio"
                   accessibilityLabel={item === 'ALL' ? 'All tracks' : `${item} track`}
                   accessibilityHint="Filters the course library by learning track"
-                  accessibilityState={{ selected: active }}
+                  accessibilityState={{ checked: active }}
                 >
                   {({ hovered }) => (
                     <Text
@@ -235,8 +254,8 @@ export default function CoursesScreen() {
                   )}
                 </InteractivePressable>
               );
-            }}
-          />
+            })}
+          </ScrollView>
 
           {featuredCourse ? (
             <InteractivePressable
@@ -334,14 +353,15 @@ export default function CoursesScreen() {
     />
   );
 
-  function StatPill({ label, value }: { label: string; value: string }) {
-    return (
-      <View style={styles.statPill}>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-      </View>
-    );
-  }
+}
+
+function StatPill({ label, value, styles }: { label: string; value: string; styles: ReturnType<typeof createStyles> }) {
+  return (
+    <View style={styles.statPill}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
 }
 
 function formatDuration(durationSeconds: number | null) {

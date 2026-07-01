@@ -44,7 +44,7 @@ export default function AdminOverview() {
       <Text style={styles.heading}>Admin Portal</Text>
       <Text style={styles.subheading}>Manage courses and question content for Hope Center CEU.</Text>
 
-      <View style={styles.statsRow}>
+      <View style={styles.statsGrid}>
         <StatTile
           icon="book-outline"
           label="Courses"
@@ -67,7 +67,7 @@ export default function AdminOverview() {
           icon="people-outline"
           label="Learners"
           value={stats ? String(stats.totalLearners) : '--'}
-          accent={colors.success}
+          accent={colors.primaryLight}
         />
       </View>
 
@@ -112,7 +112,11 @@ export default function AdminOverview() {
     accent: string;
   }) {
     return (
-      <View style={styles.statTile}>
+      <View
+        style={styles.statTile}
+        accessibilityRole="text"
+        accessibilityLabel={`${label}: ${value}`}
+      >
         <View style={[styles.statIcon, { backgroundColor: withAlpha(accent, '20') }]}>
           <Ionicons name={icon} size={18} color={accent} />
         </View>
@@ -186,9 +190,10 @@ const createStyles = (
       color: colors.textSecondary,
       marginBottom: 24,
     },
-    statsRow: { flexDirection: 'row', gap: 10, marginBottom: 28 },
+    statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
     statTile: {
-      flex: 1,
+      width: '47%',
+      flexGrow: 1,
       borderRadius: 16,
       padding: 14,
       backgroundColor: colors.surface,

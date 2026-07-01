@@ -26,6 +26,7 @@ export default function AnalyticsScreen() {
     <FlatList
       data={data?.courseStats ?? []}
       keyExtractor={(item) => item.courseId}
+      style={{ backgroundColor: colors.background }}
       contentContainerStyle={styles.content}
       ListHeaderComponent={
         <>
@@ -136,9 +137,13 @@ function SummaryTile({
   color: string; styles: ReturnType<typeof createStyles>;
 }) {
   return (
-    <View style={styles.summaryTile}>
+    <View
+      style={styles.summaryTile}
+      accessibilityRole="text"
+      accessibilityLabel={`${label}: ${value}`}
+    >
       <View style={[styles.summaryIcon, { backgroundColor: withAlpha(color, '20') }]}>
-        <Ionicons name={icon} size={18} color={color} />
+        <Ionicons name={icon} size={18} color={color} accessibilityElementsHidden />
       </View>
       <Text style={styles.summaryValue}>{value}</Text>
       <Text style={styles.summaryLabel}>{label}</Text>
@@ -212,7 +217,7 @@ const createStyles = (
   textScale: number,
 ) =>
   StyleSheet.create({
-    content: { padding: 16, paddingBottom: 40, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 40, backgroundColor: colors.background, flexGrow: 1 },
     periodRow: { flexDirection: 'row', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
     periodChip: {
       borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
