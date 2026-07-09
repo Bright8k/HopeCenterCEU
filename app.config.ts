@@ -16,12 +16,17 @@ export default {
     slug: 'hope-center-ceu',
     version: '1.0.0',
     scheme: 'hopecenterceu',
+    privacy: 'unlisted',
     orientation: 'portrait',
     icon: './assets/icon.png',
     splash: { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#8B1A8F' },
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.hopecenter.ceu',
+      infoPlist: {
+        NSUserNotificationUsageDescription:
+          'Hope Center CEU sends reminders when your CEU renewal deadline is approaching.',
+      },
     },
     android: {
       adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#8B1A8F' },
@@ -29,6 +34,7 @@ export default {
     },
     plugins: [
       'expo-router',
+      'expo-font',
       'expo-secure-store',
       'expo-video',
       ['expo-notifications', { icon: './assets/notification-icon.png', color: '#8B1A8F' }],

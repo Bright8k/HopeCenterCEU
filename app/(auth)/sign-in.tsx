@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
-import { HOPE_CENTER_LOGO_URI } from '@/constants/brand';
+import { HOPE_CENTER_LOGO } from '@/constants/brand';
 
 export default function SignIn() {
   const { colors, textScale } = usePreferences();
@@ -99,7 +99,7 @@ export default function SignIn() {
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <Image
-            source={{ uri: HOPE_CENTER_LOGO_URI }}
+            source={HOPE_CENTER_LOGO}
             style={styles.heroLogo}
             resizeMode="contain"
             accessibilityLabel="Hope Center for Behavior Change logo"
@@ -127,26 +127,30 @@ export default function SignIn() {
           </Text>
         )}
 
-        <View style={styles.socialGroup}>
-          <SocialButton
-            label="Continue with Google"
-            icon={<Ionicons name="logo-google" size={18} color={colors.text} />}
-            onPress={() => handleSocialPress('google')}
-            styles={styles}
-          />
-          <SocialButton
-            label="Continue with Apple"
-            icon={<Ionicons name="logo-apple" size={20} color={colors.text} />}
-            onPress={() => handleSocialPress('apple')}
-            styles={styles}
-          />
-        </View>
+        {Platform.OS === 'web' && (
+          <>
+            <View style={styles.socialGroup}>
+              <SocialButton
+                label="Continue with Google"
+                icon={<Ionicons name="logo-google" size={18} color={colors.text} />}
+                onPress={() => handleSocialPress('google')}
+                styles={styles}
+              />
+              <SocialButton
+                label="Continue with Apple"
+                icon={<Ionicons name="logo-apple" size={20} color={colors.text} />}
+                onPress={() => handleSocialPress('apple')}
+                styles={styles}
+              />
+            </View>
 
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or sign in with email</Text>
-          <View style={styles.dividerLine} />
-        </View>
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or sign in with email</Text>
+              <View style={styles.dividerLine} />
+            </View>
+          </>
+        )}
 
         <Input
           label="Email"

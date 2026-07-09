@@ -137,26 +137,30 @@ export default function SignUp() {
               : 'Create your account now, then choose your role to personalize the app.'}
         </Text>
 
-        <View style={styles.socialGroup}>
-          <SocialButton
-            label="Continue with Google"
-            icon={<Ionicons name="logo-google" size={18} color={colors.text} />}
-            onPress={() => handleSocialPress('google')}
-            styles={styles}
-          />
-          <SocialButton
-            label="Continue with Apple"
-            icon={<Ionicons name="logo-apple" size={20} color={colors.text} />}
-            onPress={() => handleSocialPress('apple')}
-            styles={styles}
-          />
-        </View>
+        {Platform.OS === 'web' && (
+          <>
+            <View style={styles.socialGroup}>
+              <SocialButton
+                label="Continue with Google"
+                icon={<Ionicons name="logo-google" size={18} color={colors.text} />}
+                onPress={() => handleSocialPress('google')}
+                styles={styles}
+              />
+              <SocialButton
+                label="Continue with Apple"
+                icon={<Ionicons name="logo-apple" size={20} color={colors.text} />}
+                onPress={() => handleSocialPress('apple')}
+                styles={styles}
+              />
+            </View>
 
-        <View style={styles.dividerRow}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or create an account with email</Text>
-          <View style={styles.dividerLine} />
-        </View>
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>or create an account with email</Text>
+              <View style={styles.dividerLine} />
+            </View>
+          </>
+        )}
 
         <Input
           label="Full Name"

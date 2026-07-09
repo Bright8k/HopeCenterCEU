@@ -1,6 +1,6 @@
 import { Image, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { usePreferences } from '@/context/PreferencesContext';
-import { HOPE_CENTER_LOGO_URI } from '@/constants/brand';
+import { HOPE_CENTER_LOGO } from '@/constants/brand';
 import { Typography } from '@/constants/theme';
 
 type AppBrandProps = {
@@ -23,7 +23,7 @@ export function AppBrand({
 
   const inner = (
     <>
-      <Image source={{ uri: HOPE_CENTER_LOGO_URI }} style={styles.logo} resizeMode="contain" />
+      <Image source={HOPE_CENTER_LOGO} style={styles.logo} resizeMode="contain" />
       {!logoOnly ? (
         <View style={styles.copy}>
           <Text style={styles.title}>Hope Center</Text>
