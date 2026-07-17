@@ -9,7 +9,13 @@ import { usePreferences } from '@/context/PreferencesContext';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Typography, withAlpha } from '@/constants/theme';
 
-type Stats = { totalCourses: number; publishedCourses: number; totalQuestions: number; totalLearners: number };
+type Stats = {
+  totalCourses: number;
+  publishedCourses: number;
+  pendingCourses: number;
+  totalQuestions: number;
+  totalLearners: number;
+};
 
 export default function AdminOverview() {
   const { colors, textScale } = usePreferences();
@@ -21,15 +27,17 @@ export default function AdminOverview() {
     if (!hasSupabaseEnv) return;
     Promise.all([
       supabase.from('courses').select('*', { count: 'exact', head: true }),
-      supabase.from('courses').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+      supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
       supabase.from('questions').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    ]).then(([all, pub, q, learners]) => {
+    ]).then(([all, pub, pending, q, learners]) => {
       setStats({
-        totalCourses: all.count ?? 0,
-        publishedCourses: pub.count ?? 0,
-        totalQuestions: q.count ?? 0,
-        totalLearners: learners.count ?? 0,
+        totalCourses:    all.count     ?? 0,
+        publishedCourses: pub.count    ?? 0,
+        pendingCourses:  pending.count ?? 0,
+        totalQuestions:  q.count       ?? 0,
+        totalLearners:   learners.count ?? 0,
       });
     });
   }, []);
@@ -37,7 +45,7 @@ export default function AdminOverview() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.roleRow}>
-        <Ionicons name="shield-checkmark-outline" size={14} color={colors.primary} />
+        <Ionicons name="shield-checkmark-outline" size={14} color={colors.primary} accessibilityElementsHidden />
         <Text style={styles.roleLabel}>{adminRole ?? 'admin'} access</Text>
       </View>
 
@@ -58,6 +66,13 @@ export default function AdminOverview() {
           accent={colors.success}
         />
         <StatTile
+          icon="hourglass-outline"
+          label="Pending"
+          value={stats ? String(stats.pendingCourses) : '--'}
+          accent={colors.warning}
+          highlight={!!(stats && stats.pendingCourses > 0)}
+        />
+        <StatTile
           icon="help-circle-outline"
           label="Questions"
           value={stats ? String(stats.totalQuestions) : '--'}
@@ -72,6 +87,16 @@ export default function AdminOverview() {
       </View>
 
       <Text style={styles.sectionTitle}>Quick actions</Text>
+
+      {stats && stats.pendingCourses > 0 && (
+        <NavRow
+          icon="hourglass-outline"
+          title={`Review Queue (${stats.pendingCourses})`}
+          description="Courses awaiting your approval before going live."
+          onPress={() => router.push('/(admin)/course-review')}
+          urgent
+        />
+      )}
 
       <NavRow
         icon="book-outline"
@@ -94,7 +119,7 @@ export default function AdminOverview() {
       <NavRow
         icon="people-outline"
         title="Learners"
-        description="View all enrolled learners, their CEU progress, and activity history."
+        description="View all enrolled learners, CEU progress, and activity history."
         onPress={() => router.push('/(admin)/users')}
       />
     </ScrollView>
@@ -105,22 +130,24 @@ export default function AdminOverview() {
     label,
     value,
     accent,
+    highlight,
   }: {
     icon: keyof typeof Ionicons.glyphMap;
     label: string;
     value: string;
     accent: string;
+    highlight?: boolean;
   }) {
     return (
       <View
-        style={styles.statTile}
+        style={[styles.statTile, highlight && { borderColor: accent }]}
         accessibilityRole="text"
         accessibilityLabel={`${label}: ${value}`}
       >
         <View style={[styles.statIcon, { backgroundColor: withAlpha(accent, '20') }]}>
-          <Ionicons name={icon} size={18} color={accent} />
+          <Ionicons name={icon} size={18} color={accent} accessibilityElementsHidden />
         </View>
-        <Text style={styles.statValue}>{value}</Text>
+        <Text style={[styles.statValue, highlight && { color: accent }]}>{value}</Text>
         <Text style={styles.statLabel}>{label}</Text>
       </View>
     );
@@ -131,11 +158,13 @@ export default function AdminOverview() {
     title,
     description,
     onPress,
+    urgent,
   }: {
     icon: keyof typeof Ionicons.glyphMap;
     title: string;
     description: string;
     onPress: () => void;
+    urgent?: boolean;
   }) {
     return (
       <InteractivePressable
@@ -147,19 +176,31 @@ export default function AdminOverview() {
         {({ hovered }) => (
           <Card
             variant="elevated"
-            style={[styles.navCard, hovered && { borderColor: withAlpha(colors.primary, '44') }]}
+            style={[
+              styles.navCard,
+              hovered && { borderColor: withAlpha(colors.primary, '44') },
+              urgent && { borderColor: withAlpha(colors.warning, '60'), borderWidth: 1.5 },
+            ]}
           >
-            <View style={[styles.navIconWrap, { backgroundColor: withAlpha(colors.primary, '12') }]}>
-              <Ionicons name={icon} size={22} color={colors.primary} />
+            <View
+              style={[
+                styles.navIconWrap,
+                { backgroundColor: urgent ? withAlpha(colors.warning, '14') : withAlpha(colors.primary, '12') },
+              ]}
+            >
+              <Ionicons name={icon} size={22} color={urgent ? colors.warning : colors.primary} accessibilityElementsHidden />
             </View>
             <View style={styles.navCopy}>
-              <Text style={[styles.navTitle, hovered && { color: colors.primary }]}>{title}</Text>
+              <Text style={[styles.navTitle, hovered && { color: colors.primary }, urgent && { color: colors.warning }]}>
+                {title}
+              </Text>
               <Text style={styles.navDesc}>{description}</Text>
             </View>
             <Ionicons
               name="chevron-forward"
               size={18}
               color={hovered ? colors.primary : colors.textSecondary}
+              accessibilityElementsHidden
             />
           </Card>
         )}
@@ -177,46 +218,23 @@ const createStyles = (
     content: { padding: 16, paddingBottom: 36 },
     roleRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 14 },
     roleLabel: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.primary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.6,
+      fontSize: 11 * textScale, fontFamily: Typography.bodyBold,
+      color: colors.primary, textTransform: 'uppercase', letterSpacing: 0.6,
     },
     heading: { fontSize: 26 * textScale, fontFamily: Typography.heading, color: colors.text, marginBottom: 4 },
-    subheading: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      marginBottom: 24,
-    },
+    subheading: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 24 },
     statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
     statTile: {
-      width: '47%',
-      flexGrow: 1,
-      borderRadius: 16,
-      padding: 14,
+      width: '47%', flexGrow: 1,
+      borderRadius: 16, padding: 14,
       backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderWidth: 1, borderColor: colors.border,
       alignItems: 'center',
     },
-    statIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 10,
-    },
+    statIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
     statValue: { fontSize: 22 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text, marginBottom: 2 },
     statLabel: { fontSize: 11 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
-    sectionTitle: {
-      fontSize: 16 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 10,
-    },
+    sectionTitle: { fontSize: 16 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text, marginBottom: 10 },
     navPressable: { marginBottom: 12 },
     navCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     navIconWrap: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },

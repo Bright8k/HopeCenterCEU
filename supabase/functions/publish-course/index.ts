@@ -29,11 +29,13 @@ Deno.serve(async (req) => {
     }
 
     const service = createServiceClient()
+    // status field is the source of truth; is_published is kept in sync by a DB trigger
+    const newStatus = isPublished ? 'published' : 'archived'
     const { data, error } = await service
       .from('courses')
-      .update({ is_published: isPublished })
+      .update({ status: newStatus, review_note: null })
       .eq('id', courseId)
-      .select('id, is_published')
+      .select('id, is_published, status')
       .single()
 
     if (error || !data) {

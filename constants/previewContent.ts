@@ -16,6 +16,8 @@ export const PREVIEW_COURSES: Course[] = [
     duration_seconds: 2700,
     pass_score: 80,
     is_published: true,
+    status: 'published',
+    review_note: null,
     created_at: '2026-04-16T00:00:00Z',
   },
   {
@@ -31,6 +33,8 @@ export const PREVIEW_COURSES: Course[] = [
     duration_seconds: 4200,
     pass_score: 80,
     is_published: true,
+    status: 'published',
+    review_note: null,
     created_at: '2026-04-15T00:00:00Z',
   },
   {
@@ -46,6 +50,8 @@ export const PREVIEW_COURSES: Course[] = [
     duration_seconds: 3000,
     pass_score: 80,
     is_published: true,
+    status: 'published',
+    review_note: null,
     created_at: '2026-04-14T00:00:00Z',
   },
 ];
