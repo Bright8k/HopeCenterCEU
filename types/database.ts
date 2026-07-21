@@ -170,6 +170,24 @@ export type Database = {
           role?: 'admin' | 'editor' | 'publisher';
         };
       };
+      push_tokens: {
+        Row: {
+          user_id: string;
+          token: string;
+          platform: 'ios' | 'android';
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          token: string;
+          platform: 'ios' | 'android';
+          updated_at?: string;
+        };
+        Update: {
+          platform?: 'ios' | 'android';
+          updated_at?: string;
+        };
+      };
     };
   };
 };

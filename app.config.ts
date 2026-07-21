@@ -9,6 +9,14 @@ const supabasePublishableKey =
   '';
 const devAuthBypass = process.env.EXPO_PUBLIC_DEV_AUTH_BYPASS === 'true';
 
+// Hard-block auth bypass in production to prevent accidental shipping.
+if (process.env.APP_VARIANT === 'production' && devAuthBypass) {
+  throw new Error(
+    '[app.config.ts] EXPO_PUBLIC_DEV_AUTH_BYPASS must not be true in production builds. ' +
+    'Unset the variable or set it to false before building with --profile production.',
+  );
+}
+
 export default {
   expo: {
     owner: 'dbright34517',
@@ -26,6 +34,10 @@ export default {
       infoPlist: {
         NSUserNotificationUsageDescription:
           'Hope Center CEU sends reminders when your CEU renewal deadline is approaching.',
+        NSPhotoLibraryUsageDescription:
+          'Hope Center CEU uses your photo library to let you upload a course thumbnail or profile picture.',
+        NSCameraUsageDescription:
+          'Hope Center CEU can use your camera to take a photo for your profile picture or a course thumbnail.',
       },
     },
     android: {

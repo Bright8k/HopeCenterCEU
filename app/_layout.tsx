@@ -20,10 +20,12 @@ import {
 } from '@expo-google-fonts/cormorant-garamond';
 import { AuthProvider } from '@/context/AuthContext';
 import { PreferencesProvider, usePreferences } from '@/context/PreferencesContext';
-import { setupNotificationHandler, setupAndroidChannel } from '@/lib/notifications';
+import { useAuth } from '@/context/AuthContext';
+import { setupNotificationHandler, setupAndroidChannel, registerPushToken } from '@/lib/notifications';
 
 function AppNavigator() {
   const { colors } = usePreferences();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Configure foreground notification display behaviour and Android channel
@@ -40,6 +42,14 @@ function AppNavigator() {
 
     return () => sub.remove();
   }, []);
+
+  // Register the Expo push token whenever the authenticated user changes.
+  // Silently no-ops on web and simulators.
+  useEffect(() => {
+    if (user?.id) {
+      void registerPushToken(user.id);
+    }
+  }, [user?.id]);
 
   return (
     <Stack
@@ -58,6 +68,7 @@ function AppNavigator() {
       <Stack.Screen name="renewal-tracker" />
       <Stack.Screen name="exam" />
       <Stack.Screen name="certificate" />
+      <Stack.Screen name="history" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

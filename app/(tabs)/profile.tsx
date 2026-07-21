@@ -247,6 +247,38 @@ export default function ProfileScreen() {
       </View>
 
       <InteractivePressable
+        onPress={() => router.push('/history')}
+        style={styles.actionPressable}
+        hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
+        accessibilityLabel="View completion history"
+        accessibilityHint="See all course attempts with scores, dates, and pass or fail status"
+      >
+        {({ hovered }) => (
+          <Card
+            variant="elevated"
+            style={[styles.recordCard, hovered && styles.actionCardHovered]}
+          >
+            <View style={styles.recordHeader}>
+              <View style={styles.recordIconWrap}>
+                <Ionicons name="list-outline" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.recordCopy}>
+                <Text style={styles.recordTitle}>Completion history</Text>
+                <Text style={styles.recordText}>
+                  All course attempts — scores, dates, pass and fail.
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={18}
+                color={hovered ? colors.primary : colors.textSecondary}
+              />
+            </View>
+          </Card>
+        )}
+      </InteractivePressable>
+
+      <InteractivePressable
         onPress={() => router.push('/renewal-tracker')}
         style={styles.actionPressable}
         hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}

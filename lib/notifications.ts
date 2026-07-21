@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 
 // ── Notification tag used to identify renewal reminders ──────────────────────
 export const RENEWAL_TAG = 'renewal_reminder';
@@ -84,6 +86,36 @@ const REMINDER_OFFSETS: Array<{ daysBefore: number; title: string; body: string 
     body: 'Your renewal deadline is tomorrow. Log in to Hope Center CEU now.',
   },
 ];
+
+/**
+ * Obtains an Expo push token and upserts it to push_tokens so Edge Functions
+ * can send server-driven notifications. Silently no-ops on web, simulators,
+ * or when permission is denied.
+ */
+export async function registerPushToken(userId: string): Promise<string | null> {
+  if (Platform.OS === 'web' || !hasSupabaseEnv) return null;
+
+  const granted = await requestNotificationPermissions();
+  if (!granted) return null;
+
+  const projectId =
+    (Constants.expoConfig?.extra?.eas?.projectId as string | undefined) ?? '';
+  if (!projectId) return null;
+
+  try {
+    const tokenResult = await Notifications.getExpoPushTokenAsync({ projectId });
+    // cast required: supabase-js v2 upsert types resolve to never on composite PK tables
+    const pushTable = (supabase as any).from('push_tokens');
+    await pushTable.upsert(
+      { user_id: userId, token: tokenResult.data, platform: Platform.OS, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,token' },
+    );
+    return tokenResult.data;
+  } catch {
+    // Simulators and emulators cannot receive push — fail silently
+    return null;
+  }
+}
 
 /** Returns the number of notifications successfully scheduled. */
 export async function scheduleRenewalReminders(renewalDateIso: string): Promise<number> {

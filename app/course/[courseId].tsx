@@ -125,15 +125,7 @@ export default function CourseViewerScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Video section */}
-        <View
-          style={styles.videoSection}
-          accessibilityLabel={
-            course.video_url
-              ? `Video player for ${course.title}`
-              : `${course.title} — video coming soon`
-          }
-          accessibilityRole="none"
-        >
+        <View style={styles.videoSection}>
           {course.video_url ? (
             <VideoView
               player={player}

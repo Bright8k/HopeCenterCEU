@@ -28,18 +28,25 @@ Deno.serve(async (req) => {
       return json({ error: 'courseId and isPublished are required' }, 400)
     }
 
+    // Publishing must go through the review workflow to prevent bypassing it.
+    // Use the review-course function with action "approve" instead.
+    if (isPublished) {
+      return json(
+        { error: 'Direct publish is disabled. Call review-course with action "approve" to publish a course through the review workflow.' },
+        400,
+      )
+    }
+
     const service = createServiceClient()
-    // status field is the source of truth; is_published is kept in sync by a DB trigger
-    const newStatus = isPublished ? 'published' : 'archived'
     const { data, error } = await service
       .from('courses')
-      .update({ status: newStatus, review_note: null })
+      .update({ status: 'archived', review_note: null })
       .eq('id', courseId)
       .select('id, is_published, status')
       .single()
 
     if (error || !data) {
-      return json({ error: 'Unable to update course publish status' }, 400)
+      return json({ error: 'Unable to archive course' }, 400)
     }
 
     return json({ course: data })
