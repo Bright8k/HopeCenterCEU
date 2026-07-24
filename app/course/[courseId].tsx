@@ -37,9 +37,9 @@ export default function CourseViewerScreen() {
       <SafeAreaView style={styles.safeArea} accessibilityLabel="Loading course">
         {/* Header */}
         <View style={styles.header}>
-          <Skeleton width={36} height={36} borderRadius={12} />
-          <Skeleton width="58%" height={18} borderRadius={6} style={{ flex: 0 }} />
-          <Skeleton width={36} height={36} borderRadius={12} />
+          <BackButton label="Go back" />
+          <Skeleton width="58%" height={18} borderRadius={6} style={{ flex: 1 }} />
+          <View style={styles.headerRight} />
         </View>
         {/* Video placeholder */}
         <View style={[styles.videoSection, { opacity: 0.6 }]} />
@@ -235,7 +235,7 @@ export default function CourseViewerScreen() {
   function BackButton({ label }: { label: string }) {
     return (
       <Pressable
-        onPress={() => router.back()}
+        onPress={() => router.dismiss()}
         accessibilityRole="button"
         accessibilityLabel={label}
         style={styles.backBtn}

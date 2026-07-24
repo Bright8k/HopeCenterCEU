@@ -27,6 +27,15 @@ type QuizState = {
   error: string | null;
 };
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export function useQuiz(courseId: string) {
   const { user } = useAuth();
   const [state, setState] = useState<QuizState>({
@@ -49,7 +58,7 @@ export function useQuiz(courseId: string) {
       if (hasSupabaseEnv) {
         const [courseRes, questionsRes] = await Promise.all([
           supabase.from('courses').select('*').eq('id', courseId).single(),
-          supabase.from('questions').select('*').eq('course_id', courseId).order('domain'),
+          supabase.from('questions').select('*').eq('course_id', courseId),
         ]);
 
         if (!active) return;
@@ -58,7 +67,7 @@ export function useQuiz(courseId: string) {
           setState((s) => ({
             ...s,
             course: courseRes.data as Course | null,
-            questions: (questionsRes.data as Question[]) ?? [],
+            questions: shuffle((questionsRes.data as Question[]) ?? []),
             loading: false,
           }));
           return;
@@ -78,7 +87,7 @@ export function useQuiz(courseId: string) {
           ...s,
           // Offline types are a strict subset of the DB row types — cast is safe for quiz use
           course: offlineCourse as unknown as Course,
-          questions: offlineQuestions as unknown as Question[],
+          questions: shuffle(offlineQuestions as unknown as Question[]),
           loading: false,
         }));
         return;
@@ -110,28 +119,47 @@ export function useQuiz(courseId: string) {
 
     setState((s) => ({ ...s, submitting: true }));
 
+    // Score is pure local math — calculate before any network call
     const correct = questions.filter((q) => answers[q.id] === q.answer).length;
     const total = questions.length;
     const score = Math.round((correct / total) * 100);
     const passed = score >= course.pass_score;
 
-    let completionId: string | null = null;
+    // Show result immediately so the user always gets feedback
+    setState((s) => ({
+      ...s,
+      submitting: false,
+      result: { score, passed, correct, total },
+      certGenerating: passed && hasSupabaseEnv,
+    }));
 
-    if (hasSupabaseEnv) {
-      // cast required: supabase client lacks Database generic, insert/upsert types resolve to never
-      // upsert so retry-after-fail updates the existing row and still returns the id
+    if (!hasSupabaseEnv) return;
+
+    // All DB work is background — result screen is already visible
+    try {
+      // cast required: supabase-js v2 upsert types resolve to never[] on composite-PK tables;
+      // cert_url reset to null so a fresh cert is generated on each passing attempt
       const completionsTable = supabase.from('completions') as any;
-      const { data: inserted } = await completionsTable
+      const { data: inserted, error: upsertErr } = await completionsTable
         .upsert(
-          { user_id: user.id, course_id: courseId, score, passed },
+          {
+            user_id: user.id,
+            course_id: courseId,
+            score,
+            passed,
+            cert_url: null,
+            completed_at: new Date().toISOString(),
+          },
           { onConflict: 'user_id,course_id', ignoreDuplicates: false },
         )
         .select('id')
         .single();
-      completionId = inserted?.id ?? null;
 
+      const completionId: string | null = upsertErr ? null : (inserted?.id ?? null);
+
+      // Record individual question responses (best-effort; ignore errors)
       const attemptsTable = supabase.from('attempts') as any;
-      await attemptsTable.insert(
+      void attemptsTable.insert(
         questions.map((q) => ({
           user_id: user.id,
           question_id: q.id,
@@ -139,31 +167,23 @@ export function useQuiz(courseId: string) {
           is_correct: answers[q.id] === q.answer,
         })),
       );
-    }
 
-    setState((s) => ({
-      ...s,
-      submitting: false,
-      result: { score, passed, correct, total },
-      certGenerating: passed && !!completionId,
-    }));
+      if (passed) void updateStreak(user.id);
 
-    // Increment daily streak on any passing attempt
-    if (passed && hasSupabaseEnv) {
-      void updateStreak(user.id);
-    }
-
-    // Generate certificate asynchronously after showing the result screen
-    if (passed && completionId && hasSupabaseEnv) {
-      supabase.functions
-        .invoke('issue-certificate', { body: { completionId } })
-        .then(({ data, error }) => {
-          if (!error && data?.signedUrl) {
-            setState((s) => ({ ...s, certUrl: data.signedUrl, certGenerating: false }));
-          } else {
-            setState((s) => ({ ...s, certGenerating: false }));
-          }
+      if (passed && completionId) {
+        const { data, error: certErr } = await supabase.functions.invoke('issue-certificate', {
+          body: { completionId },
         });
+        setState((s) => ({
+          ...s,
+          certUrl: !certErr && data?.signedUrl ? (data.signedUrl as string) : null,
+          certGenerating: false,
+        }));
+      } else {
+        setState((s) => ({ ...s, certGenerating: false }));
+      }
+    } catch {
+      setState((s) => ({ ...s, certGenerating: false }));
     }
   }, [state, user, courseId]);
 

@@ -43,6 +43,14 @@ export default {
     android: {
       adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#8B1A8F' },
       package: 'com.hopecenter.ceu',
+      versionCode: 1,
+      // Android 13+ requires POST_NOTIFICATIONS to be declared; vibrate is for notification ringtones.
+      // RECEIVE_BOOT_COMPLETED lets scheduled notifications survive a device reboot.
+      permissions: [
+        'android.permission.POST_NOTIFICATIONS',
+        'android.permission.VIBRATE',
+        'android.permission.RECEIVE_BOOT_COMPLETED',
+      ],
     },
     plugins: [
       'expo-router',
