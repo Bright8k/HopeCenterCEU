@@ -1,16 +1,23 @@
-import { Tabs, router } from 'expo-router';
+import { Tabs, router, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable } from 'react-native';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { AppBrand } from '@/components/ui/AppBrand';
+import { hasSupabaseEnv } from '@/lib/supabase';
 import { Typography } from '@/constants/theme';
 
 export default function TabLayout() {
-  const { role } = useAuth();
+  const { role, session, loading } = useAuth();
   const { colors } = usePreferences();
   const isStudent = role === 'STUDENT';
+
+  // Declarative auth guard: when Supabase session is cleared (sign-out), navigate to sign-in.
+  // Skipped in preview/dev-bypass mode where hasSupabaseEnv is false.
+  if (hasSupabaseEnv && !loading && !session) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
 
   return (
     <Tabs
