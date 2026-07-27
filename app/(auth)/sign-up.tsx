@@ -196,9 +196,15 @@ export default function SignUp() {
         />
 
         <Link href="/(auth)/sign-in" asChild>
-          <Text style={styles.footer}>
-            Already have an account? <Text style={styles.footerLink}>Sign in</Text>
-          </Text>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Already have an account? Sign in"
+            style={styles.linkPressable}
+          >
+            <Text style={styles.footer}>
+              Already have an account? <Text style={styles.footerLink}>Sign in</Text>
+            </Text>
+          </Pressable>
         </Link>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -353,6 +359,11 @@ const createStyles = (
   button: {
     marginTop: 10,
     marginBottom: 24,
+  },
+  linkPressable: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   footer: {
     textAlign: 'center',

@@ -248,42 +248,54 @@ export default function DashboardScreen() {
         <Text style={styles.sectionHint}>Fresh from your current library.</Text>
       </View>
 
-      {displayCourses.slice(0, 2).map((course) => (
-        <InteractivePressable
-          key={course.id}
-          onPress={() => router.push(`/course/${course.id}`)}
-          style={styles.actionPressable}
-          hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
-          accessibilityLabel={course.title}
-          accessibilityHint="Opens the course"
-        >
-          {({ hovered }) => (
-            <Card
-              variant="elevated"
-              style={[styles.actionCard, hovered && styles.actionCardHovered]}
-            >
-              <View style={[styles.actionIconWrap, hovered && styles.actionIconWrapHovered]}>
+      {displayCourses.length === 0 ? (
+        <Card style={styles.emptyCoursesCard}>
+          <Ionicons name="library-outline" size={28} color={colors.textMuted} />
+          <View style={styles.emptyCoursesCopy}>
+            <Text style={styles.emptyCoursesTitle}>No courses available yet</Text>
+            <Text style={styles.emptyCoursesText}>
+              Check back soon — new courses are added regularly.
+            </Text>
+          </View>
+        </Card>
+      ) : (
+        displayCourses.slice(0, 2).map((course) => (
+          <InteractivePressable
+            key={course.id}
+            onPress={() => router.push(`/course/${course.id}`)}
+            style={styles.actionPressable}
+            hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
+            accessibilityLabel={course.title}
+            accessibilityHint="Opens the course"
+          >
+            {({ hovered }) => (
+              <Card
+                variant="elevated"
+                style={[styles.actionCard, hovered && styles.actionCardHovered]}
+              >
+                <View style={[styles.actionIconWrap, hovered && styles.actionIconWrapHovered]}>
+                  <Ionicons
+                    name={isStudent ? 'school-outline' : 'play-circle-outline'}
+                    size={22}
+                    color={hovered ? colors.primaryLight : colors.primary}
+                  />
+                </View>
+                <View style={styles.actionCopy}>
+                  <Text style={[styles.actionTitle, hovered && styles.actionTitleHovered]}>{course.title}</Text>
+                  <Text style={styles.actionDescription}>
+                    {course.description ?? 'Open the library to view the full course details.'}
+                  </Text>
+                </View>
                 <Ionicons
-                  name={isStudent ? 'school-outline' : 'play-circle-outline'}
-                  size={22}
-                  color={hovered ? colors.primaryLight : colors.primary}
+                  name="chevron-forward"
+                  size={20}
+                  color={hovered ? colors.primary : colors.textSecondary}
                 />
-              </View>
-              <View style={styles.actionCopy}>
-                <Text style={[styles.actionTitle, hovered && styles.actionTitleHovered]}>{course.title}</Text>
-                <Text style={styles.actionDescription}>
-                  {course.description ?? 'Open the library to view the full course details.'}
-                </Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color={hovered ? colors.primary : colors.textSecondary}
-              />
-            </Card>
-          )}
-        </InteractivePressable>
-      ))}
+              </Card>
+            )}
+          </InteractivePressable>
+        ))
+      )}
 
       <Card style={styles.supportCard}>
         <Text style={styles.supportTitle}>Hope Center rhythm</Text>
@@ -603,5 +615,26 @@ const createStyles = (
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 8,
+    },
+    emptyCoursesCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      marginBottom: 12,
+    },
+    emptyCoursesCopy: {
+      flex: 1,
+    },
+    emptyCoursesTitle: {
+      fontSize: 14 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.text,
+      marginBottom: 4,
+    },
+    emptyCoursesText: {
+      fontSize: 12 * textScale,
+      lineHeight: 18,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
     },
   });

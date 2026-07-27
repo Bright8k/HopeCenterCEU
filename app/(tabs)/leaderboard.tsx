@@ -9,7 +9,8 @@ import { useLeaderboard, type LeaderboardEntry, type LeaderboardPeriod, type Lea
 import { Card } from '@/components/ui/Card';
 import { Typography, withAlpha } from '@/constants/theme';
 
-const RANK_COLORS = ['#D4A843', '#9E9E9E', '#CD7F32'] as const;
+// Gold / silver / bronze — intentionally not in the brand token system
+const RANK_COLORS = ['#C9A84C', '#8E9196', '#B07D50'] as const;
 const RANK_ICONS = ['trophy', 'medal', 'ribbon'] as const;
 
 const PERIOD_OPTIONS: { label: string; value: LeaderboardPeriod }[] = [
@@ -35,9 +36,8 @@ export default function LeaderboardScreen() {
 
   async function onRefresh() {
     setRefreshing(true);
-    refetch();
-    // Give the RPC time to complete before clearing the spinner
-    setTimeout(() => setRefreshing(false), 1200);
+    await refetch();
+    setRefreshing(false);
   }
   const styles = createStyles(colors, textScale);
 
@@ -282,12 +282,12 @@ const createStyles = (
       borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: withAlpha('#FFFFFF', '22'),
+      backgroundColor: withAlpha(colors.white, '22'),
     },
     myAvatarText: {
       fontSize: 18 * textScale,
       fontFamily: Typography.bodyBold,
-      color: '#FFFFFF',
+      color: colors.white,
     },
     myAvatarImage: {
       width: 44,
@@ -298,7 +298,7 @@ const createStyles = (
     myName: {
       fontSize: 16 * textScale,
       fontFamily: Typography.bodyBold,
-      color: '#FFFFFF',
+      color: colors.white,
       marginBottom: 4,
     },
     myStats: {
@@ -308,11 +308,11 @@ const createStyles = (
     myStat: {
       fontSize: 13 * textScale,
       fontFamily: Typography.body,
-      color: withAlpha('#FFFFFF', 'CC'),
+      color: withAlpha(colors.white, 'CC'),
     },
     streakBadge: {
       alignItems: 'center',
-      backgroundColor: withAlpha('#FFFFFF', '20'),
+      backgroundColor: withAlpha(colors.white, '20'),
       borderRadius: 12,
       paddingHorizontal: 10,
       paddingVertical: 6,
@@ -324,7 +324,7 @@ const createStyles = (
     streakCount: {
       fontSize: 13 * textScale,
       fontFamily: Typography.bodyBold,
-      color: '#FFFFFF',
+      color: colors.white,
       textAlign: 'center',
     },
     filterRow: {
@@ -406,8 +406,8 @@ const createStyles = (
       backgroundColor: withAlpha(colors.primary, '06'),
     },
     rowFirst: {
-      borderColor: withAlpha('#D4A843', '44'),
-      backgroundColor: withAlpha('#D4A843', '06'),
+      borderColor: withAlpha(colors.accent, '44'),
+      backgroundColor: withAlpha(colors.accent, '06'),
     },
     rankBadge: {
       width: 32,

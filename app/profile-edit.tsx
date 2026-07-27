@@ -436,8 +436,8 @@ const createStyles = (
       gap: 10,
     },
     headerBtn: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
@@ -450,7 +450,7 @@ const createStyles = (
       color: colors.text,
       textAlign: 'center',
     },
-    headerRight: { width: 36 },
+    headerRight: { width: 44 },
     content: { padding: 20, paddingBottom: 16 },
     sectionLabel: {
       fontSize: 15 * textScale,

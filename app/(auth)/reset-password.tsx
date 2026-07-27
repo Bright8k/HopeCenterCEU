@@ -95,7 +95,12 @@ export default function ResetPasswordScreen() {
       setPreparing(false);
     }
 
+    // Cold-start: app launched via the reset link
     Linking.getInitialURL().then(exchangeToken);
+
+    // Foregrounded: app was already open when the user tapped the email link
+    const sub = Linking.addEventListener('url', ({ url }) => exchangeToken(url));
+    return () => sub.remove();
   }, [code]);
 
   async function handleSave() {

@@ -105,10 +105,10 @@ function SettingsHeaderButton() {
       onHoverOut={() => setIsHovered(false)}
       style={({ pressed }) => [
         {
-          marginRight: 16,
-          width: 36,
-          height: 36,
-          borderRadius: 18,
+          marginRight: 8,
+          width: 44,
+          height: 44,
+          borderRadius: 22,
           alignItems: 'center',
           justifyContent: 'center',
           backgroundColor: isHovered ? colors.surface : 'transparent',

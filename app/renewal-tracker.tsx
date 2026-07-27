@@ -371,8 +371,8 @@ const createStyles = (
       gap: 10,
     },
     backBtn: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
@@ -385,7 +385,7 @@ const createStyles = (
       color: colors.text,
       textAlign: 'center',
     },
-    headerRight: { width: 36 },
+    headerRight: { width: 44 },
     content: { padding: 16, paddingBottom: 36 },
     roleRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
     // Countdown card
@@ -433,9 +433,10 @@ const createStyles = (
       gap: 6,
       alignSelf: 'flex-start',
       marginTop: 10,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      borderRadius: 8,
+      minHeight: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 10,
       backgroundColor: withAlpha(colors.primary, '0E'),
     },
     setDateText: {

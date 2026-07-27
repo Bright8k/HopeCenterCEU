@@ -29,61 +29,56 @@ export function useLeaderboard(
 ) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tick, setTick] = useState(0);
-  const refetch = useCallback(() => setTick((t) => t + 1), []);
 
-  // Re-fetch on filter change or when completions/streaks are written
-  useEffect(() => {
+  const load = useCallback(async () => {
     if (!hasSupabaseEnv) {
       setLoading(false);
       return;
     }
-    let active = true;
     setLoading(true);
-
     // supabase.rpc lacks TypeScript generics for custom functions — cast to any
-    (supabase as any)
-      .rpc('get_leaderboard', {
-        p_role: roleFilter === 'ALL' ? null : roleFilter,
-        p_since: periodToDate(period),
-      })
-      .then(({ data, error }: { data: any[] | null; error: any }) => {
-        if (!active) return;
-        if (!error && data) {
-          setEntries(
-            data.map((row) => ({
-              userId: row.user_id as string,
-              displayName: row.display_name as string,
-              avatarUrl: (row.avatar_url as string | null) ?? null,
-              role: row.role as string,
-              totalCeus: row.total_ceus as number,
-              completionsCount: row.completions_count as number,
-              currentStreak: row.current_streak as number,
-              longestStreak: row.longest_streak as number,
-            })),
-          );
-        }
-        setLoading(false);
-      });
+    const { data, error } = await (supabase as any).rpc('get_leaderboard', {
+      p_role: roleFilter === 'ALL' ? null : roleFilter,
+      p_since: periodToDate(period),
+    }) as { data: any[] | null; error: any };
 
-    return () => { active = false; };
-  }, [roleFilter, period, tick]);
+    if (!error && data) {
+      setEntries(
+        data.map((row) => ({
+          userId: row.user_id as string,
+          displayName: row.display_name as string,
+          avatarUrl: (row.avatar_url as string | null) ?? null,
+          role: row.role as string,
+          totalCeus: row.total_ceus as number,
+          completionsCount: row.completions_count as number,
+          currentStreak: row.current_streak as number,
+          longestStreak: row.longest_streak as number,
+        })),
+      );
+    }
+    setLoading(false);
+  }, [roleFilter, period]);
+
+  const refetch = useCallback(() => load(), [load]);
+
+  // Re-fetch on filter change or when completions/streaks are written
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   // Realtime — any new completion or streak update triggers a leaderboard refresh
   useEffect(() => {
     if (!hasSupabaseEnv) return;
 
-    const bump = () => setTick((t) => t + 1);
-
     const channel = supabase
       .channel('leaderboard-live')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'completions' }, bump)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'streaks' }, bump)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'streaks' }, bump)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'completions' }, () => void load())
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'streaks' }, () => void load())
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'streaks' }, () => void load())
       .subscribe();
 
     return () => { void supabase.removeChannel(channel); };
-  }, []);
+  }, [load]);
 
   return { entries, loading, refetch };
 }

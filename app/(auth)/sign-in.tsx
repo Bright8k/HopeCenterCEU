@@ -4,6 +4,7 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -173,13 +174,25 @@ export default function SignIn() {
         <Button title={devAuthBypass ? 'Enter Dashboard' : 'Sign In'} onPress={handleSignIn} loading={loading} style={styles.button} />
 
         <Link href="/(auth)/forgot-password" asChild>
-          <Text style={styles.forgotLink}>Forgot your password?</Text>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Forgot your password? Tap to reset it"
+            style={styles.linkPressable}
+          >
+            <Text style={styles.forgotLink}>Forgot your password?</Text>
+          </Pressable>
         </Link>
 
         <Link href="/(auth)/sign-up" asChild>
-          <Text style={styles.footer}>
-            Don&apos;t have an account yet? <Text style={styles.footerLink}>Create one</Text>
-          </Text>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Don't have an account yet? Create one"
+            style={styles.linkPressable}
+          >
+            <Text style={styles.footer}>
+              Don&apos;t have an account yet? <Text style={styles.footerLink}>Create one</Text>
+            </Text>
+          </Pressable>
         </Link>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -336,6 +349,11 @@ const createStyles = (
   button: {
     marginTop: 10,
     marginBottom: 24,
+  },
+  linkPressable: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   forgotLink: {
     textAlign: 'center',

@@ -1,20 +1,37 @@
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useExamPrep } from '@/hooks/useExamPrep';
 import { usePreferences } from '@/context/PreferencesContext';
 import { hasSupabaseEnv } from '@/lib/supabase';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 export default function ExamPrepScreen() {
-  const { displayDomains, usingPreviewData } = useExamPrep();
+  const { displayDomains, usingPreviewData, loading } = useExamPrep();
   const { colors, textScale, preferences } = usePreferences();
   const styles = createStyles(colors, textScale);
   const totalQuestions = displayDomains.reduce((sum, domain) => sum + domain.questions, 0);
   const totalAttempts = displayDomains.reduce((sum, domain) => sum + domain.attempts, 0);
+  const isLocked = !hasSupabaseEnv || usingPreviewData;
+
+  if (loading) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content} accessibilityLabel="Loading exam prep">
+        <Skeleton height={140} borderRadius={24} style={{ marginBottom: 14 }} />
+        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+          <Skeleton height={90} borderRadius={18} style={{ flex: 1 }} />
+          <Skeleton height={90} borderRadius={18} style={{ flex: 1 }} />
+        </View>
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} height={110} borderRadius={16} style={{ marginBottom: 12 }} />
+        ))}
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -61,21 +78,22 @@ export default function ExamPrepScreen() {
         <InteractivePressable
           key={domain.name}
           onPress={
-            hasSupabaseEnv && !usingPreviewData
+            !isLocked
               ? () => router.push({ pathname: '/exam/[domain]', params: { domain: domain.name } })
               : undefined
           }
-          style={styles.domainPressable}
-          hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
+          style={[styles.domainPressable, isLocked && styles.domainPressableLocked]}
+          hoverStyle={!isLocked && !preferences.reducedMotion ? styles.hoverLift : undefined}
           accessibilityLabel={domain.name}
+          accessibilityState={{ disabled: isLocked }}
           accessibilityHint={
-            hasSupabaseEnv && !usingPreviewData
+            !isLocked
               ? `Start ${domain.name} practice session`
-              : domain.description
+              : 'Connect to a live account to enable practice sessions'
           }
         >
           {({ hovered }) => (
-            <Card variant="elevated" style={[styles.domainCard, hovered && styles.domainCardHovered]}>
+            <Card variant="elevated" style={[styles.domainCard, hovered && !isLocked && styles.domainCardHovered]}>
               <View style={styles.domainHeader}>
                 <View style={[styles.domainIconWrap, hovered && styles.domainIconWrapHovered]}>
                   <Ionicons name="school-outline" size={20} color={hovered ? colors.primaryLight : colors.primary} />
@@ -244,6 +262,9 @@ const createStyles = (
     },
     domainPressable: {
       marginBottom: 12,
+    },
+    domainPressableLocked: {
+      opacity: 0.55,
     },
     domainCard: {},
     domainCardHovered: {

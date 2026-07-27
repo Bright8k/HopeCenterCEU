@@ -247,8 +247,8 @@ const createStyles = (
       gap: 10,
     },
     backBtn: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
@@ -261,7 +261,7 @@ const createStyles = (
       color: colors.text,
       textAlign: 'center',
     },
-    headerRight: { width: 36 },
+    headerRight: { width: 44 },
     loadingWrap: {
       flex: 1,
       alignItems: 'center',

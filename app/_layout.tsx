@@ -20,6 +20,7 @@ import {
 } from '@expo-google-fonts/cormorant-garamond';
 import { AuthProvider } from '@/context/AuthContext';
 import { PreferencesProvider, usePreferences } from '@/context/PreferencesContext';
+import { LightColors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { setupNotificationHandler, setupAndroidChannel, registerPushToken } from '@/lib/notifications';
 
@@ -95,10 +96,10 @@ export default function RootLayout() {
             flex: 1,
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: '#F7F2F6',
+            backgroundColor: LightColors.background,
           }}
         >
-          <ActivityIndicator size="large" color="#8B1A8F" />
+          <ActivityIndicator size="large" color={LightColors.primary} />
         </View>
       </GestureHandlerRootView>
     );

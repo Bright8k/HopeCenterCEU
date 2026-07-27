@@ -7,6 +7,7 @@ type ProgressBarProps = {
   showLabel?: boolean;
   color?: string;
   height?: number;
+  accessibilityLabel?: string;
 };
 
 export function ProgressBar({
@@ -15,13 +16,18 @@ export function ProgressBar({
   showLabel = false,
   color,
   height = 10,
+  accessibilityLabel,
 }: ProgressBarProps) {
   const { colors } = usePreferences();
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   const fillColor = color ?? colors.primary;
 
   return (
-    <View>
+    <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max, now: value }}
+      accessibilityLabel={accessibilityLabel ?? `${Math.round(pct)}% complete`}
+    >
       <View style={[styles.track, { height, backgroundColor: colors.border }]}>
         <View
           style={[

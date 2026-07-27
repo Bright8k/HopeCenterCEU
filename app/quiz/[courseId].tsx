@@ -306,8 +306,8 @@ const createStyles = (
       gap: 10,
     },
     backBtn: {
-      width: 36,
-      height: 36,
+      width: 44,
+      height: 44,
       borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
@@ -324,7 +324,7 @@ const createStyles = (
       fontFamily: Typography.bodyBold,
       color: colors.primary,
     },
-    headerRight: { width: 36 },
+    headerRight: { width: 44 },
     progressBar: { marginHorizontal: 16, marginTop: 10, marginBottom: 4 },
     loadingWrap: {
       flex: 1,

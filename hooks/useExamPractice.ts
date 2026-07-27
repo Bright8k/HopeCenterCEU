@@ -71,24 +71,20 @@ export function useExamPractice(domain: string) {
 
     setSubmitting(true);
 
-    let correct = 0;
     const total = questions.length;
+    const attemptRows = questions
+      .filter((q) => answers[q.id] !== undefined)
+      .map((q) => ({
+        user_id: user?.id,
+        question_id: q.id,
+        selected: answers[q.id],
+        is_correct: answers[q.id] === q.answer,
+      }));
+    const correct = attemptRows.filter((r) => r.is_correct).length;
 
-    for (const q of questions) {
-      const chosen = answers[q.id];
-      if (chosen === undefined) continue;
-
-      const isCorrect = chosen === q.answer;
-      if (isCorrect) correct++;
-
-      if (user && hasSupabaseEnv) {
-        await (supabase as any).from('attempts').insert({
-          user_id: user.id,
-          question_id: q.id,
-          selected: chosen,
-          is_correct: isCorrect,
-        });
-      }
+    if (user && hasSupabaseEnv && attemptRows.length > 0) {
+      // Single batched insert instead of one per question
+      await (supabase as any).from('attempts').insert(attemptRows);
     }
 
     setResult({

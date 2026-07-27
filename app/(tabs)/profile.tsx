@@ -221,6 +221,7 @@ export default function ProfileScreen() {
                 }
                 accessibilityRole="button"
                 accessibilityLabel={`View certificate for ${certificate.title}`}
+                accessibilityState={{ disabled: !canView }}
                 style={({ pressed }) => [pressed && canView && { opacity: 0.8 }]}
               >
                 <Card style={styles.certificateCard}>
@@ -694,9 +695,9 @@ const createStyles = (
       backgroundColor: withAlpha(colors.primary, '12'),
     },
     editBtn: {
-      width: 34,
-      height: 34,
-      borderRadius: 10,
+      width: 44,
+      height: 44,
+      borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: withAlpha(colors.white, '20'),
@@ -731,9 +732,10 @@ const createStyles = (
       alignItems: 'center',
       gap: 6,
       alignSelf: 'flex-start',
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      borderRadius: 8,
+      minHeight: 44,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 10,
       backgroundColor: withAlpha(colors.primary, '0E'),
     },
     completionBtnText: {
