@@ -20,19 +20,19 @@ export function useStreak() {
     }
     let active = true;
 
-    (supabase as any)
+    supabase
       .from('streaks')
       .select('current_streak, longest_streak, last_activity_date')
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data: row }: { data: any }) => {
+      .then(({ data: row }) => {
         if (!active) return;
         setData(
           row
             ? {
-                currentStreak: row.current_streak as number,
-                longestStreak: row.longest_streak as number,
-                lastActivityDate: row.last_activity_date as string | null,
+                currentStreak: row.current_streak,
+                longestStreak: row.longest_streak,
+                lastActivityDate: row.last_activity_date,
               }
             : { currentStreak: 0, longestStreak: 0, lastActivityDate: null },
         );

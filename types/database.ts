@@ -27,6 +27,7 @@ export type Database = {
           org_id?: string | null;
           avatar_url?: string | null;
         };
+        Relationships: [];
       };
       courses: {
         Row: {
@@ -75,6 +76,7 @@ export type Database = {
           status?: 'draft' | 'pending_review' | 'published' | 'archived';
           review_note?: string | null;
         };
+        Relationships: [];
       };
       completions: {
         Row: {
@@ -99,7 +101,24 @@ export type Database = {
           score?: number | null;
           passed?: boolean;
           cert_url?: string | null;
+          completed_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'completions_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'completions_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'courses';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       questions: {
         Row: {
@@ -130,6 +149,15 @@ export type Database = {
           explanation?: string | null;
           track?: 'RBT' | 'BCBA' | 'STUDENT' | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'questions_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'courses';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       attempts: {
         Row: {
@@ -152,6 +180,22 @@ export type Database = {
           selected?: number | null;
           is_correct?: boolean | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'attempts_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'attempts_question_id_fkey';
+            columns: ['question_id'];
+            isOneToOne: false;
+            referencedRelation: 'questions';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       admin_roles: {
         Row: {
@@ -169,6 +213,7 @@ export type Database = {
         Update: {
           role?: 'admin' | 'editor' | 'publisher';
         };
+        Relationships: [];
       };
       push_tokens: {
         Row: {
@@ -187,6 +232,65 @@ export type Database = {
           platform?: 'ios' | 'android';
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      streaks: {
+        Row: {
+          user_id: string;
+          current_streak: number;
+          longest_streak: number;
+          last_activity_date: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          current_streak?: number;
+          longest_streak?: number;
+          last_activity_date?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          current_streak?: number;
+          longest_streak?: number;
+          last_activity_date?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+    };
+    Views: {};
+    Functions: {
+      get_leaderboard: {
+        Args: {
+          p_role?: string | null;
+          p_since?: string | null;
+        };
+        Returns: Array<{
+          user_id: string;
+          display_name: string;
+          avatar_url: string | null;
+          role: string;
+          total_ceus: number;
+          completions_count: number;
+          current_streak: number;
+          longest_streak: number;
+        }>;
+      };
+      is_user_admin: {
+        Args: {
+          target_user_id: string;
+        };
+        Returns: boolean;
+      };
+      get_user_ceu_summary: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: Array<{
+          category: string;
+          ceu_total: number;
+          completions_count: number;
+        }>;
       };
     };
   };

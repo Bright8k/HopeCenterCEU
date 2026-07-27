@@ -13,7 +13,7 @@ export async function updateStreak(userId: string): Promise<void> {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: existing } = await (supabase as any)
+  const { data: existing } = await supabase
     .from('streaks')
     .select('current_streak, longest_streak, last_activity_date')
     .eq('user_id', userId)
@@ -26,16 +26,13 @@ export async function updateStreak(userId: string): Promise<void> {
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().slice(0, 10);
 
-  const prevStreak = (existing?.current_streak as number | undefined) ?? 0;
+  const prevStreak = existing?.current_streak ?? 0;
   const newStreak =
     existing?.last_activity_date === yesterdayStr ? prevStreak + 1 : 1;
 
-  const newLongest = Math.max(
-    newStreak,
-    (existing?.longest_streak as number | undefined) ?? 0,
-  );
+  const newLongest = Math.max(newStreak, existing?.longest_streak ?? 0);
 
-  await (supabase as any).from('streaks').upsert({
+  await supabase.from('streaks').upsert({
     user_id: userId,
     current_streak: newStreak,
     longest_streak: newLongest,

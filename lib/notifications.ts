@@ -104,10 +104,8 @@ export async function registerPushToken(userId: string): Promise<string | null> 
 
   try {
     const tokenResult = await Notifications.getExpoPushTokenAsync({ projectId });
-    // cast required: supabase-js v2 upsert types resolve to never on composite PK tables
-    const pushTable = (supabase as any).from('push_tokens');
-    await pushTable.upsert(
-      { user_id: userId, token: tokenResult.data, platform: Platform.OS, updated_at: new Date().toISOString() },
+    await supabase.from('push_tokens').upsert(
+      { user_id: userId, token: tokenResult.data, platform: Platform.OS as 'ios' | 'android', updated_at: new Date().toISOString() },
       { onConflict: 'user_id,token' },
     );
     return tokenResult.data;

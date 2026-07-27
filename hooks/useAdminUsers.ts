@@ -40,19 +40,20 @@ export function useAdminUsers() {
 
     async function run() {
       const [profilesRes, completionsRes, streaksRes] = await Promise.all([
-        (supabase as any).from('profiles').select('id, display_name, role, renewal_date').not('role', 'is', null),
+        supabase.from('profiles').select('id, display_name, role, renewal_date').not('role', 'is', null),
+        // relational join syntax (courses(ceu_value)) requires as any until Supabase generates relationship types
         (supabase as any).from('completions').select('user_id, passed, courses(ceu_value)'),
-        (supabase as any).from('streaks').select('user_id, current_streak'),
+        supabase.from('streaks').select('user_id, current_streak'),
       ]);
 
       if (!active) return;
 
-      const profiles: any[] = profilesRes.data ?? [];
+      const profiles = profilesRes.data ?? [];
       const completions: any[] = completionsRes.data ?? [];
-      const streaks: any[] = streaksRes.data ?? [];
+      const streaks = streaksRes.data ?? [];
 
       const streakMap: Record<string, number> = {};
-      for (const s of streaks) streakMap[s.user_id as string] = s.current_streak as number;
+      for (const s of streaks) streakMap[s.user_id] = s.current_streak;
 
       const compMap: Record<string, { count: number; ceus: number }> = {};
       for (const c of completions) {
@@ -65,13 +66,13 @@ export function useAdminUsers() {
       }
 
       const list: AdminUserSummary[] = profiles.map((p) => ({
-        id: p.id as string,
-        displayName: (p.display_name as string | null) ?? 'Learner',
-        role: p.role as string,
-        renewalDate: p.renewal_date as string | null,
-        totalCompletions: compMap[p.id as string]?.count ?? 0,
-        totalCeus: compMap[p.id as string]?.ceus ?? 0,
-        currentStreak: streakMap[p.id as string] ?? 0,
+        id: p.id,
+        displayName: p.display_name ?? 'Learner',
+        role: p.role ?? 'Unknown',
+        renewalDate: p.renewal_date,
+        totalCompletions: compMap[p.id]?.count ?? 0,
+        totalCeus: compMap[p.id]?.ceus ?? 0,
+        currentStreak: streakMap[p.id] ?? 0,
       }));
 
       // Sort by most active first
@@ -101,19 +102,20 @@ export function useAdminUserDetail(userId: string) {
 
     async function run() {
       const [profileRes, completionsRes, streakRes] = await Promise.all([
-        (supabase as any).from('profiles').select('id, display_name, role, renewal_date').eq('id', userId).single(),
+        supabase.from('profiles').select('id, display_name, role, renewal_date').eq('id', userId).single(),
+        // relational join syntax requires as any until Supabase generates relationship types
         (supabase as any)
           .from('completions')
           .select('id, passed, score, completed_at, courses(title, ceu_value)')
           .eq('user_id', userId)
           .order('completed_at', { ascending: false }),
-        (supabase as any).from('streaks').select('current_streak, longest_streak').eq('user_id', userId).maybeSingle(),
+        supabase.from('streaks').select('current_streak, longest_streak').eq('user_id', userId).maybeSingle(),
       ]);
 
       if (!active) return;
 
-      const p = profileRes.data as any;
-      const streak = streakRes.data as any;
+      const p = profileRes.data;
+      const streak = streakRes.data;
 
       const completions: AdminUserCompletion[] = ((completionsRes.data as any[]) ?? []).map((c) => ({
         id: c.id as string,
@@ -126,11 +128,11 @@ export function useAdminUserDetail(userId: string) {
 
       setDetail({
         id: userId,
-        displayName: (p?.display_name as string | null) ?? 'Learner',
-        role: (p?.role as string) ?? 'Unknown',
-        renewalDate: (p?.renewal_date as string | null) ?? null,
-        currentStreak: (streak?.current_streak as number) ?? 0,
-        longestStreak: (streak?.longest_streak as number) ?? 0,
+        displayName: p?.display_name ?? 'Learner',
+        role: p?.role ?? 'Unknown',
+        renewalDate: p?.renewal_date ?? null,
+        currentStreak: streak?.current_streak ?? 0,
+        longestStreak: streak?.longest_streak ?? 0,
         completions,
       });
       setLoading(false);

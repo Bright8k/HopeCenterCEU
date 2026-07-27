@@ -36,23 +36,22 @@ export function useLeaderboard(
       return;
     }
     setLoading(true);
-    // supabase.rpc lacks TypeScript generics for custom functions — cast to any
-    const { data, error } = await (supabase as any).rpc('get_leaderboard', {
+    const { data, error } = await supabase.rpc('get_leaderboard', {
       p_role: roleFilter === 'ALL' ? null : roleFilter,
       p_since: periodToDate(period),
-    }) as { data: any[] | null; error: any };
+    });
 
     if (!error && data) {
       setEntries(
         data.map((row) => ({
-          userId: row.user_id as string,
-          displayName: row.display_name as string,
-          avatarUrl: (row.avatar_url as string | null) ?? null,
-          role: row.role as string,
-          totalCeus: row.total_ceus as number,
-          completionsCount: row.completions_count as number,
-          currentStreak: row.current_streak as number,
-          longestStreak: row.longest_streak as number,
+          userId: row.user_id,
+          displayName: row.display_name,
+          avatarUrl: row.avatar_url ?? null,
+          role: row.role,
+          totalCeus: row.total_ceus,
+          completionsCount: row.completions_count,
+          currentStreak: row.current_streak,
+          longestStreak: row.longest_streak,
         })),
       );
     }
