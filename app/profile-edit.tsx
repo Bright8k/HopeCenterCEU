@@ -102,7 +102,7 @@ export default function ProfileEditScreen() {
       const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(storagePath);
       const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
 
-      await (supabase.from('profiles') as any).update({ avatar_url: publicUrl }).eq('id', user.id);
+      await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user.id);
       setAvatarUri(publicUrl);
     } finally {
       setUploadingAvatar(false);
@@ -134,7 +134,7 @@ export default function ProfileEditScreen() {
         : null;
 
     setSaving(true);
-    const { error } = await (supabase.from('profiles') as any).upsert({
+    const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       display_name: displayName.trim(),
       role: selectedRole,

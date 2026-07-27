@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import { router } from 'expo-router';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { updateStreak } from '@/lib/streaks';
 import type { UserRole } from '@/constants/roles';
@@ -70,8 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    if (!hasSupabaseEnv) return;
-    await supabase.auth.signOut();
+    if (hasSupabaseEnv) {
+      await supabase.auth.signOut();
+    }
+    router.replace('/(auth)/sign-in');
   };
 
   return (

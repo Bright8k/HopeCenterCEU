@@ -21,7 +21,7 @@ export function useProfile() {
       .select('*')
       .eq('id', user.id)
       .single();
-    setProfile((data as UserProfile | null) ?? null);
+    setProfile(data ?? null);
     setLoading(false);
   }, [user]);
 

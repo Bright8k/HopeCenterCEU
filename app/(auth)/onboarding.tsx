@@ -84,7 +84,7 @@ export default function Onboarding() {
         : null;
 
     setSaving(true);
-    const { error } = await (supabase.from('profiles') as any).upsert({
+    const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       display_name: name,
       role: selectedRole,
