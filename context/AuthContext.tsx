@@ -12,6 +12,7 @@ type AuthContextType = {
   role: UserRole | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refetchRole: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   role: null,
   loading: true,
   signOut: async () => {},
+  refetchRole: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -77,9 +79,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.replace('/(auth)/sign-in');
   };
 
+  const refetchRole = async () => {
+    const userId = session?.user?.id;
+    if (hasSupabaseEnv && userId) {
+      await fetchRole(userId);
+    }
+  };
+
   return (
     <AuthContext.Provider
-      value={{ session, user: session?.user ?? null, role, loading, signOut }}
+      value={{ session, user: session?.user ?? null, role, loading, signOut, refetchRole }}
     >
       {children}
     </AuthContext.Provider>

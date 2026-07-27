@@ -29,7 +29,7 @@ const RENEWAL_YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR + i);
 const TOTAL_STEPS = 3;
 
 export default function Onboarding() {
-  const { user } = useAuth();
+  const { user, refetchRole } = useAuth();
   const { colors, textScale } = usePreferences();
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
@@ -61,7 +61,7 @@ export default function Onboarding() {
   }
 
   async function handleFinish() {
-    if (devAuthBypass || !user) {
+    if (devAuthBypass) {
       router.replace('/(tabs)');
       return;
     }
@@ -77,15 +77,25 @@ export default function Onboarding() {
       return;
     }
 
-    const name = displayName.trim() || (user?.user_metadata?.full_name as string | undefined) || 'Learner';
+    setSaving(true);
+
+    // Fetch the current user directly in case the auth context hasn't settled yet
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (!currentUser) {
+      setSaving(false);
+      Alert.alert('Session expired', 'Please sign in again.');
+      router.replace('/(auth)/sign-in');
+      return;
+    }
+
+    const name = displayName.trim() || (currentUser.user_metadata?.full_name as string | undefined) || 'Learner';
     const renewalDate =
       needsRenewal && renewalMonth && renewalYear
         ? `${renewalYear}-${String(renewalMonth).padStart(2, '0')}-01`
         : null;
 
-    setSaving(true);
     const { error } = await supabase.from('profiles').upsert({
-      id: user.id,
+      id: currentUser.id,
       display_name: name,
       role: selectedRole,
       renewal_date: renewalDate,
@@ -97,6 +107,8 @@ export default function Onboarding() {
       return;
     }
 
+    // Refresh the role in AuthContext so the profile tab reflects the change immediately
+    await refetchRole();
     router.replace('/(tabs)');
   }
 

@@ -43,8 +43,10 @@ export default function ProfileScreen() {
     .toUpperCase()
     .slice(0, 2);
 
-  const roleRequirement = role ? ROLE_CEU_REQUIREMENTS[role] : null;
-  const isStudent = role === 'STUDENT';
+  // Prefer fresh DB data from useProfile over potentially-stale AuthContext role
+  const displayRole = profile?.role ?? role;
+  const roleRequirement = displayRole ? ROLE_CEU_REQUIREMENTS[displayRole] : null;
+  const isStudent = displayRole === 'STUDENT';
   const earned = progress?.earned ?? 0;
   const completed = progress?.completedCourses ?? 0;
 
@@ -81,7 +83,7 @@ export default function ProfileScreen() {
             <Text style={styles.email}>{email}</Text>
             <View style={styles.badgeRow}>
               <Badge
-                label={role ? ROLE_LABELS[role] : 'Track not selected'}
+                label={displayRole ? ROLE_LABELS[displayRole] : 'Track not selected'}
                 variant="accent"
               />
               <Badge
@@ -102,7 +104,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Completion prompt — shown when renewal date is missing for professionals */}
-      {hasSupabaseEnv && !isStudent && role && !profile?.renewal_date && (
+      {hasSupabaseEnv && !isStudent && displayRole && !profile?.renewal_date && (
         <Card style={styles.completionCard}>
           <View style={styles.completionRow}>
             <Ionicons name="alert-circle-outline" size={20} color={colors.accent} accessibilityElementsHidden />
