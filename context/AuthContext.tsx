@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
+import { router } from 'expo-router';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { updateStreak } from '@/lib/streaks';
 import type { UserRole } from '@/constants/roles';
@@ -10,7 +11,7 @@ type AuthContextType = {
   user: User | null;
   role: UserRole | null;
   loading: boolean;
-  signOut: () => Promise<void>;
+  signOut: () => void;
   refetchRole: () => Promise<void>;
 };
 
@@ -19,7 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   role: null,
   loading: true,
-  signOut: async () => {},
+  signOut: () => {},
   refetchRole: async () => {},
 });
 
@@ -71,12 +72,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void updateStreak(userId);
   }
 
-  const signOut = async () => {
+  const signOut = () => {
+    // Navigate immediately so the button always responds, regardless of
+    // bypass mode or network latency. Session cleanup runs in the background.
+    router.replace('/(auth)/sign-in');
     if (hasSupabaseEnv) {
-      await supabase.auth.signOut();
+      void supabase.auth.signOut();
     }
-    // Navigation to sign-in is handled declaratively by the (tabs) layout
-    // guard, which redirects whenever session becomes null.
   };
 
   const refetchRole = async () => {
