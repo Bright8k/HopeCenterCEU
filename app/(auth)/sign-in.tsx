@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
-  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -23,24 +22,17 @@ import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme'
 import { HOPE_CENTER_LOGO } from '@/constants/brand';
 
 export default function SignIn() {
-  const { session } = useAuth();
+  const { signIn } = useAuth();
   const { colors, textScale } = usePreferences();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
 
-  // When the AuthContext session becomes available (after onAuthStateChange fires),
-  // navigate to tabs. This avoids the race where we navigate before the session
-  // is set in context, which causes the tab guard to bounce back to sign-in.
-  useEffect(() => {
-    if (session) {
-      router.replace('/(tabs)');
-    }
-  }, [session]);
-
   const handleSignIn = async () => {
+    setAuthError(null);
     const hasCredentials = email.trim().length > 0 && password.trim().length > 0;
 
     // Bypass only when fields are empty — typing credentials always goes through Supabase.
@@ -50,54 +42,55 @@ export default function SignIn() {
     }
 
     if (!hasSupabaseEnv) {
-      Alert.alert('Supabase not configured', 'Add your project values to .env before signing in.');
+      setAuthError('Supabase is not configured. Add your project values to .env before signing in.');
       return;
     }
 
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Missing details', 'Enter your email and password to sign in.');
+      setAuthError('Enter your email and password to sign in.');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    // signIn sets loading=true in AuthContext, keeping the tab guard from bouncing
+    // us back to sign-in before onAuthStateChange fires.
+    const errorMessage = await signIn(email.trim(), password);
     setLoading(false);
 
-    if (error) {
-      Alert.alert('Sign in failed', error.message);
+    if (errorMessage) {
+      setAuthError(errorMessage);
       return;
     }
-    // Navigation is handled by the useEffect above once session is confirmed in AuthContext.
+
+    // Auth succeeded — loading=true in AuthContext now protects the tab guard.
+    // Navigate directly; onAuthStateChange will fire and set the session.
+    router.replace('/(tabs)');
   };
 
   const handleSocialPress = async (provider: 'google' | 'apple') => {
+    setAuthError(null);
     if (devAuthBypass) {
       router.replace('/(tabs)');
       return;
     }
 
     if (!hasSupabaseEnv) {
-      Alert.alert('Supabase not configured', 'Add your project values to .env before using social sign in.');
+      setAuthError('Supabase is not configured. Add your project values to .env first.');
       return;
     }
 
     if (Platform.OS !== 'web') {
-      Alert.alert(
-        `${provider === 'google' ? 'Google' : 'Apple'} sign in`,
-        'This button is ready for social auth wiring. For now, use the main sign in button to continue to the dashboard while we build screens.',
-      );
+      setAuthError('Social sign-in is available on the web version only for now.');
       return;
     }
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: window.location.origin,
-      },
+      options: { redirectTo: window.location.origin },
     });
 
     if (error) {
-      Alert.alert('Sign in unavailable', error.message);
+      setAuthError(error.message);
     }
   };
 
@@ -175,6 +168,12 @@ export default function SignIn() {
           secureTextEntry
           autoComplete="password"
         />
+
+        {authError && (
+          <Text style={styles.errorText} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            {authError}
+          </Text>
+        )}
 
         <Button
           title={devAuthBypass && !email && !password ? 'Enter Dashboard' : 'Sign In'}
@@ -366,6 +365,18 @@ const createStyles = (
       letterSpacing: 0.8,
       color: colors.textMuted,
       textTransform: 'uppercase',
+    },
+    errorText: {
+      marginTop: 4,
+      marginBottom: 12,
+      borderRadius: 10,
+      padding: 12,
+      backgroundColor: withAlpha(colors.error, '12'),
+      color: colors.error,
+      fontSize: 13 * textScale,
+      fontFamily: Typography.bodySemiBold,
+      lineHeight: 20,
+      textAlign: 'center',
     },
     button: {
       marginTop: 10,

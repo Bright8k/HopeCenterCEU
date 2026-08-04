@@ -11,6 +11,7 @@ type AuthContextType = {
   user: User | null;
   role: UserRole | null;
   loading: boolean;
+  signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => void;
   refetchRole: () => Promise<void>;
 };
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   role: null,
   loading: true,
+  signIn: async () => null,
   signOut: () => {},
   refetchRole: async () => {},
 });
@@ -72,6 +74,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void updateStreak(userId);
   }
 
+  const signIn = async (email: string, password: string): Promise<string | null> => {
+    // Hold loading=true so the tab guard won't bounce us back to sign-in
+    // before onAuthStateChange fires and sets the session in context.
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setLoading(false);
+      return error.message;
+    }
+    // On success, onAuthStateChange will call fetchRole which sets loading=false.
+    return null;
+  };
+
   const signOut = () => {
     // Navigate immediately so the button always responds, regardless of
     // bypass mode or network latency. Session cleanup runs in the background.
@@ -90,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user: session?.user ?? null, role, loading, signOut, refetchRole }}
+      value={{ session, user: session?.user ?? null, role, loading, signIn, signOut, refetchRole }}
     >
       {children}
     </AuthContext.Provider>
