@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Image,
@@ -17,11 +17,13 @@ import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
+import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 import { HOPE_CENTER_LOGO } from '@/constants/brand';
 
 export default function SignIn() {
+  const { session } = useAuth();
   const { colors, textScale } = usePreferences();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,16 +31,21 @@ export default function SignIn() {
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
 
-  const goToDashboard = () => {
-    router.replace('/(tabs)');
-  };
+  // When the AuthContext session becomes available (after onAuthStateChange fires),
+  // navigate to tabs. This avoids the race where we navigate before the session
+  // is set in context, which causes the tab guard to bounce back to sign-in.
+  useEffect(() => {
+    if (session) {
+      router.replace('/(tabs)');
+    }
+  }, [session]);
 
   const handleSignIn = async () => {
     const hasCredentials = email.trim().length > 0 && password.trim().length > 0;
 
     // Bypass only when fields are empty — typing credentials always goes through Supabase.
     if (devAuthBypass && !hasCredentials) {
-      goToDashboard();
+      router.replace('/(tabs)');
       return;
     }
 
@@ -60,13 +67,12 @@ export default function SignIn() {
       Alert.alert('Sign in failed', error.message);
       return;
     }
-
-    goToDashboard();
+    // Navigation is handled by the useEffect above once session is confirmed in AuthContext.
   };
 
   const handleSocialPress = async (provider: 'google' | 'apple') => {
     if (devAuthBypass) {
-      goToDashboard();
+      router.replace('/(tabs)');
       return;
     }
 
