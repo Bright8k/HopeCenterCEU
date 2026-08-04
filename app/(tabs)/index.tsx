@@ -12,22 +12,13 @@ import { ProgressBar } from '@/components/ui/ProgressBar';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { ROLE_CEU_REQUIREMENTS, ROLE_LABELS } from '@/constants/roles';
 import { hasSupabaseEnv } from '@/lib/supabase';
-import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
+import { Typography, Shadow, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good morning';
   if (hour < 17) return 'Good afternoon';
   return 'Good evening';
-}
-
-function getRenewalMessage(role: keyof typeof ROLE_CEU_REQUIREMENTS | null) {
-  if (!role || role === 'STUDENT') {
-    return 'Focus on steady practice and exam readiness this week.';
-  }
-
-  const requirement = ROLE_CEU_REQUIREMENTS[role];
-  return `${requirement.total} CEUs every ${requirement.cycleYears} years keeps your renewal plan on track.`;
 }
 
 export default function DashboardScreen() {
@@ -45,6 +36,8 @@ export default function DashboardScreen() {
   const requiredCeus = roleRequirement?.total ?? 0;
   const percentage = progress?.percentage ?? 0;
   const isStudent = role === 'STUDENT';
+  const streakDays = streak?.currentStreak ?? 0;
+  const hasStreak = streakDays > 0;
 
   const nextSteps = isStudent
     ? [
@@ -70,7 +63,7 @@ export default function DashboardScreen() {
         },
         {
           title: 'Review certificates',
-          description: 'Keep your completions and proof of progress organized in one place.',
+          description: 'Keep your completions and proof of progress organized.',
           icon: 'ribbon-outline' as const,
           route: '/(tabs)/profile',
         },
@@ -80,129 +73,144 @@ export default function DashboardScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
       accessibilityLabel="Dashboard"
     >
+      {/* ── Hero ── */}
       <View style={styles.hero}>
-        <View style={styles.heroTop}>
-          <View style={styles.heroCopy}>
-            <Text style={styles.greeting}>
-              {getGreeting()}, {firstName}
-            </Text>
-            <Text style={styles.heroTitle}>Welcome back to Hope Center CEU</Text>
-            <Text style={styles.heroText}>
-              {role ? ROLE_LABELS[role] : 'Choose your track to personalize your dashboard.'}
-            </Text>
-          </View>
-          <View
-            style={styles.heroSeal}
-            accessibilityElementsHidden
-            importantForAccessibility="no-hide-descendants"
-          >
-            <Text style={styles.heroSealText}>HC</Text>
-          </View>
+        <View style={styles.heroMeta}>
+          {role && <Badge label={ROLE_LABELS[role]} variant="primary" size="sm" />}
+          {hasStreak && (
+            <View style={styles.streakPill}>
+              <Text style={styles.streakPillText}>🔥 {streakDays}</Text>
+            </View>
+          )}
         </View>
-
-        <View style={styles.heroFooter}>
-          <Badge
-            label={role ? ROLE_LABELS[role] : 'Learning profile pending'}
-            variant="accent"
-          />
-          <Text style={styles.heroFooterText}>{getRenewalMessage(role ?? null)}</Text>
-        </View>
+        <Text style={styles.heroGreeting} accessibilityRole="text">
+          {getGreeting()},
+        </Text>
+        <Text style={styles.heroName} accessibilityRole="header">
+          {firstName}
+        </Text>
+        <Text style={styles.heroSub}>
+          {isStudent
+            ? 'Keep building momentum toward your exam.'
+            : role && roleRequirement
+            ? `${requiredCeus} CEUs every ${roleRequirement.cycleYears} years. You're on track.`
+            : 'Track your progress and continue your journey.'}
+        </Text>
       </View>
 
-      {!hasSupabaseEnv ? (
+      {/* ── Preview mode notice ── */}
+      {!hasSupabaseEnv && (
         <Card style={styles.noticeCard}>
           <Text style={styles.noticeTitle}>Preview mode</Text>
           <Text style={styles.noticeText}>
-            Local Supabase values are missing, so this dashboard is showing a layout preview while we keep building.
+            Supabase is not configured — this is a layout preview while we continue building.
           </Text>
         </Card>
-      ) : null}
+      )}
 
+      {/* ── Progress card ── */}
       <Card variant="elevated" style={styles.progressCard}>
         <View style={styles.progressHeader}>
-          <View>
+          <View style={styles.progressLeft}>
             <Text style={styles.progressEyebrow}>
-              {isStudent ? 'Exam readiness' : 'CEU progress'}
+              {isStudent ? 'EXAM READINESS' : 'CEU PROGRESS'}
             </Text>
-            <Text style={styles.progressTitle}>
-              {isStudent ? 'Stay consistent this week' : `${earnedCeus.toFixed(1)} of ${requiredCeus} CEUs earned`}
-            </Text>
+            {isStudent ? (
+              <Text style={styles.progressTitle}>Stay consistent this week</Text>
+            ) : (
+              <Text style={styles.progressPct}>
+                {loading ? '--' : `${Math.round(percentage)}%`}
+              </Text>
+            )}
+            {!isStudent && (
+              <Text style={styles.progressSub}>
+                {earnedCeus.toFixed(1)} of {requiredCeus} CEUs earned
+              </Text>
+            )}
           </View>
-          <View style={styles.progressBadge}>
-            <Text style={styles.progressBadgeValue}>
-              {loading ? '--' : `${Math.round(percentage)}%`}
-            </Text>
-          </View>
+          {!isStudent && (
+            <View
+              style={[styles.progressBadge, { borderColor: withAlpha(colors.primary, '30') }]}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <Text style={[styles.progressBadgeValue, { color: colors.primary }]}>
+                {earnedCeus.toFixed(0)}
+              </Text>
+              <Text style={[styles.progressBadgeSub, { color: colors.textMuted }]}>
+                earned
+              </Text>
+            </View>
+          )}
         </View>
 
         {isStudent ? (
           <Text style={styles.progressText}>
-            Student Analysts do not have a CEU requirement here, so the dashboard centers your study rhythm and next actions.
+            Student Analysts don't have a CEU requirement here — the dashboard centers your study rhythm and next actions instead.
           </Text>
         ) : (
           <>
-            <ProgressBar value={earnedCeus} max={requiredCeus} color={colors.primary} />
+            <ProgressBar value={earnedCeus} max={requiredCeus} color={colors.primary} height={8} />
             <Text style={styles.progressText}>
               {loading
-                ? 'Refreshing your current CEU totals.'
+                ? 'Refreshing your CEU totals…'
                 : completedCourses > 0
-                  ? `You have completed ${completedCourses} course${completedCourses === 1 ? '' : 's'} so far in this renewal cycle.`
-                  : 'Complete your first course to begin building renewal momentum.'}
+                ? `${completedCourses} course${completedCourses === 1 ? '' : 's'} completed this cycle.`
+                : 'Complete your first course to start building renewal momentum.'}
             </Text>
           </>
         )}
       </Card>
 
+      {/* ── Metrics row ── */}
       <View style={styles.metricsRow}>
         <MetricCard
-          label={isStudent ? 'Study Sets' : 'Completed'}
+          label={isStudent ? 'Study sets' : 'Completed'}
           value={loading ? '--' : String(completedCourses)}
           accent={colors.primary}
           styles={styles}
         />
         <MetricCard
-          label={isStudent ? 'Goal' : 'Earned'}
+          label={isStudent ? 'Goal' : 'CEUs'}
           value={isStudent ? 'Weekly' : loading ? '--' : earnedCeus.toFixed(1)}
-          accent={colors.accentDark}
+          accent={colors.accent}
           styles={styles}
         />
         <MetricCard
-          label={isStudent ? 'Focus' : 'Cycle'}
-          value={isStudent ? 'Exam' : roleRequirement ? `${roleRequirement.cycleYears}yr` : '--'}
-          accent={colors.primaryLight}
+          label="Day streak"
+          value={hasStreak ? String(streakDays) : '—'}
+          accent={colors.success}
           styles={styles}
         />
       </View>
 
-      {/* ── Streak card ── */}
+      {/* ── Streak bar ── */}
       <Pressable
         onPress={() => router.push('/(tabs)/leaderboard')}
         accessibilityRole="button"
-        accessibilityLabel={`Your current streak: ${streak?.currentStreak ?? 0} days. Tap to view the leaderboard.`}
+        accessibilityLabel={`${hasStreak ? `${streakDays}-day streak` : 'Start your streak'}. Tap to view the leaderboard.`}
         style={({ pressed }) => [styles.streakCard, pressed && { opacity: 0.88 }]}
       >
         <View style={styles.streakLeft}>
-          <Text style={styles.streakEmoji}>
-            {(streak?.currentStreak ?? 0) > 0 ? '🔥' : '⚡'}
-          </Text>
+          <Text style={styles.streakEmoji}>{hasStreak ? '🔥' : '⚡'}</Text>
           <View>
             <Text style={styles.streakTitle}>
-              {(streak?.currentStreak ?? 0) > 0
-                ? `${streak!.currentStreak}-day streak`
-                : 'Start your streak'}
+              {hasStreak ? `${streakDays}-day streak` : 'Start your streak'}
             </Text>
             <Text style={styles.streakSub}>
-              {(streak?.currentStreak ?? 0) > 0
+              {hasStreak
                 ? `Best: ${streak!.longestStreak} days · Pass a course to keep it going`
                 : 'Pass a course today to begin your streak'}
             </Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward-outline" size={18} color={colors.textSecondary} />
+        <Ionicons name="chevron-forward-outline" size={18} color={colors.textMuted} />
       </Pressable>
 
+      {/* ── Next steps ── */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Next steps</Text>
         <Text style={styles.sectionHint}>
@@ -222,40 +230,54 @@ export default function DashboardScreen() {
           {({ hovered }) => (
             <Card
               variant="elevated"
-              style={[styles.actionCard, hovered && styles.actionCardHovered]}
+              style={[styles.actionCard, hovered && styles.actionCardActive]}
             >
-              <View style={[styles.actionIconWrap, hovered && styles.actionIconWrapHovered]}>
-                <Ionicons name={step.icon} size={22} color={hovered ? colors.primaryLight : colors.primary} />
+              <View
+                style={[
+                  styles.actionIconWrap,
+                  { backgroundColor: withAlpha(colors.primary, hovered ? '1A' : '12') },
+                ]}
+              >
+                <Ionicons
+                  name={step.icon}
+                  size={22}
+                  color={hovered ? colors.primaryLight : colors.primary}
+                />
               </View>
               <View style={styles.actionCopy}>
-                <Text style={[styles.actionTitle, hovered && styles.actionTitleHovered]}>{step.title}</Text>
-                <Text style={styles.actionDescription}>{step.description}</Text>
+                <Text style={[styles.actionTitle, hovered && styles.actionTitleActive]}>
+                  {step.title}
+                </Text>
+                <Text style={styles.actionDesc}>{step.description}</Text>
               </View>
               <Ionicons
                 name="chevron-forward"
-                size={20}
-                color={hovered ? colors.primary : colors.textSecondary}
+                size={18}
+                color={hovered ? colors.primary : colors.textMuted}
               />
             </Card>
           )}
         </InteractivePressable>
       ))}
 
+      {/* ── Recommended courses ── */}
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
-          {isStudent ? 'Suggested study sets' : 'Recommended next courses'}
+          {isStudent ? 'Suggested study sets' : 'Recommended courses'}
         </Text>
         <Text style={styles.sectionHint}>Fresh from your current library.</Text>
       </View>
 
       {displayCourses.length === 0 ? (
-        <Card style={styles.emptyCoursesCard}>
-          <Ionicons name="library-outline" size={28} color={colors.textMuted} />
-          <View style={styles.emptyCoursesCopy}>
-            <Text style={styles.emptyCoursesTitle}>No courses available yet</Text>
-            <Text style={styles.emptyCoursesText}>
-              Check back soon — new courses are added regularly.
-            </Text>
+        <Card style={styles.emptyCard}>
+          <View style={styles.emptyInner}>
+            <View style={[styles.emptyIconWrap, { backgroundColor: withAlpha(colors.primary, '10') }]}>
+              <Ionicons name="library-outline" size={22} color={colors.textMuted} />
+            </View>
+            <View style={styles.emptyCopy}>
+              <Text style={styles.emptyTitle}>No courses available yet</Text>
+              <Text style={styles.emptyText}>Check back soon — new courses are added regularly.</Text>
+            </View>
           </View>
         </Card>
       ) : (
@@ -271,9 +293,14 @@ export default function DashboardScreen() {
             {({ hovered }) => (
               <Card
                 variant="elevated"
-                style={[styles.actionCard, hovered && styles.actionCardHovered]}
+                style={[styles.actionCard, hovered && styles.actionCardActive]}
               >
-                <View style={[styles.actionIconWrap, hovered && styles.actionIconWrapHovered]}>
+                <View
+                  style={[
+                    styles.actionIconWrap,
+                    { backgroundColor: withAlpha(colors.primary, hovered ? '1A' : '12') },
+                  ]}
+                >
                   <Ionicons
                     name={isStudent ? 'school-outline' : 'play-circle-outline'}
                     size={22}
@@ -281,15 +308,17 @@ export default function DashboardScreen() {
                   />
                 </View>
                 <View style={styles.actionCopy}>
-                  <Text style={[styles.actionTitle, hovered && styles.actionTitleHovered]}>{course.title}</Text>
-                  <Text style={styles.actionDescription}>
-                    {course.description ?? 'Open the library to view the full course details.'}
+                  <Text style={[styles.actionTitle, hovered && styles.actionTitleActive]}>
+                    {course.title}
+                  </Text>
+                  <Text style={styles.actionDesc}>
+                    {course.description ?? 'Open the library to view full course details.'}
                   </Text>
                 </View>
                 <Ionicons
                   name="chevron-forward"
-                  size={20}
-                  color={hovered ? colors.primary : colors.textSecondary}
+                  size={18}
+                  color={hovered ? colors.primary : colors.textMuted}
                 />
               </Card>
             )}
@@ -297,12 +326,13 @@ export default function DashboardScreen() {
         ))
       )}
 
-      <Card style={styles.supportCard}>
-        <Text style={styles.supportTitle}>Hope Center rhythm</Text>
-        <Text style={styles.supportText}>
+      {/* ── Footer card ── */}
+      <Card style={styles.footerCard}>
+        <Text style={styles.footerTitle}>The Hope Center rhythm</Text>
+        <Text style={styles.footerText}>
           The goal is steady progress, not cramming. A short session today keeps your learning plan lighter later.
         </Text>
-        <View style={styles.supportTags}>
+        <View style={styles.footerTags}>
           <Badge label="Family-centered" variant="muted" />
           <Badge label="Evidence-based" variant="primary" />
           <Badge label="Florida ABA" variant="accent" />
@@ -310,7 +340,6 @@ export default function DashboardScreen() {
       </Card>
     </ScrollView>
   );
-
 }
 
 function MetricCard({
@@ -330,7 +359,7 @@ function MetricCard({
       accessibilityRole="text"
       accessibilityLabel={`${label}: ${value}`}
     >
-      <View style={[styles.metricAccent, { backgroundColor: accent }]} />
+      <View style={[styles.metricBar, { backgroundColor: accent }]} />
       <Text style={styles.metricValue}>{value}</Text>
       <Text style={styles.metricLabel}>{label}</Text>
     </View>
@@ -348,74 +377,58 @@ const createStyles = (
     },
     content: {
       padding: 16,
-      paddingBottom: 36,
+      paddingBottom: 40,
     },
+
+    // ── Hero (floating, no card) ──
     hero: {
-      borderRadius: 24,
-      padding: 20,
-      marginBottom: 14,
-      backgroundColor: colors.primary,
+      paddingTop: 8,
+      paddingBottom: 26,
     },
-    heroTop: {
+    heroMeta: {
       flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      gap: 12,
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 16,
     },
-    heroCopy: {
-      flex: 1,
+    streakPill: {
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      backgroundColor: withAlpha(colors.warning, '18'),
     },
-    greeting: {
-      fontSize: 16 * textScale,
+    streakPillText: {
+      fontSize: 12 * textScale,
       fontFamily: Typography.bodyBold,
-      color: colors.white,
+      color: colors.warning,
+      letterSpacing: 0.2,
+    },
+    heroGreeting: {
+      fontSize: 15 * textScale,
+      fontFamily: Typography.body,
+      color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    heroName: {
+      fontSize: 40 * textScale,
+      lineHeight: 46,
+      fontFamily: Typography.heading,
+      color: colors.text,
       marginBottom: 10,
     },
-    heroTitle: {
-      fontSize: 28 * textScale,
-      lineHeight: 34,
-      fontFamily: Typography.heading,
-      color: colors.white,
-      marginBottom: 8,
-    },
-    heroText: {
+    heroSub: {
       fontSize: 14 * textScale,
-      lineHeight: 21,
-      color: colors.white,
+      lineHeight: 22,
       fontFamily: Typography.body,
+      color: colors.textSecondary,
     },
-    heroSeal: {
-      width: 58,
-      height: 58,
-      borderRadius: 29,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.accent,
-    },
-    heroSealText: {
-      color: colors.primaryDark,
-      fontSize: 18,
-      fontFamily: Typography.bodyBold,
-      letterSpacing: 0.8,
-    },
-    heroFooter: {
-      marginTop: 18,
-      paddingTop: 16,
-      borderTopWidth: 1,
-      borderTopColor: withAlpha(colors.white, '33'),
-      gap: 10,
-    },
-    heroFooterText: {
-      color: colors.white,
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      fontFamily: Typography.body,
-    },
+
+    // ── Notice ──
     noticeCard: {
       marginBottom: 14,
     },
     noticeTitle: {
-      fontSize: 15 * textScale,
+      fontSize: 14 * textScale,
       fontFamily: Typography.bodyBold,
       color: colors.text,
       marginBottom: 4,
@@ -426,21 +439,25 @@ const createStyles = (
       color: colors.textSecondary,
       fontFamily: Typography.body,
     },
+
+    // ── Progress card ──
     progressCard: {
       marginBottom: 14,
     },
     progressHeader: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'flex-start',
-      gap: 12,
+      justifyContent: 'space-between',
       marginBottom: 14,
+      gap: 12,
+    },
+    progressLeft: {
+      flex: 1,
     },
     progressEyebrow: {
-      fontSize: 12 * textScale,
+      fontSize: 11 * textScale,
       fontFamily: Typography.bodyBold,
-      letterSpacing: 0.5,
-      textTransform: 'uppercase',
+      letterSpacing: 1,
       color: colors.primary,
       marginBottom: 6,
     },
@@ -450,42 +467,89 @@ const createStyles = (
       fontFamily: Typography.headingSemiBold,
       color: colors.text,
     },
+    progressPct: {
+      fontSize: 44 * textScale,
+      lineHeight: 50,
+      fontFamily: Typography.bodyExtraBold,
+      color: colors.text,
+      marginBottom: 2,
+    },
+    progressSub: {
+      fontSize: 13 * textScale,
+      fontFamily: Typography.body,
+      color: colors.textSecondary,
+    },
     progressBadge: {
-      minWidth: 70,
-      borderRadius: 18,
-      paddingHorizontal: 12,
-      paddingVertical: 10,
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      borderWidth: 2,
       alignItems: 'center',
-      backgroundColor: withAlpha(colors.accent, '26'),
+      justifyContent: 'center',
     },
     progressBadgeValue: {
-      fontSize: 20 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.accentDark,
+      fontSize: 22 * textScale,
+      fontFamily: Typography.bodyExtraBold,
+      lineHeight: 26,
+    },
+    progressBadgeSub: {
+      fontSize: 10 * textScale,
+      fontFamily: Typography.bodySemiBold,
+      letterSpacing: 0.3,
     },
     progressText: {
-      marginTop: 12,
+      marginTop: 10,
       fontSize: 13 * textScale,
       lineHeight: 20,
-      color: colors.textSecondary,
+      color: colors.textMuted,
       fontFamily: Typography.body,
     },
+
+    // ── Metrics row ──
     metricsRow: {
       flexDirection: 'row',
       gap: 10,
       marginBottom: 14,
     },
+    metricCard: {
+      flex: 1,
+      borderRadius: 16,
+      padding: 14,
+      backgroundColor: colors.card,
+      ...Shadow.sm,
+      shadowColor: colors.shadow,
+    },
+    metricBar: {
+      width: 24,
+      height: 3,
+      borderRadius: 999,
+      marginBottom: 10,
+    },
+    metricValue: {
+      fontSize: 22 * textScale,
+      fontFamily: Typography.bodyExtraBold,
+      color: colors.text,
+      marginBottom: 3,
+    },
+    metricLabel: {
+      fontSize: 11 * textScale,
+      color: colors.textMuted,
+      fontFamily: Typography.bodySemiBold,
+      letterSpacing: 0.2,
+    },
+
+    // ── Streak bar ──
     streakCard: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      borderRadius: 18,
+      borderRadius: 16,
       paddingHorizontal: 16,
       paddingVertical: 14,
-      marginBottom: 22,
+      marginBottom: 26,
       backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
+      ...Shadow.sm,
+      shadowColor: colors.shadow,
     },
     streakLeft: {
       flexDirection: 'row',
@@ -494,50 +558,27 @@ const createStyles = (
       flex: 1,
     },
     streakEmoji: {
-      fontSize: 26,
-      lineHeight: 30,
+      fontSize: 24,
+      lineHeight: 28,
     },
     streakTitle: {
       fontSize: 15 * textScale,
       fontFamily: Typography.bodyBold,
       color: colors.text,
-      marginBottom: 3,
+      marginBottom: 2,
     },
     streakSub: {
       fontSize: 12 * textScale,
       fontFamily: Typography.body,
       color: colors.textSecondary,
     },
-    metricCard: {
-      flex: 1,
-      borderRadius: 18,
-      padding: 14,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    metricAccent: {
-      width: 26,
-      height: 4,
-      borderRadius: 999,
+
+    // ── Sections ──
+    sectionHeader: {
       marginBottom: 12,
     },
-    metricValue: {
-      fontSize: 22 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    metricLabel: {
-      fontSize: 12 * textScale,
-      color: colors.textSecondary,
-      fontFamily: Typography.bodySemiBold,
-    },
-    sectionHeader: {
-      marginBottom: 10,
-    },
     sectionTitle: {
-      fontSize: 18 * textScale,
+      fontSize: 19 * textScale,
       fontFamily: Typography.headingSemiBold,
       color: colors.text,
       marginBottom: 2,
@@ -547,94 +588,103 @@ const createStyles = (
       color: colors.textSecondary,
       fontFamily: Typography.body,
     },
+
+    // ── Action cards ──
     actionPressable: {
-      marginBottom: 12,
+      marginBottom: 10,
+    },
+    liftHover: {
+      transform: [{ translateY: -2 }],
     },
     actionCard: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
     },
-    actionCardHovered: {
-      borderColor: withAlpha(colors.primary, '44'),
+    actionCardActive: {
+      borderColor: withAlpha(colors.primary, '30'),
       shadowColor: colors.primary,
-      shadowOpacity: 0.18,
-      shadowRadius: 18,
-      backgroundColor: colors.card,
-    },
-    liftHover: {
-      transform: [{ translateY: -2 }],
+      shadowOpacity: 0.14,
     },
     actionIconWrap: {
-      width: 46,
-      height: 46,
-      borderRadius: 15,
+      width: 44,
+      height: 44,
+      borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    actionIconWrapHovered: {
-      backgroundColor: withAlpha(colors.primary, '1A'),
     },
     actionCopy: {
       flex: 1,
     },
     actionTitle: {
-      fontSize: 16 * textScale,
+      fontSize: 15 * textScale,
       fontFamily: Typography.bodyBold,
       color: colors.text,
-      marginBottom: 4,
+      marginBottom: 3,
       ...(getWebTransitionStyle('color') ?? {}),
     },
-    actionTitleHovered: {
+    actionTitleActive: {
       color: colors.primary,
     },
-    actionDescription: {
-      fontSize: 13 * textScale,
-      lineHeight: 19,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    supportCard: {
-      marginTop: 4,
-    },
-    supportTitle: {
-      fontSize: 16 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 8,
-    },
-    supportText: {
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      color: colors.textSecondary,
-      marginBottom: 12,
-      fontFamily: Typography.body,
-    },
-    supportTags: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    emptyCoursesCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-      marginBottom: 12,
-    },
-    emptyCoursesCopy: {
-      flex: 1,
-    },
-    emptyCoursesTitle: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    emptyCoursesText: {
+    actionDesc: {
       fontSize: 12 * textScale,
       lineHeight: 18,
       color: colors.textSecondary,
       fontFamily: Typography.body,
+    },
+
+    // ── Empty state ──
+    emptyCard: {
+      marginBottom: 12,
+    },
+    emptyInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+    },
+    emptyIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    emptyCopy: {
+      flex: 1,
+    },
+    emptyTitle: {
+      fontSize: 14 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.text,
+      marginBottom: 3,
+    },
+    emptyText: {
+      fontSize: 12 * textScale,
+      lineHeight: 18,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
+    },
+
+    // ── Footer card ──
+    footerCard: {
+      marginTop: 8,
+    },
+    footerTitle: {
+      fontSize: 15 * textScale,
+      fontFamily: Typography.headingSemiBold,
+      color: colors.text,
+      marginBottom: 6,
+    },
+    footerText: {
+      fontSize: 13 * textScale,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      fontFamily: Typography.body,
+      marginBottom: 12,
+    },
+    footerTags: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
     },
   });

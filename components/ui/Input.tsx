@@ -1,6 +1,7 @@
 import { View, Text, TextInput, StyleSheet, type TextInputProps } from 'react-native';
+import { useState } from 'react';
 import { usePreferences } from '@/context/PreferencesContext';
-import { Typography, getWebTransitionStyle } from '@/constants/theme';
+import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 type InputProps = TextInputProps & {
   label?: string;
@@ -10,17 +11,26 @@ type InputProps = TextInputProps & {
 
 export function Input({ label, error, hint, style, ...props }: InputProps) {
   const { colors, textScale } = usePreferences();
+  const [isFocused, setIsFocused] = useState(false);
 
-  // Strip trailing " *" for the accessibility label so screen readers say
-  // "Email address" not "Email address asterisk".
   const a11yLabel = label?.replace(/\s*\*+\s*$/, '').trim();
   const isRequired = label?.includes('*') ?? false;
+
+  const borderColor = error
+    ? colors.error
+    : isFocused
+    ? colors.primary
+    : colors.border;
+
+  const shadowStyle = isFocused && !error
+    ? { shadowColor: colors.primary, shadowOffset: { width: 0, height: 0 }, shadowRadius: 6, shadowOpacity: 0.18, elevation: 0 }
+    : {};
 
   return (
     <View style={styles.container}>
       {label && (
         <Text
-          style={[styles.label, { color: colors.text, fontSize: 14 * textScale }]}
+          style={[styles.label, { color: isFocused ? colors.primary : colors.text, fontSize: 13 * textScale }]}
           nativeID={a11yLabel}
         >
           {label}
@@ -31,22 +41,26 @@ export function Input({ label, error, hint, style, ...props }: InputProps) {
         aria-required={isRequired}
         accessibilityHint={hint}
         accessibilityState={{ disabled: props.editable === false }}
+        onFocus={(e) => { setIsFocused(true); props.onFocus?.(e); }}
+        onBlur={(e) => { setIsFocused(false); props.onBlur?.(e); }}
         style={[
           styles.input,
           {
-            borderColor: error ? colors.error : colors.border,
+            borderColor,
+            borderWidth: isFocused || error ? 2 : 1.5,
             color: colors.text,
             backgroundColor: colors.card,
-            fontSize: 16 * textScale,
-            ...(getWebTransitionStyle('border-color, background-color, color') ?? {}),
+            fontSize: 15 * textScale,
           },
+          shadowStyle,
+          { ...(getWebTransitionStyle('border-color, box-shadow') ?? {}) },
           style,
         ]}
-        placeholderTextColor={colors.textSecondary}
+        placeholderTextColor={colors.textMuted}
         {...props}
       />
       {hint && !error && (
-        <Text style={[styles.hint, { color: colors.textSecondary, fontSize: 12 * textScale }]}>
+        <Text style={[styles.hint, { color: colors.textMuted, fontSize: 12 * textScale }]}>
           {hint}
         </Text>
       )}
@@ -69,23 +83,23 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: Typography.bodySemiBold,
-    marginBottom: 6,
+    marginBottom: 7,
+    letterSpacing: 0.1,
   },
   input: {
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
     fontFamily: Typography.body,
-    minHeight: 48,
+    minHeight: 50,
   },
   hint: {
     fontFamily: Typography.body,
-    marginTop: 4,
+    marginTop: 5,
     lineHeight: 18,
   },
   error: {
     fontFamily: Typography.bodySemiBold,
-    marginTop: 4,
+    marginTop: 5,
   },
 });

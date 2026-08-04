@@ -167,10 +167,15 @@ const createStyles = (
       paddingBottom: 36,
     },
     hero: {
-      borderRadius: 24,
+      borderRadius: 20,
       padding: 20,
       marginBottom: 14,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 16,
+      shadowOpacity: 0.08,
+      elevation: 4,
     },
     heroHeader: {
       flexDirection: 'row',
@@ -182,18 +187,18 @@ const createStyles = (
     heroStat: {
       fontSize: 12 * textScale,
       fontFamily: Typography.bodyBold,
-      color: colors.white,
+      color: colors.textMuted,
     },
     heroTitle: {
-      fontSize: 28 * textScale,
+      fontSize: 26 * textScale,
       fontFamily: Typography.heading,
-      color: colors.white,
+      color: colors.text,
       marginBottom: 8,
     },
     heroText: {
       fontSize: 14 * textScale,
       lineHeight: 21,
-      color: colors.white,
+      color: colors.textSecondary,
       fontFamily: Typography.body,
     },
     summaryRow: {
@@ -203,11 +208,14 @@ const createStyles = (
     },
     summaryCard: {
       flex: 1,
-      borderRadius: 18,
+      borderRadius: 16,
       padding: 16,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowRadius: 4,
+      shadowOpacity: 0.06,
+      elevation: 2,
     },
     summaryIconWrap: {
       width: 36,
@@ -220,7 +228,7 @@ const createStyles = (
     },
     summaryValue: {
       fontSize: 20 * textScale,
-      fontFamily: Typography.headingSemiBold,
+      fontFamily: Typography.bodyExtraBold,
       color: colors.text,
       marginBottom: 4,
     },

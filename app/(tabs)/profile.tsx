@@ -98,7 +98,7 @@ export default function ProfileScreen() {
             accessibilityLabel="Edit profile"
             style={styles.editBtn}
           >
-            <Ionicons name="pencil-outline" size={16} color={colors.white} />
+            <Ionicons name="pencil-outline" size={16} color={colors.primary} />
           </Pressable>
         </View>
       </View>
@@ -434,10 +434,15 @@ const createStyles = (
       paddingBottom: 36,
     },
     hero: {
-      borderRadius: 24,
+      borderRadius: 20,
       padding: 20,
       marginBottom: 14,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 16,
+      shadowOpacity: 0.08,
+      elevation: 4,
     },
     avatarWrap: {
       flexDirection: 'row',
@@ -450,7 +455,9 @@ const createStyles = (
       borderRadius: 39,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.accent,
+      backgroundColor: withAlpha(colors.primary, '15'),
+      borderWidth: 2,
+      borderColor: withAlpha(colors.primary, '25'),
     },
     avatarImage: {
       width: 78,
@@ -459,22 +466,22 @@ const createStyles = (
     },
     avatarText: {
       fontSize: 26 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.primaryDark,
+      fontFamily: Typography.bodyExtraBold,
+      color: colors.primary,
     },
     heroCopy: {
       flex: 1,
     },
     name: {
-      fontSize: 24 * textScale,
+      fontSize: 22 * textScale,
       fontFamily: Typography.headingSemiBold,
-      color: colors.white,
-      marginBottom: 4,
+      color: colors.text,
+      marginBottom: 3,
     },
     email: {
-      fontSize: 14 * textScale,
-      color: colors.white,
-      marginBottom: 12,
+      fontSize: 13 * textScale,
+      color: colors.textSecondary,
+      marginBottom: 10,
       fontFamily: Typography.body,
     },
     badgeRow: {
@@ -489,11 +496,14 @@ const createStyles = (
     },
     metricCard: {
       flex: 1,
-      borderRadius: 18,
+      borderRadius: 16,
       padding: 16,
-      backgroundColor: colors.surface,
-      borderWidth: 1,
-      borderColor: colors.border,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowRadius: 4,
+      shadowOpacity: 0.06,
+      elevation: 2,
     },
     metricIconWrap: {
       width: 36,
@@ -505,7 +515,7 @@ const createStyles = (
     },
     metricValue: {
       fontSize: 22 * textScale,
-      fontFamily: Typography.headingSemiBold,
+      fontFamily: Typography.bodyExtraBold,
       color: colors.text,
       marginBottom: 4,
     },
@@ -699,7 +709,7 @@ const createStyles = (
       borderRadius: 12,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: withAlpha(colors.white, '20'),
+      backgroundColor: withAlpha(colors.primary, '10'),
       alignSelf: 'flex-start',
     },
     completionCard: {

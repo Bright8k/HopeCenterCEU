@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { usePreferences } from '@/context/PreferencesContext';
+import { Typography, withAlpha } from '@/constants/theme';
 
 type ProgressBarProps = {
   value: number;
@@ -15,7 +16,7 @@ export function ProgressBar({
   max,
   showLabel = false,
   color,
-  height = 10,
+  height = 8,
   accessibilityLabel,
 }: ProgressBarProps) {
   const { colors } = usePreferences();
@@ -28,7 +29,12 @@ export function ProgressBar({
       accessibilityValue={{ min: 0, max, now: value }}
       accessibilityLabel={accessibilityLabel ?? `${Math.round(pct)}% complete`}
     >
-      <View style={[styles.track, { height, backgroundColor: colors.border }]}>
+      <View
+        style={[
+          styles.track,
+          { height, backgroundColor: withAlpha(fillColor, '18') },
+        ]}
+      >
         <View
           style={[
             styles.fill,
@@ -37,8 +43,8 @@ export function ProgressBar({
         />
       </View>
       {showLabel && (
-        <Text style={[styles.label, { color: colors.textSecondary }]}>
-          {value} / {max} ({Math.round(pct)}%)
+        <Text style={[styles.label, { color: colors.textMuted }]}>
+          {value} / {max} · {Math.round(pct)}%
         </Text>
       )}
     </View>
@@ -54,8 +60,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   label: {
-    marginTop: 4,
+    marginTop: 6,
     fontSize: 12,
-    fontWeight: '500',
+    fontFamily: Typography.bodySemiBold,
+    letterSpacing: 0.2,
   },
 });

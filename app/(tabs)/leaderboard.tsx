@@ -269,7 +269,12 @@ const createStyles = (
       borderRadius: 20,
       padding: 16,
       marginBottom: 14,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 16,
+      shadowOpacity: 0.08,
+      elevation: 4,
     },
     myCardRow: {
       flexDirection: 'row',
@@ -282,12 +287,14 @@ const createStyles = (
       borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: withAlpha(colors.white, '22'),
+      backgroundColor: withAlpha(colors.primary, '15'),
+      borderWidth: 1.5,
+      borderColor: withAlpha(colors.primary, '25'),
     },
     myAvatarText: {
       fontSize: 18 * textScale,
       fontFamily: Typography.bodyBold,
-      color: colors.white,
+      color: colors.primary,
     },
     myAvatarImage: {
       width: 44,
@@ -298,7 +305,7 @@ const createStyles = (
     myName: {
       fontSize: 16 * textScale,
       fontFamily: Typography.bodyBold,
-      color: colors.white,
+      color: colors.text,
       marginBottom: 4,
     },
     myStats: {
@@ -308,11 +315,11 @@ const createStyles = (
     myStat: {
       fontSize: 13 * textScale,
       fontFamily: Typography.body,
-      color: withAlpha(colors.white, 'CC'),
+      color: colors.textSecondary,
     },
     streakBadge: {
       alignItems: 'center',
-      backgroundColor: withAlpha(colors.white, '20'),
+      backgroundColor: withAlpha(colors.warning, '15'),
       borderRadius: 12,
       paddingHorizontal: 10,
       paddingVertical: 6,
@@ -324,7 +331,7 @@ const createStyles = (
     streakCount: {
       fontSize: 13 * textScale,
       fontFamily: Typography.bodyBold,
-      color: colors.white,
+      color: colors.warning,
       textAlign: 'center',
     },
     filterRow: {

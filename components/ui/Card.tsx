@@ -1,34 +1,36 @@
 import { View, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
 import { usePreferences } from '@/context/PreferencesContext';
-import { getWebTransitionStyle } from '@/constants/theme';
+import { Shadow, getWebTransitionStyle } from '@/constants/theme';
 
 type CardProps = {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
-  variant?: 'default' | 'elevated';
+  variant?: 'default' | 'elevated' | 'ghost';
 };
 
 export function Card({ children, style, variant = 'default' }: CardProps) {
   const { colors, resolvedTheme } = usePreferences();
+  const isDark = resolvedTheme === 'dark';
 
   return (
     <View
       style={[
         styles.card,
-        {
-          backgroundColor: colors.card,
-          borderColor: colors.border,
-          ...(getWebTransitionStyle() ?? {}),
-        },
+        { backgroundColor: colors.card, shadowColor: colors.shadow },
+        variant === 'default' && [
+          styles.default,
+          isDark
+            ? { borderWidth: 1, borderColor: colors.border }
+            : { ...Shadow.sm },
+        ],
         variant === 'elevated' && [
           styles.elevated,
-          {
-            shadowColor: colors.shadow,
-            shadowOpacity: resolvedTheme === 'light' ? 0.08 : 0.18,
-            shadowRadius: resolvedTheme === 'light' ? 14 : 12,
-            backgroundColor: resolvedTheme === 'light' ? colors.card : colors.card,
-          },
+          isDark
+            ? { borderWidth: 1, borderColor: colors.border, ...Shadow.md, shadowOpacity: 0.4 }
+            : { ...Shadow.lg },
         ],
+        variant === 'ghost' && styles.ghost,
+        { ...(getWebTransitionStyle('box-shadow, background-color, border-color') ?? {}) },
         style,
       ]}
     >
@@ -39,12 +41,12 @@ export function Card({ children, style, variant = 'default' }: CardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
+    borderRadius: 16,
+    padding: 18,
   },
-  elevated: {
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
+  default: {},
+  elevated: {},
+  ghost: {
+    backgroundColor: 'transparent',
   },
 });

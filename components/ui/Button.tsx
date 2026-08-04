@@ -9,13 +9,14 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { usePreferences } from '@/context/PreferencesContext';
-import { Typography, getWebTransitionStyle } from '@/constants/theme';
+import { Typography, Shadow, getWebTransitionStyle } from '@/constants/theme';
 
 type ButtonProps = {
   title: string;
   onPress: () => void;
   loading?: boolean;
-  variant?: 'primary' | 'outline';
+  variant?: 'primary' | 'outline' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
   style?: StyleProp<ViewStyle>;
   textStyle?: StyleProp<TextStyle>;
   disabled?: boolean;
@@ -28,6 +29,7 @@ export function Button({
   onPress,
   loading,
   variant = 'primary',
+  size = 'md',
   style,
   textStyle,
   disabled,
@@ -35,40 +37,64 @@ export function Button({
   accessibilityHint,
 }: ButtonProps) {
   const { colors } = usePreferences();
-  const isPrimary = variant === 'primary';
   const [isHovered, setIsHovered] = useState(false);
+  const isDisabled = disabled || loading;
+
+  const sizeStyles = {
+    sm: { paddingVertical: 10, paddingHorizontal: 18, minHeight: 40 },
+    md: { paddingVertical: 14, paddingHorizontal: 28, minHeight: 50 },
+    lg: { paddingVertical: 17, paddingHorizontal: 36, minHeight: 56 },
+  };
+
+  const textSizes = { sm: 14, md: 15, lg: 16 };
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
       accessibilityHint={accessibilityHint}
-      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
       style={({ pressed }) => [
         styles.base,
-        isPrimary
-          ? [styles.primary, { backgroundColor: colors.primary }, getWebTransitionStyle()]
-          : [styles.outline, { borderColor: colors.primary, backgroundColor: colors.card }, getWebTransitionStyle()],
-        isHovered && !disabled && !loading ? styles.hovered : null,
-        pressed && !disabled && !loading ? styles.pressed : null,
-        (disabled || loading) && styles.disabled,
+        sizeStyles[size],
+        variant === 'primary' && [
+          styles.primary,
+          { backgroundColor: colors.primary, shadowColor: colors.primary },
+          isHovered && !isDisabled && styles.primaryHovered,
+          pressed && !isDisabled && styles.primaryPressed,
+          ...(isHovered && !isDisabled ? [Shadow.md] : []),
+        ],
+        variant === 'outline' && [
+          styles.outline,
+          { borderColor: colors.primary, backgroundColor: colors.card },
+          isHovered && !isDisabled && { backgroundColor: colors.surface },
+          pressed && !isDisabled && { opacity: 0.85 },
+        ],
+        variant === 'ghost' && [
+          styles.ghost,
+          isHovered && !isDisabled && { backgroundColor: colors.surface },
+          pressed && !isDisabled && { opacity: 0.75 },
+        ],
+        isDisabled && styles.disabled,
+        { ...(getWebTransitionStyle('transform, box-shadow, background-color, opacity') ?? {}) },
         style,
       ]}
       onPress={onPress}
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}
-      disabled={disabled || loading}
+      disabled={isDisabled}
     >
       {loading ? (
-        <ActivityIndicator color={isPrimary ? colors.white : colors.primary} />
+        <ActivityIndicator color={variant === 'primary' ? colors.white : colors.primary} size="small" />
       ) : (
         <Text
           style={[
             styles.text,
-            isPrimary
-              ? { color: colors.white }
-              : { color: colors.primary },
-            getWebTransitionStyle('color, transform'),
+            { fontSize: textSizes[size], fontFamily: Typography.bodyBold },
+            variant === 'primary' && { color: colors.white },
+            variant === 'outline' && { color: colors.primary },
+            variant === 'ghost' && { color: colors.textSecondary },
+            { ...(getWebTransitionStyle('color') ?? {}) },
             textStyle,
           ]}
         >
@@ -81,32 +107,36 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
+    borderRadius: 999,       // pill shape — modern, confident CTA
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 50,
+    flexDirection: 'row',
+    gap: 8,
   },
   primary: {
-    backgroundColor: 'transparent',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    shadowOpacity: 0.25,
+    elevation: 4,
   },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  disabled: {
-    opacity: 0.6,
-  },
-  hovered: {
+  primaryHovered: {
     transform: [{ translateY: -1 }],
   },
-  pressed: {
-    transform: [{ scale: 0.992 }],
+  primaryPressed: {
+    transform: [{ scale: 0.978 }],
+    shadowOpacity: 0.12,
+  },
+  outline: {
+    borderWidth: 1.5,
+    borderRadius: 12,        // outline buttons stay rectangular — visual contrast with pill CTA
+  },
+  ghost: {
+    borderRadius: 10,
+  },
+  disabled: {
+    opacity: 0.45,
   },
   text: {
-    fontSize: 16,
-    fontFamily: Typography.bodyBold,
+    letterSpacing: 0.1,
   },
 });

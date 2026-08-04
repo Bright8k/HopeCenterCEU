@@ -26,16 +26,26 @@ export default function TabLayout() {
       screenOptions={{
         sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textSecondary,
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
+          borderTopWidth: 1,
           borderTopColor: colors.border,
           backgroundColor: colors.card,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
-        headerStyle: { backgroundColor: colors.card },
+        tabBarLabelStyle: {
+          fontFamily: Typography.bodySemiBold,
+          fontSize: 10,
+          letterSpacing: 0.2,
+        },
+        headerStyle: { backgroundColor: colors.card, shadowColor: 'transparent', elevation: 0, borderBottomWidth: 1, borderBottomColor: colors.border },
         headerTintColor: colors.text,
         headerTitleStyle: {
-          fontFamily: Typography.heading,
-          fontSize: 18,
+          fontFamily: Typography.bodyBold,
+          fontSize: 16,
+          letterSpacing: 0.1,
           color: colors.text,
         },
         headerTitleAlign: 'center',
@@ -43,7 +53,7 @@ export default function TabLayout() {
           <AppBrand
             compact
             logoOnly
-            style={{ marginLeft: 12 }}
+            style={{ marginLeft: 16 }}
             onPress={() => router.navigate('/(tabs)')}
           />
         ),

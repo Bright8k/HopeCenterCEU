@@ -22,57 +22,62 @@ export type AppColors = {
   black: string;
 };
 
+// 2026 redesign — crisp neutral base, purple as pure accent, not a tinting agent.
+// Light: Slate-family neutrals give a clean professional feel.
+// Dark: True zinc-based darks with no purple bleed into surfaces.
+
 export const LightColors: AppColors = {
   primary: '#8B1A8F',
-  primaryLight: '#B94DBE',
-  primaryDark: '#6A1270',
+  primaryLight: '#B845BE',
+  primaryDark: '#6B1470',
   accent: '#D4A843',
-  accentDark: '#7A5A17',
-  background: '#F7F2F6',
-  surface: '#EFE5EF',
-  surfaceMuted: '#E7DAE7',
-  card: '#FBF8FB',
-  text: '#201B20',
-  textSecondary: '#5D515D',
-  textMuted: '#857685',
-  border: '#DCCCDC',
-  shadow: '#2E1230',
-  error: '#D32F2F',
-  success: '#388E3C',
-  warning: '#F57C00',
+  accentDark: '#9A6F1A',
+  background: '#F8FAFC',   // slate-50 — neutral white, not purple-tinted
+  surface: '#F1F5F9',      // slate-100
+  surfaceMuted: '#E2E8F0', // slate-200
+  card: '#FFFFFF',         // pure white cards for maximum depth contrast
+  text: '#0F172A',         // slate-900 — crisper than previous near-black
+  textSecondary: '#475569',// slate-600
+  textMuted: '#94A3B8',    // slate-400
+  border: '#E2E8F0',       // slate-200 — lighter, more subtle
+  shadow: '#1E293B',       // slate-800
+  error: '#DC2626',
+  success: '#16A34A',
+  warning: '#D97706',
   white: '#FFFFFF',
   black: '#000000',
 };
 
 export const DarkColors: AppColors = {
   primary: '#8B1A8F',
-  primaryLight: '#C766CB',
+  primaryLight: '#C668CF',
   primaryDark: '#8B1A8F',
   accent: '#E4BF68',
   accentDark: '#F2D38A',
-  background: '#140E16',
-  surface: '#201523',
-  surfaceMuted: '#2A1C2D',
-  card: '#241828',
-  text: '#F8F2F7',
-  textSecondary: '#E5D7E3',
-  textMuted: '#C6B4C4',
-  border: '#5D4761',
+  background: '#09090B',   // zinc-950 — true dark, no purple bleed
+  surface: '#111115',
+  surfaceMuted: '#1A1A20',
+  card: '#18181D',         // zinc-900-ish — cards lift subtly from bg
+  text: '#F4F4F5',         // zinc-100
+  textSecondary: '#A1A1AA',// zinc-400
+  textMuted: '#52525B',    // zinc-600
+  border: '#27272A',       // zinc-800
   shadow: '#000000',
-  error: '#FF7B7B',
-  success: '#71D28A',
-  warning: '#FFB14A',
+  error: '#F87171',
+  success: '#34D399',
+  warning: '#FBBF24',
   white: '#FFFFFF',
   black: '#000000',
 };
 
 export const FontSize = {
-  xs: 12,
-  sm: 14,
-  base: 16,
-  lg: 18,
-  xl: 22,
-  '2xl': 28,
+  xs: 11,
+  sm: 13,
+  base: 15,
+  lg: 17,
+  xl: 21,
+  '2xl': 26,
+  '3xl': 34,
 };
 
 export const Spacing = {
@@ -81,40 +86,66 @@ export const Spacing = {
   md: 16,
   lg: 24,
   xl: 32,
+  '2xl': 48,
 };
 
 export const Radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
+  xs: 6,
+  sm: 10,
+  md: 16,
+  lg: 24,
+  xl: 32,
   full: 999,
 };
 
+// Layered shadow system — use shadowColor from AppColors.shadow
+export const Shadow = {
+  sm: {
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    elevation: 2,
+  },
+  md: {
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 16,
+    shadowOpacity: 0.09,
+    elevation: 5,
+  },
+  lg: {
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 28,
+    shadowOpacity: 0.13,
+    elevation: 10,
+  },
+} as const;
+
 export const Typography = {
-  // Cormorant Garamond — for all large headings and brand moments
+  // Cormorant Garamond — hero headings and brand moments only
   heading: 'CormorantGaramond_700Bold',
   headingSemiBold: 'CormorantGaramond_600SemiBold',
   headingMedium: 'CormorantGaramond_500Medium',
   headingRegular: 'CormorantGaramond_400Regular',
   headingItalic: 'CormorantGaramond_400Regular_Italic',
-  // Nunito — for UI labels, body copy, and interactive elements
+  // Nunito — all UI, labels, body, interactive elements
   body: 'Nunito_400Regular',
   bodySemiBold: 'Nunito_600SemiBold',
   bodyBold: 'Nunito_700Bold',
+  bodyExtraBold: 'Nunito_800ExtraBold', // for stat numbers and impact labels
 };
 
 export function withAlpha(hex: string, alphaHex: string) {
   return `${hex}${alphaHex}`;
 }
 
-export function getWebTransitionStyle(properties = 'transform, box-shadow, background-color, border-color, color') {
+export function getWebTransitionStyle(properties = 'transform, box-shadow, background-color, border-color, color, opacity') {
   if (Platform.OS !== 'web') {
     return null;
   }
 
   return {
-    transitionDuration: '240ms',
-    transitionTimingFunction: 'cubic-bezier(0.22, 1, 0.36, 1)',
+    transitionDuration: '200ms',
+    transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
     transitionProperty: properties,
   } as any;
 }

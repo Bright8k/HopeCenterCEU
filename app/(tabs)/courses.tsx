@@ -83,37 +83,37 @@ export default function CoursesScreen() {
             width={104}
             height={26}
             borderRadius={13}
-            style={{ backgroundColor: withAlpha(colors.white, '30') }}
+            style={{ backgroundColor: withAlpha(colors.textMuted, '30') }}
           />
           <Skeleton
             width="68%"
             height={32}
             borderRadius={8}
-            style={{ backgroundColor: withAlpha(colors.white, '30') }}
+            style={{ backgroundColor: withAlpha(colors.textMuted, '30') }}
           />
           <Skeleton
             height={14}
             borderRadius={6}
-            style={{ backgroundColor: withAlpha(colors.white, '25') }}
+            style={{ backgroundColor: withAlpha(colors.textMuted, '25') }}
           />
           <Skeleton
             width="75%"
             height={14}
             borderRadius={6}
-            style={{ backgroundColor: withAlpha(colors.white, '25') }}
+            style={{ backgroundColor: withAlpha(colors.textMuted, '25') }}
           />
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
             <Skeleton
               width="48%"
               height={54}
               borderRadius={18}
-              style={{ backgroundColor: withAlpha(colors.white, '22') }}
+              style={{ backgroundColor: withAlpha(colors.textMuted, '22') }}
             />
             <Skeleton
               width="48%"
               height={54}
               borderRadius={18}
-              style={{ backgroundColor: withAlpha(colors.white, '22') }}
+              style={{ backgroundColor: withAlpha(colors.textMuted, '22') }}
             />
           </View>
         </View>
@@ -397,33 +397,38 @@ const createStyles = (
       marginBottom: 8,
     },
     hero: {
-      borderRadius: 24,
+      borderRadius: 20,
       padding: 20,
       marginBottom: 14,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 16,
+      shadowOpacity: 0.08,
+      elevation: 4,
     },
     heroBadge: {
       alignSelf: 'flex-start',
       borderRadius: 999,
       paddingHorizontal: 10,
-      paddingVertical: 6,
+      paddingVertical: 5,
       marginBottom: 14,
-      backgroundColor: withAlpha(colors.white, '22'),
+      backgroundColor: withAlpha(colors.primary, '12'),
     },
     heroBadgeText: {
-      color: colors.white,
+      color: colors.primary,
       fontSize: 12 * textScale,
       fontFamily: Typography.bodyBold,
       letterSpacing: 0.4,
     },
     heroTitle: {
-      color: colors.white,
-      fontSize: 28 * textScale,
+      color: colors.text,
+      fontSize: 26 * textScale,
       fontFamily: Typography.heading,
       marginBottom: 8,
     },
     heroText: {
-      color: colors.white,
+      color: colors.textSecondary,
       fontSize: 14 * textScale,
       lineHeight: 21,
       marginBottom: 18,
@@ -435,19 +440,19 @@ const createStyles = (
     },
     statPill: {
       flex: 1,
-      borderRadius: 18,
+      borderRadius: 16,
       paddingVertical: 14,
       paddingHorizontal: 12,
-      backgroundColor: withAlpha(colors.white, '18'),
+      backgroundColor: colors.surface,
     },
     statValue: {
-      color: colors.white,
+      color: colors.text,
       fontSize: 20 * textScale,
-      fontFamily: Typography.headingSemiBold,
+      fontFamily: Typography.bodyExtraBold,
       marginBottom: 2,
     },
     statLabel: {
-      color: colors.white,
+      color: colors.textMuted,
       fontSize: 12 * textScale,
       fontFamily: Typography.bodySemiBold,
     },
