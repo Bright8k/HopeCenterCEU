@@ -34,7 +34,10 @@ export default function SignIn() {
   };
 
   const handleSignIn = async () => {
-    if (devAuthBypass) {
+    const hasCredentials = email.trim().length > 0 && password.trim().length > 0;
+
+    // Bypass only when fields are empty — typing credentials always goes through Supabase.
+    if (devAuthBypass && !hasCredentials) {
       goToDashboard();
       return;
     }
@@ -44,13 +47,13 @@ export default function SignIn() {
       return;
     }
 
-    if (!email || !password) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert('Missing details', 'Enter your email and password to sign in.');
       return;
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
 
     if (error) {
@@ -116,17 +119,13 @@ export default function SignIn() {
 
         {devAuthBypass ? (
           <Text style={styles.notice}>
-            Builder mode is enabled locally. Sign in actions currently route straight to the dashboard so we can keep developing screens safely.
+            Builder mode on — leave fields empty to skip auth, or type your credentials to sign in normally.
           </Text>
         ) : !hasSupabaseEnv ? (
           <Text style={styles.notice}>
             Local config missing. Add Supabase values to `.env` before testing auth.
           </Text>
-        ) : (
-          <Text style={styles.notice}>
-            Use your real credentials here. This login screen is now wired to keep dev bypass separate from production behavior.
-          </Text>
-        )}
+        ) : null}
 
         {Platform.OS === 'web' && (
           <>
@@ -171,7 +170,12 @@ export default function SignIn() {
           autoComplete="password"
         />
 
-        <Button title={devAuthBypass ? 'Enter Dashboard' : 'Sign In'} onPress={handleSignIn} loading={loading} style={styles.button} />
+        <Button
+          title={devAuthBypass && !email && !password ? 'Enter Dashboard' : 'Sign In'}
+          onPress={handleSignIn}
+          loading={loading}
+          style={styles.button}
+        />
 
         <Link href="/(auth)/forgot-password" asChild>
           <Pressable
