@@ -195,7 +195,7 @@ export default function CertificateScreen() {
 
             {/* Credential line */}
             <Text style={styles.credentialLine}>
-              Authorized Continuing Education Provider · BACB ACE Program
+              Hope Center for Behavior Change · Continuing Education Provider
             </Text>
 
             {/* Bottom accent bar */}

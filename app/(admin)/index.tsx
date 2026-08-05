@@ -122,6 +122,12 @@ export default function AdminOverview() {
         description="View all enrolled learners, CEU progress, and activity history."
         onPress={() => router.push('/(admin)/users')}
       />
+      <NavRow
+        icon="mail-outline"
+        title="Invite Learner"
+        description="Send an email invitation to a new learner to join the platform."
+        onPress={() => router.push('/(admin)/invite')}
+      />
     </ScrollView>
   );
 
