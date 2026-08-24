@@ -55,12 +55,14 @@ export function useCEUProgress(): { progress: CEUProgress | null; loading: boole
     return () => { active = false; };
   }, [user?.id, role, tick]);
 
-  // Realtime — subscribe to this user's completions
+  // Realtime — subscribe to this user's completions.
+  // Unique suffix prevents "cannot add callbacks after subscribe()" when React
+  // StrictMode or a remount re-runs this effect before cleanup finishes.
   useEffect(() => {
     if (!hasSupabaseEnv || !user) return;
 
     const channel = supabase
-      .channel(`ceu-progress-${user.id}`)
+      .channel(`ceu-progress-${user.id}-${Math.random().toString(36).slice(2)}`)
       .on(
         'postgres_changes',
         {

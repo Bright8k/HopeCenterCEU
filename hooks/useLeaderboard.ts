@@ -70,7 +70,7 @@ export function useLeaderboard(
     if (!hasSupabaseEnv) return;
 
     const channel = supabase
-      .channel('leaderboard-live')
+      .channel(`leaderboard-live-${Math.random().toString(36).slice(2)}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'completions' }, () => void load())
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'streaks' }, () => void load())
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'streaks' }, () => void load())
