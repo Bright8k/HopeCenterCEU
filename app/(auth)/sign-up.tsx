@@ -28,51 +28,59 @@ export default function SignUp() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [accountCreated, setAccountCreated] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
 
   const handleSignUp = async () => {
+    setFormError(null);
+
     if (devAuthBypass) {
       router.replace('/(auth)/onboarding');
       return;
     }
 
     if (!hasSupabaseEnv) {
-      Alert.alert('Supabase not configured', 'Add your project values to .env before creating an account.');
+      setFormError('Supabase is not configured. Add your project values to .env before creating an account.');
       return;
     }
 
-    if (!fullName || !email || !password) {
-      Alert.alert('Missing details', 'Please fill in your name, email, and password.');
+    if (!fullName.trim() || !email.trim() || !password) {
+      setFormError('Please fill in your name, email, and password.');
       return;
     }
 
     if (password.length < 8) {
-      Alert.alert('Password too short', 'Password must be at least 8 characters.');
+      setFormError('Password must be at least 8 characters.');
       return;
     }
 
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim().toLowerCase(),
       password,
-      options: { data: { full_name: fullName } },
+      options: {
+        data: { full_name: fullName.trim() },
+        emailRedirectTo: 'hopecenterceu://',
+      },
     });
     setLoading(false);
 
     if (error) {
-      Alert.alert('Sign Up Failed', error.message);
+      setFormError(error.message);
       return;
     }
 
     if (data.session) {
-      router.replace('/(auth)/onboarding');
+      setAccountCreated(true);
+      setTimeout(() => router.replace('/(auth)/onboarding'), 700);
       return;
     }
 
-    Alert.alert('Check Your Email', 'Please confirm your email address to continue.', [
-      { text: 'OK', onPress: () => router.replace('/(auth)/sign-in') },
-    ]);
+    // Email confirmation is required — show inline instead of navigating away.
+    setAwaitingConfirmation(true);
   };
 
   const handleSocialPress = async (provider: 'google' | 'apple') => {
@@ -162,50 +170,80 @@ export default function SignUp() {
           </>
         )}
 
-        <Input
-          label="Full Name"
-          value={fullName}
-          onChangeText={setFullName}
-          placeholder="Jane Doe"
-          autoCapitalize="words"
-          autoComplete="name"
-        />
-        <Input
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@example.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          autoComplete="email"
-        />
-        <Input
-          label="Password"
-          value={password}
-          onChangeText={setPassword}
-          placeholder="At least 8 characters"
-          secureTextEntry
-          autoComplete="new-password"
-        />
-
-        <Button
-          title={devAuthBypass ? 'Continue to Onboarding' : 'Create Account'}
-          onPress={handleSignUp}
-          loading={loading}
-          style={styles.button}
-        />
-
-        <Link href="/(auth)/sign-in" asChild>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel="Already have an account? Sign in"
-            style={styles.linkPressable}
-          >
-            <Text style={styles.footer}>
-              Already have an account? <Text style={styles.footerLink}>Sign in</Text>
+        {awaitingConfirmation ? (
+          <View style={styles.confirmBox}>
+            <Ionicons name="mail-open-outline" size={40} color={colors.primary} accessibilityElementsHidden />
+            <Text style={styles.confirmTitle}>Check your inbox</Text>
+            <Text style={styles.confirmBody}>
+              We sent a confirmation link to <Text style={styles.confirmEmail}>{email}</Text>.
+              Open it to activate your account, then come back to sign in.
             </Text>
-          </Pressable>
-        </Link>
+            <Button
+              title="Back to Sign In"
+              onPress={() => router.replace('/(auth)/sign-in')}
+              style={styles.button}
+            />
+          </View>
+        ) : (
+          <>
+            <Input
+              label="Full Name"
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Jane Doe"
+              autoCapitalize="words"
+              autoComplete="name"
+            />
+            <Input
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+            />
+            <Input
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="At least 8 characters"
+              secureTextEntry
+              autoComplete="new-password"
+            />
+
+            {accountCreated ? (
+              <View style={styles.successBanner} accessibilityRole="alert" accessibilityLiveRegion="polite">
+                <Ionicons name="checkmark-circle" size={16} color={colors.success} accessibilityElementsHidden />
+                <Text style={styles.successText}>Account created! Setting up your profile…</Text>
+              </View>
+            ) : formError ? (
+              <View style={styles.errorBanner} accessibilityRole="alert">
+                <Ionicons name="alert-circle-outline" size={16} color={colors.error} accessibilityElementsHidden />
+                <Text style={styles.errorText}>{formError}</Text>
+              </View>
+            ) : null}
+
+            <Button
+              title={devAuthBypass ? 'Continue to Onboarding' : 'Create Account'}
+              onPress={handleSignUp}
+              loading={loading || accountCreated}
+              style={styles.button}
+            />
+
+            <Link href="/(auth)/sign-in" asChild>
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Already have an account? Sign in"
+                style={styles.linkPressable}
+              >
+                <Text style={styles.footer}>
+                  Already have an account? <Text style={styles.footerLink}>Sign in</Text>
+                </Text>
+              </Pressable>
+            </Link>
+          </>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
     </SafeAreaView>
@@ -374,5 +412,64 @@ const createStyles = (
   footerLink: {
     color: colors.primary,
     fontFamily: Typography.bodyBold,
+  },
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: withAlpha(colors.success, '12'),
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.success, '30'),
+  },
+  successText: {
+    fontSize: 13 * textScale,
+    fontFamily: Typography.bodySemiBold,
+    color: colors.success,
+    lineHeight: 20,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: withAlpha(colors.error, '14'),
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: withAlpha(colors.error, '30'),
+  },
+  errorText: {
+    flex: 1,
+    fontSize: 13 * textScale,
+    fontFamily: Typography.body,
+    color: colors.error,
+    lineHeight: 18,
+  },
+  confirmBox: {
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 20,
+  },
+  confirmTitle: {
+    fontSize: 22 * textScale,
+    fontFamily: Typography.heading,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  confirmBody: {
+    fontSize: 15 * textScale,
+    fontFamily: Typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+    maxWidth: 300,
+  },
+  confirmEmail: {
+    fontFamily: Typography.bodyBold,
+    color: colors.text,
   },
 });

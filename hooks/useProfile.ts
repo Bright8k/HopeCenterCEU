@@ -9,6 +9,7 @@ export function useProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     if (!hasSupabaseEnv || !user) {
@@ -16,11 +17,16 @@ export function useProfile() {
       return;
     }
     setLoading(true);
-    const { data } = await supabase
+    setError(null);
+    const { data, error: queryError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', user.id)
       .single();
+    if (queryError && queryError.code !== 'PGRST116') {
+      // PGRST116 = no rows found (expected for new users before onboarding)
+      setError(queryError.message);
+    }
     setProfile(data ?? null);
     setLoading(false);
   }, [user]);
@@ -29,7 +35,7 @@ export function useProfile() {
     refetch();
   }, [refetch]);
 
-  return { profile, loading, refetch };
+  return { profile, loading, error, refetch };
 }
 
 export function formatRenewalDate(dateStr: string): string {

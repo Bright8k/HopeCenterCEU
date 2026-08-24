@@ -22,7 +22,7 @@ export default function ProfileScreen() {
   const { colors, textScale, preferences } = usePreferences();
   const { progress, loading } = useCEUProgress();
   const { displayCertificates, usingPreviewData } = useCertificates();
-  const { profile, refetch: refetchProfile } = useProfile();
+  const { profile, error: profileError, refetch: refetchProfile } = useProfile();
   const styles = createStyles(colors, textScale);
 
   useFocusEffect(
@@ -65,6 +65,11 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {profileError && (
+        <View style={styles.profileErrorBanner} accessibilityRole="alert">
+          <Text style={styles.profileErrorText}>Profile error: {profileError}</Text>
+        </View>
+      )}
       <View style={styles.hero}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
@@ -432,6 +437,19 @@ const createStyles = (
     content: {
       padding: 16,
       paddingBottom: 36,
+    },
+    profileErrorBanner: {
+      backgroundColor: withAlpha(colors.error, '12'),
+      borderRadius: 10,
+      padding: 12,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: withAlpha(colors.error, '30'),
+    },
+    profileErrorText: {
+      fontSize: 12 * textScale,
+      fontFamily: Typography.body,
+      color: colors.error,
     },
     hero: {
       borderRadius: 20,

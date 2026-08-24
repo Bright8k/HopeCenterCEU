@@ -28,6 +28,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
 
@@ -62,9 +63,9 @@ export default function SignIn() {
       return;
     }
 
-    // Auth succeeded — loading=true in AuthContext now protects the tab guard.
-    // Navigate directly; onAuthStateChange will fire and set the session.
-    router.replace('/(tabs)');
+    setSignedIn(true);
+    // Route through index so it can redirect to onboarding if the profile/role is missing.
+    setTimeout(() => router.replace('/'), 700);
   };
 
   const handleSocialPress = async (provider: 'google' | 'apple') => {
@@ -169,16 +170,21 @@ export default function SignIn() {
           autoComplete="password"
         />
 
-        {authError && (
+        {signedIn ? (
+          <View style={styles.successBanner} accessibilityRole="alert" accessibilityLiveRegion="polite">
+            <Ionicons name="checkmark-circle" size={16} color={colors.success} accessibilityElementsHidden />
+            <Text style={styles.successText}>Signed in — loading your dashboard…</Text>
+          </View>
+        ) : authError ? (
           <Text style={styles.errorText} accessibilityRole="alert" accessibilityLiveRegion="polite">
             {authError}
           </Text>
-        )}
+        ) : null}
 
         <Button
           title={devAuthBypass && !email && !password ? 'Enter Dashboard' : 'Sign In'}
           onPress={handleSignIn}
-          loading={loading}
+          loading={loading || signedIn}
           style={styles.button}
         />
 
@@ -365,6 +371,25 @@ const createStyles = (
       letterSpacing: 0.8,
       color: colors.textMuted,
       textTransform: 'uppercase',
+    },
+    successBanner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 4,
+      marginBottom: 12,
+      borderRadius: 10,
+      padding: 12,
+      backgroundColor: withAlpha(colors.success, '12'),
+      borderWidth: 1,
+      borderColor: withAlpha(colors.success, '30'),
+    },
+    successText: {
+      fontSize: 13 * textScale,
+      fontFamily: Typography.bodySemiBold,
+      color: colors.success,
+      lineHeight: 20,
     },
     errorText: {
       marginTop: 4,
