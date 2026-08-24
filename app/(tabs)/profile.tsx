@@ -346,7 +346,7 @@ export default function ProfileScreen() {
           icon="shield-checkmark-outline"
           title="Admin Portal"
           description="Manage courses, question banks, and published content for Hope Center."
-          onPress={() => router.push('/(admin)/index')}
+          onPress={() => router.push('/(admin)')}
         />
       )}
 

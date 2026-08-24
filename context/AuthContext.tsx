@@ -88,8 +88,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = () => {
-    // Navigate immediately so the button always responds, regardless of
-    // bypass mode or network latency. Session cleanup runs in the background.
+    // Clear auth state synchronously so all guards update before navigation.
+    setSession(null);
+    setRole(null);
+    setLoading(false);
     router.replace('/(auth)/sign-in');
     if (hasSupabaseEnv) {
       void supabase.auth.signOut();

@@ -1,5 +1,6 @@
-import { Redirect, Stack } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { Redirect, Stack, router } from 'expo-router';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { usePreferences } from '@/context/PreferencesContext';
@@ -30,7 +31,34 @@ export default function AdminLayout() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Admin Portal' }} />
+      <Stack.Screen
+        name="index"
+        options={{
+          title: 'Admin Portal',
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.replace('/(tabs)')}
+              accessibilityRole="button"
+              accessibilityLabel="Switch to learner view"
+              style={({ pressed }) => ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 4,
+                marginLeft: 8,
+                paddingHorizontal: 8,
+                paddingVertical: 6,
+                minHeight: 44,
+                opacity: pressed ? 0.7 : 1,
+              })}
+            >
+              <Ionicons name="people-outline" size={16} color={colors.primary} />
+              <Text style={{ fontFamily: Typography.bodySemiBold, fontSize: 14, color: colors.primary }}>
+                Learner View
+              </Text>
+            </Pressable>
+          ),
+        }}
+      />
       <Stack.Screen name="courses" options={{ title: 'Manage Courses' }} />
       <Stack.Screen name="course-edit" options={{ title: 'Course' }} />
       <Stack.Screen name="questions" options={{ title: 'Question Bank' }} />

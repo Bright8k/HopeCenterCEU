@@ -1,10 +1,11 @@
 import { Tabs, router, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { useState } from 'react';
 import Constants from 'expo-constants';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
+import { useAdminRole } from '@/hooks/useAdminRole';
 import { AppBrand } from '@/components/ui/AppBrand';
 import { hasSupabaseEnv } from '@/lib/supabase';
 import { Typography } from '@/constants/theme';
@@ -12,6 +13,7 @@ import { Typography } from '@/constants/theme';
 export default function TabLayout() {
   const { role, session, loading } = useAuth();
   const { colors } = usePreferences();
+  const { isAdmin } = useAdminRole();
   const isStudent = role === 'STUDENT';
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
 
@@ -57,7 +59,12 @@ export default function TabLayout() {
             onPress={() => router.navigate('/(tabs)')}
           />
         ),
-        headerRight: () => <SettingsHeaderButton />,
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {isAdmin && <AdminHeaderButton />}
+            <SettingsHeaderButton />
+          </View>
+        ),
       }}
     >
       <Tabs.Screen
@@ -107,6 +114,35 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+  );
+}
+
+function AdminHeaderButton() {
+  const { colors } = usePreferences();
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Switch to admin dashboard"
+      accessibilityHint="Opens the admin management portal"
+      onPress={() => router.push('/(admin)')}
+      onHoverIn={() => setIsHovered(true)}
+      onHoverOut={() => setIsHovered(false)}
+      style={({ pressed }) => ({
+        marginRight: 4,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: isHovered ? colors.surface : 'transparent',
+        opacity: pressed ? 0.8 : 1,
+        transform: [{ scale: pressed ? 0.96 : isHovered ? 1.03 : 1 }],
+      })}
+    >
+      <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
+    </Pressable>
   );
 }
 
