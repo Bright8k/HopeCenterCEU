@@ -64,18 +64,19 @@ export default function CertificateScreen() {
     }
 
     let active = true;
-    (supabase as any)
+    supabase
       .from('completions')
       .select('passed, cert_url, completed_at, courses(title, ceu_value)')
       .eq('id', completionId)
       .eq('user_id', user.id)
       .single()
-      .then(({ data, error }: { data: any; error: any }) => {
+      .then(({ data, error }) => {
         if (!active) return;
         if (data && !error) {
+          const course = data.courses as { title: string; ceu_value: number } | null;
           setCertData({
-            courseTitle: data.courses?.title ?? 'Course',
-            ceuValue: data.courses?.ceu_value ?? 0,
+            courseTitle: course?.title ?? 'Course',
+            ceuValue: course?.ceu_value ?? 0,
             completedAt: data.completed_at,
             certUrl: data.cert_url ?? null,
             passed: Boolean(data.passed),
