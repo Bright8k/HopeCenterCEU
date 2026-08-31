@@ -1,23 +1,22 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '@/context/AuthContext';
 import { useCEUProgress } from '@/hooks/useCEUProgress';
 import { useCourses } from '@/hooks/useCourses';
 import { useStreak } from '@/hooks/useStreak';
 import { usePreferences } from '@/context/PreferencesContext';
-import { Badge } from '@/components/ui/Badge';
 import { Card } from '@/components/ui/Card';
 import { ProgressBar } from '@/components/ui/ProgressBar';
-import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { ROLE_CEU_REQUIREMENTS, ROLE_LABELS } from '@/constants/roles';
 import { hasSupabaseEnv } from '@/lib/supabase';
-import { Typography, Shadow, getWebTransitionStyle, withAlpha } from '@/constants/theme';
+import { Typography, withAlpha } from '@/constants/theme';
 
 function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
   return 'Good evening';
 }
 
@@ -30,44 +29,17 @@ export default function DashboardScreen() {
   const styles = createStyles(colors, textScale);
 
   const firstName = user?.user_metadata?.full_name?.split(' ')[0] ?? 'there';
+  const roleLabel = role ? ROLE_LABELS[role] : null;
   const roleRequirement = role ? ROLE_CEU_REQUIREMENTS[role] : null;
-  const completedCourses = progress?.completedCourses ?? 0;
-  const earnedCeus = progress?.earned ?? 0;
-  const requiredCeus = roleRequirement?.total ?? 0;
-  const percentage = progress?.percentage ?? 0;
   const isStudent = role === 'STUDENT';
+  const earned = progress?.earned ?? 0;
+  const required = roleRequirement?.total ?? 0;
+  const completed = progress?.completedCourses ?? 0;
   const streakDays = streak?.currentStreak ?? 0;
-  const hasStreak = streakDays > 0;
+  const ceuLeft = Math.max(0, required - earned);
 
-  const nextSteps = isStudent
-    ? [
-        {
-          title: 'Continue exam prep',
-          description: 'Review practice domains and build your board-style pacing.',
-          icon: 'school-outline' as const,
-          route: '/(tabs)/exam',
-        },
-        {
-          title: 'Browse study sets',
-          description: 'Open the library and find the next mock quiz or review set.',
-          icon: 'book-outline' as const,
-          route: '/(tabs)/courses',
-        },
-      ]
-    : [
-        {
-          title: 'Open CEU Library',
-          description: 'Find ethics, supervision, and skills-based CEUs aligned to your role.',
-          icon: 'library-outline' as const,
-          route: '/(tabs)/courses',
-        },
-        {
-          title: 'Review certificates',
-          description: 'Keep your completions and proof of progress organized.',
-          icon: 'ribbon-outline' as const,
-          route: '/(tabs)/profile',
-        },
-      ];
+  const fade = (delay: number) =>
+    preferences.reducedMotion ? undefined : FadeInDown.delay(delay).duration(350);
 
   return (
     <ScrollView
@@ -77,292 +49,204 @@ export default function DashboardScreen() {
       accessibilityLabel="Dashboard"
     >
       {/* ── Hero ── */}
-      <View style={styles.hero}>
-        <View style={styles.heroMeta}>
-          {role && <Badge label={ROLE_LABELS[role]} variant="primary" size="sm" />}
-          {hasStreak && (
-            <View style={styles.streakPill}>
-              <Text style={styles.streakPillText}>🔥 {streakDays}</Text>
-            </View>
-          )}
-        </View>
-        <Text style={styles.heroGreeting} accessibilityRole="text">
-          {getGreeting()},
+      <Animated.View entering={fade(0)} style={styles.hero}>
+        <Text style={styles.eyebrow} numberOfLines={1}>
+          {getGreeting()}{roleLabel ? ` · ${roleLabel}` : ''}
         </Text>
         <Text style={styles.heroName} accessibilityRole="header">
           {firstName}
         </Text>
-        <Text style={styles.heroSub}>
-          {isStudent
-            ? 'Keep building momentum toward your exam.'
-            : role && roleRequirement
-            ? `${requiredCeus} CEUs every ${roleRequirement.cycleYears} years. You're on track.`
-            : 'Track your progress and continue your journey.'}
-        </Text>
-      </View>
+      </Animated.View>
 
-      {/* ── Preview mode notice ── */}
       {!hasSupabaseEnv && (
         <Card style={styles.noticeCard}>
           <Text style={styles.noticeTitle}>Preview mode</Text>
           <Text style={styles.noticeText}>
-            Supabase is not configured — this is a layout preview while we continue building.
+            Supabase is not configured — this is a layout preview.
           </Text>
         </Card>
       )}
 
       {/* ── Progress card ── */}
-      <Card variant="elevated" style={styles.progressCard}>
-        <View style={styles.progressHeader}>
-          <View style={styles.progressLeft}>
-            <Text style={styles.progressEyebrow}>
-              {isStudent ? 'EXAM READINESS' : 'CEU PROGRESS'}
-            </Text>
-            {isStudent ? (
-              <Text style={styles.progressTitle}>Stay consistent this week</Text>
-            ) : (
-              <Text style={styles.progressPct}>
-                {loading ? '--' : `${Math.round(percentage)}%`}
-              </Text>
-            )}
-            {!isStudent && (
-              <Text style={styles.progressSub}>
-                {earnedCeus.toFixed(1)} of {requiredCeus} CEUs earned
-              </Text>
-            )}
-          </View>
-          {!isStudent && (
-            <View
-              style={[styles.progressBadge, { borderColor: withAlpha(colors.primary, '30') }]}
-              accessibilityElementsHidden
-              importantForAccessibility="no-hide-descendants"
-            >
-              <Text style={[styles.progressBadgeValue, { color: colors.primary }]}>
-                {earnedCeus.toFixed(0)}
-              </Text>
-              <Text style={[styles.progressBadgeSub, { color: colors.textMuted }]}>
-                earned
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {isStudent ? (
-          <Text style={styles.progressText}>
-            Student Analysts don't have a CEU requirement here — the dashboard centers your study rhythm and next actions instead.
+      <Animated.View entering={fade(60)}>
+        <Card variant="elevated" style={styles.progressCard}>
+          <Text style={styles.sectionLabel}>
+            {isStudent ? 'STUDY PROGRESS' : 'CEU PROGRESS'}
           </Text>
-        ) : (
-          <>
-            <ProgressBar value={earnedCeus} max={requiredCeus} color={colors.primary} height={8} />
-            <Text style={styles.progressText}>
-              {loading
-                ? 'Refreshing your CEU totals…'
-                : completedCourses > 0
-                ? `${completedCourses} course${completedCourses === 1 ? '' : 's'} completed this cycle.`
-                : 'Complete your first course to start building renewal momentum.'}
-            </Text>
-          </>
-        )}
-      </Card>
-
-      {/* ── Metrics row ── */}
-      <View style={styles.metricsRow}>
-        <MetricCard
-          label={isStudent ? 'Study sets' : 'Completed'}
-          value={loading ? '--' : String(completedCourses)}
-          accent={colors.primary}
-          styles={styles}
-        />
-        <MetricCard
-          label={isStudent ? 'Goal' : 'CEUs'}
-          value={isStudent ? 'Weekly' : loading ? '--' : earnedCeus.toFixed(1)}
-          accent={colors.accent}
-          styles={styles}
-        />
-        <MetricCard
-          label="Day streak"
-          value={hasStreak ? String(streakDays) : '—'}
-          accent={colors.success}
-          styles={styles}
-        />
-      </View>
-
-      {/* ── Streak bar ── */}
-      <Pressable
-        onPress={() => router.push('/(tabs)/leaderboard')}
-        accessibilityRole="button"
-        accessibilityLabel={`${hasStreak ? `${streakDays}-day streak` : 'Start your streak'}. Tap to view the leaderboard.`}
-        style={({ pressed }) => [styles.streakCard, pressed && { opacity: 0.88 }]}
-      >
-        <View style={styles.streakLeft}>
-          <Text style={styles.streakEmoji}>{hasStreak ? '🔥' : '⚡'}</Text>
-          <View>
-            <Text style={styles.streakTitle}>
-              {hasStreak ? `${streakDays}-day streak` : 'Start your streak'}
-            </Text>
-            <Text style={styles.streakSub}>
-              {hasStreak
-                ? `Best: ${streak!.longestStreak} days · Pass a course to keep it going`
-                : 'Pass a course today to begin your streak'}
-            </Text>
-          </View>
-        </View>
-        <Ionicons name="chevron-forward-outline" size={18} color={colors.textMuted} />
-      </Pressable>
-
-      {/* ── Next steps ── */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Next steps</Text>
-        <Text style={styles.sectionHint}>
-          {isStudent ? 'Keep the pressure low and steady.' : 'Small wins add up quickly.'}
-        </Text>
-      </View>
-
-      {nextSteps.map((step) => (
-        <InteractivePressable
-          key={step.title}
-          onPress={() => router.push(step.route)}
-          style={styles.actionPressable}
-          hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
-          accessibilityLabel={step.title}
-          accessibilityHint={step.description}
-        >
-          {({ hovered }) => (
-            <Card
-              variant="elevated"
-              style={[styles.actionCard, hovered && styles.actionCardActive]}
-            >
-              <View
-                style={[
-                  styles.actionIconWrap,
-                  { backgroundColor: withAlpha(colors.primary, hovered ? '1A' : '12') },
-                ]}
-              >
-                <Ionicons
-                  name={step.icon}
-                  size={22}
-                  color={hovered ? colors.primaryLight : colors.primary}
-                />
-              </View>
-              <View style={styles.actionCopy}>
-                <Text style={[styles.actionTitle, hovered && styles.actionTitleActive]}>
-                  {step.title}
-                </Text>
-                <Text style={styles.actionDesc}>{step.description}</Text>
-              </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={hovered ? colors.primary : colors.textMuted}
-              />
-            </Card>
-          )}
-        </InteractivePressable>
-      ))}
-
-      {/* ── Recommended courses ── */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>
-          {isStudent ? 'Suggested study sets' : 'Recommended courses'}
-        </Text>
-        <Text style={styles.sectionHint}>Fresh from your current library.</Text>
-      </View>
-
-      {displayCourses.length === 0 ? (
-        <Card style={styles.emptyCard}>
-          <View style={styles.emptyInner}>
-            <View style={[styles.emptyIconWrap, { backgroundColor: withAlpha(colors.primary, '10') }]}>
-              <Ionicons name="library-outline" size={22} color={colors.textMuted} />
-            </View>
-            <View style={styles.emptyCopy}>
-              <Text style={styles.emptyTitle}>No courses available yet</Text>
-              <Text style={styles.emptyText}>Check back soon — new courses are added regularly.</Text>
-            </View>
-          </View>
-        </Card>
-      ) : (
-        displayCourses.slice(0, 2).map((course) => (
-          <InteractivePressable
-            key={course.id}
-            onPress={() => router.push(`/course/${course.id}`)}
-            style={styles.actionPressable}
-            hoverStyle={!preferences.reducedMotion ? styles.liftHover : undefined}
-            accessibilityLabel={course.title}
-            accessibilityHint="Opens the course"
-          >
-            {({ hovered }) => (
-              <Card
-                variant="elevated"
-                style={[styles.actionCard, hovered && styles.actionCardActive]}
-              >
-                <View
-                  style={[
-                    styles.actionIconWrap,
-                    { backgroundColor: withAlpha(colors.primary, hovered ? '1A' : '12') },
-                  ]}
+          {isStudent ? (
+            <Text style={styles.progressTitle}>Keep building momentum</Text>
+          ) : (
+            <>
+              <View style={styles.ceuRow}>
+                <Text
+                  style={styles.ceuBig}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
                 >
-                  <Ionicons
-                    name={isStudent ? 'school-outline' : 'play-circle-outline'}
-                    size={22}
-                    color={hovered ? colors.primaryLight : colors.primary}
-                  />
+                  {loading ? '–' : earned.toFixed(1)}
+                </Text>
+                <View style={styles.ceuDenomWrap}>
+                  <Text style={styles.ceuDenom}>/ {required}</Text>
+                  <Text style={styles.ceuUnit}>CEUs earned</Text>
                 </View>
-                <View style={styles.actionCopy}>
-                  <Text style={[styles.actionTitle, hovered && styles.actionTitleActive]}>
-                    {course.title}
-                  </Text>
-                  <Text style={styles.actionDesc}>
-                    {course.description ?? 'Open the library to view full course details.'}
-                  </Text>
-                </View>
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={hovered ? colors.primary : colors.textMuted}
-                />
-              </Card>
-            )}
-          </InteractivePressable>
-        ))
+              </View>
+              <ProgressBar
+                value={earned}
+                max={required || 1}
+                color={colors.primary}
+                height={5}
+                accessibilityLabel={`${earned.toFixed(1)} of ${required} CEUs earned`}
+              />
+              <Text style={styles.progressCaption}>
+                {loading
+                  ? 'Loading…'
+                  : completed > 0
+                  ? `${completed} course${completed === 1 ? '' : 's'} completed this cycle`
+                  : 'Complete your first course to start tracking'}
+              </Text>
+            </>
+          )}
+        </Card>
+      </Animated.View>
+
+      {/* ── Stats strip ── */}
+      {!isStudent && (
+        <Animated.View entering={fade(120)} style={styles.statsStrip}>
+          <View
+            style={styles.statItem}
+            accessibilityRole="text"
+            accessibilityLabel={`${completed} courses completed`}
+          >
+            <Text style={[styles.statValue, { color: colors.primary }]}>
+              {loading ? '–' : String(completed)}
+            </Text>
+            <Text style={styles.statLabel}>Completed</Text>
+          </View>
+          <View style={styles.statsDivider} />
+          <View
+            style={styles.statItem}
+            accessibilityRole="text"
+            accessibilityLabel={`${streakDays} day streak`}
+          >
+            <Text style={[styles.statValue, { color: colors.accent }]}>
+              {streakDays > 0 ? String(streakDays) : '–'}
+            </Text>
+            <Text style={styles.statLabel}>Day streak</Text>
+          </View>
+          <View style={styles.statsDivider} />
+          <View
+            style={styles.statItem}
+            accessibilityRole="text"
+            accessibilityLabel={`${ceuLeft.toFixed(1)} CEUs remaining`}
+          >
+            <Text style={[styles.statValue, { color: colors.success }]}>
+              {loading ? '–' : ceuLeft.toFixed(1)}
+            </Text>
+            <Text style={styles.statLabel}>CEUs left</Text>
+          </View>
+        </Animated.View>
       )}
 
-      {/* ── Footer card ── */}
-      <Card style={styles.footerCard}>
-        <Text style={styles.footerTitle}>The Hope Center rhythm</Text>
-        <Text style={styles.footerText}>
-          The goal is steady progress, not cramming. A short session today keeps your learning plan lighter later.
-        </Text>
-        <View style={styles.footerTags}>
-          <Badge label="Family-centered" variant="muted" />
-          <Badge label="Evidence-based" variant="primary" />
-          <Badge label="Florida ABA" variant="accent" />
+      {/* ── Continue learning ── */}
+      <Animated.View entering={fade(isStudent ? 120 : 180)}>
+        <View style={styles.sectionRow}>
+          <Text style={styles.sectionLabel}>CONTINUE LEARNING</Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/courses')}
+            accessibilityRole="button"
+            accessibilityLabel="View all courses"
+            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+          >
+            <Text style={styles.sectionLink}>See all</Text>
+          </Pressable>
         </View>
-      </Card>
-    </ScrollView>
-  );
-}
 
-function MetricCard({
-  label,
-  value,
-  accent,
-  styles,
-}: {
-  label: string;
-  value: string;
-  accent: string;
-  styles: ReturnType<typeof createStyles>;
-}) {
-  return (
-    <View
-      style={styles.metricCard}
-      accessibilityRole="text"
-      accessibilityLabel={`${label}: ${value}`}
-    >
-      <View style={[styles.metricBar, { backgroundColor: accent }]} />
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
+        {displayCourses.length === 0 ? (
+          <Card style={styles.emptyCard}>
+            <Text style={styles.emptyText}>No courses available yet — check back soon.</Text>
+          </Card>
+        ) : (
+          <Card variant="elevated" style={styles.courseListCard}>
+            {displayCourses.slice(0, 3).map((course, index) => (
+              <View key={course.id}>
+                {index > 0 && <View style={styles.rowDivider} />}
+                <Pressable
+                  onPress={() => router.push(`/course/${course.id}`)}
+                  accessibilityRole="button"
+                  accessibilityLabel={course.title}
+                  accessibilityHint="Opens course"
+                  style={({ pressed }) => [styles.courseRow, pressed && styles.courseRowPressed]}
+                >
+                  <View style={[styles.courseIcon, { backgroundColor: withAlpha(colors.primary, '12') }]}>
+                    <Ionicons
+                      name={isStudent ? 'school-outline' : 'play-circle-outline'}
+                      size={18}
+                      color={colors.primary}
+                      accessibilityElementsHidden
+                    />
+                  </View>
+                  <Text style={styles.courseTitle} numberOfLines={1}>{course.title}</Text>
+                  {course.ceu_value > 0 && (
+                    <View style={styles.ceuChip}>
+                      <Text style={styles.ceuChipText}>{course.ceu_value} CEU</Text>
+                    </View>
+                  )}
+                  <Ionicons
+                    name="chevron-forward"
+                    size={16}
+                    color={colors.textMuted}
+                    accessibilityElementsHidden
+                  />
+                </Pressable>
+              </View>
+            ))}
+          </Card>
+        )}
+      </Animated.View>
+
+      {/* ── Quick actions ── */}
+      <Animated.View entering={fade(isStudent ? 180 : 240)} style={styles.actionsRow}>
+        <Pressable
+          onPress={() => router.push('/(tabs)/leaderboard')}
+          accessibilityRole="button"
+          accessibilityLabel="View leaderboard"
+          style={({ pressed }) => [styles.actionTile, pressed && styles.actionTilePressed]}
+        >
+          <Ionicons name="trophy-outline" size={22} color={colors.accent} accessibilityElementsHidden />
+          <Text style={styles.actionTileLabel}>Leaderboard</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push('/history')}
+          accessibilityRole="button"
+          accessibilityLabel="View certificates"
+          style={({ pressed }) => [styles.actionTile, pressed && styles.actionTilePressed]}
+        >
+          <Ionicons name="ribbon-outline" size={22} color={colors.primary} accessibilityElementsHidden />
+          <Text style={styles.actionTileLabel}>Certificates</Text>
+        </Pressable>
+        {isStudent ? (
+          <Pressable
+            onPress={() => router.push('/(tabs)/exam')}
+            accessibilityRole="button"
+            accessibilityLabel="Open exam prep"
+            style={({ pressed }) => [styles.actionTile, pressed && styles.actionTilePressed]}
+          >
+            <Ionicons name="school-outline" size={22} color={colors.success} accessibilityElementsHidden />
+            <Text style={styles.actionTileLabel}>Exam Prep</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={() => router.push('/(tabs)/courses')}
+            accessibilityRole="button"
+            accessibilityLabel="Browse course library"
+            style={({ pressed }) => [styles.actionTile, pressed && styles.actionTilePressed]}
+          >
+            <Ionicons name="library-outline" size={22} color={colors.success} accessibilityElementsHidden />
+            <Text style={styles.actionTileLabel}>Browse CEUs</Text>
+          </Pressable>
+        )}
+      </Animated.View>
+    </ScrollView>
   );
 }
 
@@ -371,62 +255,27 @@ const createStyles = (
   textScale: number,
 ) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    content: {
-      padding: 16,
-      paddingBottom: 40,
-    },
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 20, paddingBottom: 48, gap: 14 },
 
-    // ── Hero (floating, no card) ──
-    hero: {
-      paddingTop: 8,
-      paddingBottom: 26,
-    },
-    heroMeta: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 16,
-    },
-    streakPill: {
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 3,
-      backgroundColor: withAlpha(colors.warning, '18'),
-    },
-    streakPillText: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.warning,
-      letterSpacing: 0.2,
-    },
-    heroGreeting: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      marginBottom: 2,
+    // Hero
+    hero: { paddingTop: 8, paddingBottom: 4 },
+    eyebrow: {
+      fontSize: 13 * textScale,
+      fontFamily: Typography.bodySemiBold,
+      color: colors.textMuted,
+      letterSpacing: 0.3,
+      marginBottom: 6,
     },
     heroName: {
-      fontSize: 40 * textScale,
-      lineHeight: 46,
-      fontFamily: Typography.heading,
+      fontSize: 34 * textScale,
+      lineHeight: 40,
+      fontFamily: Typography.bodyExtraBold,
       color: colors.text,
-      marginBottom: 10,
-    },
-    heroSub: {
-      fontSize: 14 * textScale,
-      lineHeight: 22,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
     },
 
-    // ── Notice ──
-    noticeCard: {
-      marginBottom: 14,
-    },
+    // Notice
+    noticeCard: {},
     noticeTitle: {
       fontSize: 14 * textScale,
       fontFamily: Typography.bodyBold,
@@ -440,251 +289,170 @@ const createStyles = (
       fontFamily: Typography.body,
     },
 
-    // ── Progress card ──
-    progressCard: {
-      marginBottom: 14,
-    },
-    progressHeader: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      marginBottom: 14,
-      gap: 12,
-    },
-    progressLeft: {
-      flex: 1,
-    },
-    progressEyebrow: {
+    // Section labels
+    sectionLabel: {
       fontSize: 11 * textScale,
       fontFamily: Typography.bodyBold,
+      color: colors.textMuted,
       letterSpacing: 1,
-      color: colors.primary,
-      marginBottom: 6,
+      marginBottom: 0,
     },
+    sectionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+    },
+    sectionLink: {
+      fontSize: 13 * textScale,
+      fontFamily: Typography.bodySemiBold,
+      color: colors.primary,
+    },
+
+    // Progress
+    progressCard: {},
     progressTitle: {
       fontSize: 20 * textScale,
       lineHeight: 26,
       fontFamily: Typography.headingSemiBold,
       color: colors.text,
     },
-    progressPct: {
-      fontSize: 44 * textScale,
-      lineHeight: 50,
+    ceuRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: 8,
+      marginBottom: 14,
+    },
+    ceuBig: {
+      fontSize: 48 * textScale,
+      lineHeight: 52,
       fontFamily: Typography.bodyExtraBold,
       color: colors.text,
-      marginBottom: 2,
     },
-    progressSub: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.body,
+    ceuDenomWrap: {
+      paddingBottom: 6,
+    },
+    ceuDenom: {
+      fontSize: 18 * textScale,
+      fontFamily: Typography.bodySemiBold,
       color: colors.textSecondary,
+      lineHeight: 22,
     },
-    progressBadge: {
-      width: 68,
-      height: 68,
-      borderRadius: 34,
-      borderWidth: 2,
+    ceuUnit: {
+      fontSize: 11 * textScale,
+      fontFamily: Typography.body,
+      color: colors.textMuted,
+      letterSpacing: 0.2,
+    },
+    progressCaption: {
+      marginTop: 10,
+      fontSize: 13 * textScale,
+      lineHeight: 18,
+      color: colors.textMuted,
+      fontFamily: Typography.body,
+    },
+
+    // Stats strip
+    statsStrip: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    statItem: {
+      flex: 1,
       alignItems: 'center',
-      justifyContent: 'center',
+      paddingVertical: 16,
+      gap: 4,
     },
-    progressBadgeValue: {
+    statsDivider: {
+      width: 1,
+      backgroundColor: colors.border,
+      marginVertical: 14,
+    },
+    statValue: {
       fontSize: 22 * textScale,
       fontFamily: Typography.bodyExtraBold,
       lineHeight: 26,
     },
-    progressBadgeSub: {
-      fontSize: 10 * textScale,
+    statLabel: {
+      fontSize: 11 * textScale,
       fontFamily: Typography.bodySemiBold,
+      color: colors.textMuted,
       letterSpacing: 0.3,
     },
-    progressText: {
-      marginTop: 10,
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      color: colors.textMuted,
-      fontFamily: Typography.body,
-    },
 
-    // ── Metrics row ──
-    metricsRow: {
-      flexDirection: 'row',
-      gap: 10,
-      marginBottom: 14,
-    },
-    metricCard: {
-      flex: 1,
-      borderRadius: 16,
-      padding: 14,
-      backgroundColor: colors.card,
-      ...Shadow.sm,
-      shadowColor: colors.shadow,
-    },
-    metricBar: {
-      width: 24,
-      height: 3,
-      borderRadius: 999,
-      marginBottom: 10,
-    },
-    metricValue: {
-      fontSize: 22 * textScale,
-      fontFamily: Typography.bodyExtraBold,
-      color: colors.text,
-      marginBottom: 3,
-    },
-    metricLabel: {
-      fontSize: 11 * textScale,
-      color: colors.textMuted,
-      fontFamily: Typography.bodySemiBold,
-      letterSpacing: 0.2,
-    },
-
-    // ── Streak bar ──
-    streakCard: {
+    // Course list
+    courseListCard: { padding: 0, overflow: 'hidden' },
+    courseRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
-      borderRadius: 16,
+      gap: 12,
       paddingHorizontal: 16,
       paddingVertical: 14,
-      marginBottom: 26,
-      backgroundColor: colors.card,
-      ...Shadow.sm,
-      shadowColor: colors.shadow,
     },
-    streakLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      flex: 1,
-    },
-    streakEmoji: {
-      fontSize: 24,
-      lineHeight: 28,
-    },
-    streakTitle: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    streakSub: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-
-    // ── Sections ──
-    sectionHeader: {
-      marginBottom: 12,
-    },
-    sectionTitle: {
-      fontSize: 19 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    sectionHint: {
-      fontSize: 13 * textScale,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-
-    // ── Action cards ──
-    actionPressable: {
-      marginBottom: 10,
-    },
-    liftHover: {
-      transform: [{ translateY: -2 }],
-    },
-    actionCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    actionCardActive: {
-      borderColor: withAlpha(colors.primary, '30'),
-      shadowColor: colors.primary,
-      shadowOpacity: 0.14,
-    },
-    actionIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
+    courseRowPressed: { backgroundColor: withAlpha(colors.primary, '06') },
+    courseIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
-    actionCopy: {
+    courseTitle: {
       flex: 1,
-    },
-    actionTitle: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 3,
-      ...(getWebTransitionStyle('color') ?? {}),
-    },
-    actionTitleActive: {
-      color: colors.primary,
-    },
-    actionDesc: {
-      fontSize: 12 * textScale,
-      lineHeight: 18,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-
-    // ── Empty state ──
-    emptyCard: {
-      marginBottom: 12,
-    },
-    emptyInner: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-    },
-    emptyIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    emptyCopy: {
-      flex: 1,
-    },
-    emptyTitle: {
       fontSize: 14 * textScale,
       fontFamily: Typography.bodyBold,
       color: colors.text,
-      marginBottom: 3,
     },
+    ceuChip: {
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      borderRadius: 8,
+      backgroundColor: withAlpha(colors.primary, '10'),
+    },
+    ceuChipText: {
+      fontSize: 11 * textScale,
+      fontFamily: Typography.bodyBold,
+      color: colors.primary,
+    },
+    rowDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginHorizontal: 16,
+    },
+    emptyCard: {},
     emptyText: {
-      fontSize: 12 * textScale,
-      lineHeight: 18,
-      color: colors.textSecondary,
+      fontSize: 14 * textScale,
       fontFamily: Typography.body,
+      color: colors.textSecondary,
+      textAlign: 'center',
     },
 
-    // ── Footer card ──
-    footerCard: {
-      marginTop: 8,
-    },
-    footerTitle: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 6,
-    },
-    footerText: {
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-      marginBottom: 12,
-    },
-    footerTags: {
+    // Quick actions
+    actionsRow: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
+      gap: 10,
+    },
+    actionTile: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
       gap: 8,
+      paddingVertical: 16,
+      borderRadius: 16,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    actionTilePressed: { opacity: 0.75 },
+    actionTileLabel: {
+      fontSize: 11 * textScale,
+      fontFamily: Typography.bodySemiBold,
+      color: colors.textSecondary,
+      textAlign: 'center',
     },
   });

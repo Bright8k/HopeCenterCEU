@@ -3,17 +3,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, View } from 'react-native';
 import { useState } from 'react';
 import Constants from 'expo-constants';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { AppBrand } from '@/components/ui/AppBrand';
 import { hasSupabaseEnv } from '@/lib/supabase';
-import { Typography } from '@/constants/theme';
+import { Typography, withAlpha } from '@/constants/theme';
 
 export default function TabLayout() {
   const { role, session, loading } = useAuth();
   const { colors } = usePreferences();
   const { isAdmin } = useAdminRole();
+  const { bottom } = useSafeAreaInsets();
   const isStudent = role === 'STUDENT';
   const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
 
@@ -30,17 +32,22 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          borderTopWidth: 1,
-          borderTopColor: colors.border,
+          height: 56 + bottom,
+          paddingTop: 6,
+          paddingBottom: bottom > 0 ? bottom + 2 : 8,
           backgroundColor: colors.card,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          borderTopWidth: 0,
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: -1 },
+          shadowOpacity: 0.06,
+          shadowRadius: 8,
+          elevation: 10,
         },
         tabBarLabelStyle: {
           fontFamily: Typography.bodySemiBold,
           fontSize: 10,
-          letterSpacing: 0.2,
+          letterSpacing: 0.1,
+          marginTop: 1,
         },
         headerStyle: { backgroundColor: colors.card, shadowColor: 'transparent', elevation: 0, borderBottomWidth: 1, borderBottomColor: colors.border },
         headerTintColor: colors.text,
@@ -71,8 +78,10 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Dashboard',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? tabPill(colors.primary) : undefined}>
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            </View>
           ),
         }}
       />
@@ -80,8 +89,10 @@ export default function TabLayout() {
         name="courses"
         options={{
           title: isStudent ? 'Courses' : 'CEU Library',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="book-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? tabPill(colors.primary) : undefined}>
+              <Ionicons name={focused ? 'book' : 'book-outline'} size={22} color={color} />
+            </View>
           ),
         }}
       />
@@ -89,8 +100,10 @@ export default function TabLayout() {
         name="leaderboard"
         options={{
           title: 'Leaderboard',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trophy-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? tabPill(colors.primary) : undefined}>
+              <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={22} color={color} />
+            </View>
           ),
         }}
       />
@@ -99,8 +112,10 @@ export default function TabLayout() {
         options={{
           title: 'Exam Prep',
           href: isStudent ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? tabPill(colors.primary) : undefined}>
+              <Ionicons name={focused ? 'school' : 'school-outline'} size={22} color={color} />
+            </View>
           ),
         }}
       />
@@ -108,13 +123,24 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <View style={focused ? tabPill(colors.primary) : undefined}>
+              <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            </View>
           ),
         }}
       />
     </Tabs>
   );
+}
+
+function tabPill(primaryColor: string) {
+  return {
+    paddingHorizontal: 14,
+    paddingVertical: 4,
+    borderRadius: 20,
+    backgroundColor: withAlpha(primaryColor, '20'),
+  } as const;
 }
 
 function AdminHeaderButton() {

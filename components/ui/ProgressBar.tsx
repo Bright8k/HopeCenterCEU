@@ -1,4 +1,6 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, withAlpha } from '@/constants/theme';
 
@@ -19,32 +21,44 @@ export function ProgressBar({
   height = 8,
   accessibilityLabel,
 }: ProgressBarProps) {
-  const { colors } = usePreferences();
-  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  const { colors, preferences } = usePreferences();
+  const pct = max > 0 ? Math.min(1, value / max) : 0;
   const fillColor = color ?? colors.primary;
+  const [trackWidth, setTrackWidth] = useState(0);
+  const animWidth = useSharedValue(0);
+  const reducedMotion = preferences.reducedMotion;
+
+  useEffect(() => {
+    if (trackWidth <= 0) return;
+    animWidth.value = withTiming(trackWidth * pct, {
+      duration: reducedMotion ? 0 : 600,
+      easing: Easing.out(Easing.cubic),
+    });
+  // animWidth is a ref-like stable object, intentionally omitted from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pct, trackWidth, reducedMotion]);
+
+  const fillStyle = useAnimatedStyle(() => ({ width: animWidth.value }));
+
+  function handleLayout(e: LayoutChangeEvent) {
+    setTrackWidth(e.nativeEvent.layout.width);
+  }
 
   return (
     <View
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max, now: value }}
-      accessibilityLabel={accessibilityLabel ?? `${Math.round(pct)}% complete`}
+      accessibilityLabel={accessibilityLabel ?? `${Math.round(pct * 100)}% complete`}
     >
       <View
-        style={[
-          styles.track,
-          { height, backgroundColor: withAlpha(fillColor, '18') },
-        ]}
+        style={[styles.track, { height, backgroundColor: withAlpha(fillColor, '18') }]}
+        onLayout={handleLayout}
       >
-        <View
-          style={[
-            styles.fill,
-            { width: `${pct}%` as const, backgroundColor: fillColor, height },
-          ]}
-        />
+        <Animated.View style={[styles.fill, { backgroundColor: fillColor, height }, fillStyle]} />
       </View>
       {showLabel && (
         <Text style={[styles.label, { color: colors.textMuted }]}>
-          {value} / {max} · {Math.round(pct)}%
+          {value} / {max} · {Math.round(pct * 100)}%
         </Text>
       )}
     </View>
