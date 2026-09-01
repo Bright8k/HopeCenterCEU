@@ -71,6 +71,7 @@ function AppNavigator() {
       <Stack.Screen name="exam" />
       <Stack.Screen name="certificate" />
       <Stack.Screen name="history" />
+      <Stack.Screen name="report-bug" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );

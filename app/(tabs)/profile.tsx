@@ -341,6 +341,13 @@ export default function ProfileScreen() {
         onPress={() => router.navigate('/(tabs)')}
       />
 
+      <ActionCard
+        icon="bug-outline"
+        title="Report a bug"
+        description="Found something broken? Let the team know and we'll get it fixed."
+        onPress={() => router.push('/report-bug')}
+      />
+
       {isAdmin && (
         <ActionCard
           icon="shield-checkmark-outline"

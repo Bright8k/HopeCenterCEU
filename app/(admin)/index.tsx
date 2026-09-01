@@ -15,6 +15,7 @@ type Stats = {
   pendingCourses: number;
   totalQuestions: number;
   totalLearners: number;
+  openBugReports: number;
 };
 
 export default function AdminOverview() {
@@ -31,13 +32,16 @@ export default function AdminOverview() {
       supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
       supabase.from('questions').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
-    ]).then(([all, pub, pending, q, learners]) => {
+      // bug_reports not yet in generated types; cast removed once `supabase gen types` is run
+      (supabase as any).from('bug_reports').select('*', { count: 'exact', head: true }).eq('status', 'open'), // eslint-disable-line @typescript-eslint/no-explicit-any
+    ]).then(([all, pub, pending, q, learners, bugs]) => {
       setStats({
         totalCourses:    all.count     ?? 0,
         publishedCourses: pub.count    ?? 0,
         pendingCourses:  pending.count ?? 0,
         totalQuestions:  q.count       ?? 0,
         totalLearners:   learners.count ?? 0,
+        openBugReports:  bugs.count    ?? 0,
       });
     });
   }, []);
@@ -84,6 +88,13 @@ export default function AdminOverview() {
           value={stats ? String(stats.totalLearners) : '--'}
           accent={colors.primaryLight}
         />
+        <StatTile
+          icon="bug-outline"
+          label="Open bugs"
+          value={stats ? String(stats.openBugReports) : '--'}
+          accent={colors.error}
+          highlight={!!(stats && stats.openBugReports > 0)}
+        />
       </View>
 
       <Text style={styles.sectionTitle}>Quick actions</Text>
@@ -127,6 +138,13 @@ export default function AdminOverview() {
         title="Invite Learner"
         description="Send an email invitation to a new learner to join the platform."
         onPress={() => router.push('/(admin)/invite')}
+      />
+      <NavRow
+        icon="bug-outline"
+        title={`Bug Reports${stats && stats.openBugReports > 0 ? ` (${stats.openBugReports} open)` : ''}`}
+        description="Review and triage user-submitted bug reports."
+        onPress={() => router.push('/(admin)/bug-reports')}
+        urgent={!!(stats && stats.openBugReports > 0)}
       />
     </ScrollView>
   );
