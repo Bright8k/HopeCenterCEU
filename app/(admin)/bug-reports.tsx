@@ -1,6 +1,5 @@
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -25,7 +24,6 @@ interface BugReport {
   updated_at: string;
 }
 
-const STATUS_OPTIONS = ['open', 'in_progress', 'resolved'] as const;
 const STATUS_LABELS: Record<string, string> = {
   open:        'Open',
   in_progress: 'In Progress',
@@ -69,24 +67,12 @@ export default function BugReportsScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  async function changeStatus(report: BugReport) {
-    const buttons = STATUS_OPTIONS
-      .filter((s) => s !== report.status)
-      .map((s) => ({
-        text: STATUS_LABELS[s],
-        onPress: async () => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          await (supabase as any).from('bug_reports').update({ status: s }).eq('id', report.id);
-          void load();
-        },
-      }));
-
-    Alert.alert(
-      'Change status',
-      `"${report.title}"\nCurrent: ${STATUS_LABELS[report.status]}`,
-      [...buttons, { text: 'Cancel', style: 'cancel' as const }],
-    );
+  async function setStatus(id: string, status: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase as any).from('bug_reports').update({ status }).eq('id', id);
+    void load();
   }
+
 
   const statusColor = (status: string) => {
     const key = STATUS_COLORS[status] ?? 'primary';
@@ -165,6 +151,7 @@ export default function BugReportsScreen() {
           onRefresh={load}
           renderItem={({ item }) => (
             <View style={styles.card}>
+              {/* chips row */}
               <View style={styles.cardTop}>
                 <View style={styles.cardMeta}>
                   <View style={[styles.categoryChip, { backgroundColor: withAlpha(colors.primary, '10') }]}>
@@ -178,23 +165,60 @@ export default function BugReportsScreen() {
                     </Text>
                   </View>
                 </View>
-                <Pressable
-                  onPress={() => changeStatus(item)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Change status"
-                  style={({ pressed }) => [styles.statusBtn, pressed && { opacity: 0.65 }]}
-                >
-                  <Ionicons name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
-                </Pressable>
               </View>
 
               <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
               <Text style={styles.desc} numberOfLines={3}>{item.description}</Text>
 
+              {/* footer: date + actions */}
               <View style={styles.footer}>
                 <Text style={styles.meta}>
                   {formatDate(item.created_at)} · {item.user_id.slice(0, 8)}…
                 </Text>
+                <View style={styles.actions}>
+                  {item.status !== 'resolved' ? (
+                    <>
+                      {item.status === 'open' && (
+                        <Pressable
+                          onPress={() => setStatus(item.id, 'in_progress')}
+                          accessibilityRole="button"
+                          accessibilityLabel="Mark as in progress"
+                          style={({ pressed }) => [styles.actionGhost, pressed && { opacity: 0.65 }]}
+                        >
+                          <Text style={[styles.actionGhostText, { color: colors.warning }]}>In Progress</Text>
+                        </Pressable>
+                      )}
+                      {item.status === 'in_progress' && (
+                        <Pressable
+                          onPress={() => setStatus(item.id, 'open')}
+                          accessibilityRole="button"
+                          accessibilityLabel="Move back to open"
+                          style={({ pressed }) => [styles.actionGhost, pressed && { opacity: 0.65 }]}
+                        >
+                          <Text style={[styles.actionGhostText, { color: colors.textSecondary }]}>← Open</Text>
+                        </Pressable>
+                      )}
+                      <Pressable
+                        onPress={() => setStatus(item.id, 'resolved')}
+                        accessibilityRole="button"
+                        accessibilityLabel="Mark as resolved"
+                        style={({ pressed }) => [styles.actionResolve, pressed && { opacity: 0.75 }]}
+                      >
+                        <Ionicons name="checkmark" size={14} color={colors.white} accessibilityElementsHidden />
+                        <Text style={styles.actionResolveText}>Resolve</Text>
+                      </Pressable>
+                    </>
+                  ) : (
+                    <Pressable
+                      onPress={() => setStatus(item.id, 'open')}
+                      accessibilityRole="button"
+                      accessibilityLabel="Reopen this report"
+                      style={({ pressed }) => [styles.actionGhost, pressed && { opacity: 0.65 }]}
+                    >
+                      <Text style={[styles.actionGhostText, { color: colors.textSecondary }]}>Reopen</Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
             </View>
           )}
@@ -241,9 +265,20 @@ const createStyles = (
     categoryText: { fontSize: 11 * textScale, fontFamily: Typography.bodyBold },
     statusChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
     statusText: { fontSize: 11 * textScale, fontFamily: Typography.bodyBold },
-    statusBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
     title: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 6, lineHeight: 21 },
     desc: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary, lineHeight: 19, marginBottom: 10 },
-    footer: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 8 },
-    meta: { fontSize: 11 * textScale, fontFamily: Typography.body, color: colors.textMuted },
+    footer: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 10, gap: 10,
+    },
+    meta: { fontSize: 11 * textScale, fontFamily: Typography.body, color: colors.textMuted, flex: 1 },
+    actions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    actionGhost: { paddingHorizontal: 10, paddingVertical: 6, minHeight: 32, justifyContent: 'center' },
+    actionGhostText: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold },
+    actionResolve: {
+      flexDirection: 'row', alignItems: 'center', gap: 5,
+      backgroundColor: colors.success, borderRadius: 8,
+      paddingHorizontal: 12, paddingVertical: 6, minHeight: 32,
+    },
+    actionResolveText: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.white },
   });

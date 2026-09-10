@@ -37,13 +37,16 @@ CREATE POLICY "users_insert_own_bug_reports" ON bug_reports
   FOR INSERT TO authenticated
   WITH CHECK (user_id = auth.uid());
 
--- Users see only their own; admins see all
+-- Users see their own; admins see all
 CREATE POLICY "read_bug_reports" ON bug_reports
   FOR SELECT TO authenticated
-  USING (user_id = auth.uid() OR is_user_admin());
+  USING (
+    user_id = auth.uid()
+    OR exists (select 1 from public.admin_roles where user_id = (select auth.uid()))
+  );
 
 -- Only admins can update status / add notes
 CREATE POLICY "admin_update_bug_reports" ON bug_reports
   FOR UPDATE TO authenticated
-  USING (is_user_admin())
-  WITH CHECK (is_user_admin());
+  USING (exists (select 1 from public.admin_roles where user_id = (select auth.uid())))
+  WITH CHECK (exists (select 1 from public.admin_roles where user_id = (select auth.uid())));
