@@ -259,17 +259,7 @@ export default function ProfileEditScreen() {
               >
                 <View style={styles.roleRow}>
                   <View style={[styles.roleIcon, isSelected && styles.roleIconSelected]}>
-                    <Ionicons
-                      name={
-                        isStudent
-                          ? 'school-outline'
-                          : role === 'BCBA'
-                            ? 'ribbon-outline'
-                            : 'medkit-outline'
-                      }
-                      size={18}
-                      color={isSelected ? colors.white : colors.primary}
-                    />
+                    <Ionicons name={isStudent ? 'school-outline' : role === 'BCBA' ? 'ribbon-outline' : 'medkit-outline'} size={18} color={isSelected ? colors.white : colors.primary} />
                   </View>
                   <View style={styles.roleCopy}>
                     <Text style={[styles.roleTitle, isSelected && styles.roleTitleSelected]}>
@@ -279,14 +269,7 @@ export default function ProfileEditScreen() {
                       {isStudent ? 'Board exam prep' : `${req.total} CEUs · ${req.cycleYears}-yr cycle`}
                     </Text>
                   </View>
-                  {isSelected && (
-                    <Ionicons
-                      name="checkmark-circle"
-                      size={20}
-                      color={colors.primary}
-                      accessibilityElementsHidden
-                    />
-                  )}
+                  {isSelected && <Ionicons name="checkmark-circle" size={20} color={colors.primary} accessibilityElementsHidden />}
                 </View>
               </InteractivePressable>
             );
@@ -345,231 +328,54 @@ export default function ProfileEditScreen() {
         )}
       </ScrollView>
 
-      {/* Save footer */}
       <View style={styles.footer}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.saveBtn,
-            pressed && styles.saveBtnPressed,
-            saving && styles.saveBtnDisabled,
-          ]}
-          onPress={handleSave}
-          disabled={saving}
-          accessibilityRole="button"
-          accessibilityLabel="Save profile changes"
-        >
-          {saving ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <>
-              <Ionicons name="checkmark" size={18} color={colors.white} accessibilityElementsHidden />
-              <Text style={styles.saveBtnText}>Save changes</Text>
-            </>
-          )}
+        <Pressable style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed, saving && styles.saveBtnDisabled]} onPress={handleSave} disabled={saving} accessibilityRole="button" accessibilityLabel="Save profile changes">
+          {saving ? <ActivityIndicator color={colors.white} /> : <><Ionicons name="checkmark" size={18} color={colors.white} accessibilityElementsHidden /><Text style={styles.saveBtnText}>Save changes</Text></>}
         </Pressable>
       </View>
     </SafeAreaView>
   );
 }
 
-const createStyles = (
-  colors: ReturnType<typeof usePreferences>['colors'],
-  textScale: number,
-) =>
+const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: colors.background },
     loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-    avatarSection: {
-      alignItems: 'center',
-      paddingVertical: 20,
-      marginBottom: 8,
-    },
-    avatarWrap: {
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      position: 'relative',
-    },
-    avatarImage: {
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      borderWidth: 2,
-      borderColor: colors.border,
-    },
-    avatarPlaceholder: {
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-      borderWidth: 2,
-      borderColor: colors.border,
-    },
-    avatarOverlay: {
-      position: 'absolute',
-      bottom: 0,
-      right: 0,
-      width: 28,
-      height: 28,
-      borderRadius: 14,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 2,
-      borderColor: colors.card,
-    },
-    avatarHint: {
-      marginTop: 10,
-      fontSize: 13,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      gap: 10,
-    },
-    headerBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surface,
-    },
-    headerTitle: {
-      flex: 1,
-      fontSize: 17 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      textAlign: 'center',
-    },
+    avatarSection: { alignItems: 'center', paddingVertical: 20, marginBottom: 8 },
+    avatarWrap: { width: 90, height: 90, borderRadius: 45, position: 'relative' },
+    avatarImage: { width: 90, height: 90, borderRadius: 45, borderWidth: 2, borderColor: colors.border },
+    avatarPlaceholder: { width: 90, height: 90, borderRadius: 45, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '12'), borderWidth: 2, borderColor: colors.border },
+    avatarOverlay: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: colors.card },
+    avatarHint: { marginTop: 10, fontSize: 13, fontFamily: Typography.body, color: colors.textSecondary },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 10 },
+    headerBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+    headerTitle: { flex: 1, fontSize: 17 * textScale, fontFamily: Typography.bodyBold, color: colors.text, textAlign: 'center' },
     headerRight: { width: 44 },
     content: { padding: 20, paddingBottom: 16 },
-    sectionLabel: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-      marginTop: 4,
-    },
-    sectionHint: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      marginBottom: 14,
-    },
+    sectionLabel: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 4, marginTop: 4 },
+    sectionHint: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 14 },
     roleList: { gap: 10, marginBottom: 22 },
-    roleCard: {
-      borderRadius: 14,
-      padding: 14,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    roleCardSelected: {
-      borderColor: colors.primary,
-      backgroundColor: withAlpha(colors.primary, '0C'),
-    },
-    roleCardHover: {
-      borderColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-    },
-    roleRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    roleIcon: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '10'),
-    },
+    roleCard: { borderRadius: 14, padding: 14, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card },
+    roleCardSelected: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '0C') },
+    roleCardHover: { borderColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.1, shadowRadius: 8 },
+    roleRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    roleIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '10') },
     roleIconSelected: { backgroundColor: colors.primary },
     roleCopy: { flex: 1 },
-    roleTitle: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 2,
-    },
+    roleTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 2 },
     roleTitleSelected: { color: colors.primary },
-    roleMeta: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
+    roleMeta: { fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
     renewalSection: { marginBottom: 8 },
-    chipGroupLabel: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.textSecondary,
-      letterSpacing: 0.4,
-      textTransform: 'uppercase',
-      marginBottom: 10,
-    },
-    chipGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-      marginBottom: 18,
-    },
-    chip: {
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      minWidth: 50,
-      alignItems: 'center',
-    },
+    chipGroupLabel: { fontSize: 12 * textScale, fontFamily: Typography.bodyBold, color: colors.textSecondary, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 10 },
+    chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
+    chip: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, minWidth: 50, alignItems: 'center' },
     chipWide: { minWidth: 70 },
-    chipActive: {
-      borderColor: colors.primary,
-      backgroundColor: withAlpha(colors.primary, '10'),
-    },
-    chipText: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textSecondary,
-    },
-    chipTextActive: {
-      color: colors.primary,
-      fontFamily: Typography.bodyBold,
-    },
-    footer: {
-      paddingHorizontal: 20,
-      paddingVertical: 14,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    saveBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      minHeight: 52,
-      borderRadius: 14,
-      backgroundColor: colors.primary,
-    },
+    chipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '10') },
+    chipText: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    chipTextActive: { color: colors.primary, fontFamily: Typography.bodyBold },
+    footer: { paddingHorizontal: 20, paddingVertical: 14, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.card },
+    saveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, borderRadius: 14, backgroundColor: colors.primary },
     saveBtnPressed: { opacity: 0.88 },
     saveBtnDisabled: { opacity: 0.5 },
-    saveBtnText: {
-      fontSize: 16 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.white,
-    },
+    saveBtnText: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.white },
   });

@@ -204,48 +204,18 @@ export default function AdminUserDetailScreen() {
         <Card variant="elevated" style={styles.actionsCard}>
           <Text style={styles.actionsTitle}>Account actions</Text>
           <View style={styles.actionRow}>
-            <Pressable
-              onPress={handleSendReset}
-              disabled={resetSending}
-              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Send password reset email"
-              accessibilityHint="Sends a password reset link to this user's email address"
-            >
-              <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.primary, '14') }]}>
-                <Ionicons name="key-outline" size={18} color={colors.primary} />
-              </View>
+            <Pressable onPress={handleSendReset} disabled={resetSending} style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel="Send password reset email" accessibilityHint="Sends a password reset link to this user's email address">
+              <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.primary, '14') }]}><Ionicons name="key-outline" size={18} color={colors.primary} /></View>
               <Text style={styles.actionLabel}>{resetSending ? 'Sending…' : 'Reset password'}</Text>
             </Pressable>
-
             {adminChecked && (
-              <Pressable
-                onPress={handleToggleAdmin}
-                disabled={adminToggling}
-                style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
-                accessibilityRole="button"
-                accessibilityLabel={isAdmin ? 'Revoke admin access' : 'Grant admin access'}
-                accessibilityHint={isAdmin ? 'Removes admin portal access from this user' : 'Gives this user admin portal access'}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.accent, '14') }]}>
-                  <Ionicons name={isAdmin ? 'shield-outline' : 'shield-checkmark-outline'} size={18} color={colors.accent} />
-                </View>
-                <Text style={styles.actionLabel}>
-                  {adminToggling ? 'Updating…' : isAdmin ? 'Revoke admin' : 'Grant admin'}
-                </Text>
+              <Pressable onPress={handleToggleAdmin} disabled={adminToggling} style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel={isAdmin ? 'Revoke admin access' : 'Grant admin access'} accessibilityHint={isAdmin ? 'Removes admin portal access from this user' : 'Gives this user admin portal access'}>
+                <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.accent, '14') }]}><Ionicons name={isAdmin ? 'shield-outline' : 'shield-checkmark-outline'} size={18} color={colors.accent} /></View>
+                <Text style={styles.actionLabel}>{adminToggling ? 'Updating…' : isAdmin ? 'Revoke admin' : 'Grant admin'}</Text>
               </Pressable>
             )}
-
-            <Pressable
-              onPress={() => setDeleteConfirmModal(true)}
-              style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]}
-              accessibilityRole="button"
-              accessibilityLabel="Delete learner account"
-              accessibilityHint="Permanently deletes this user and all their data"
-            >
-              <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.error, '14') }]}>
-                <Ionicons name="trash-outline" size={18} color={colors.error} />
-              </View>
+            <Pressable onPress={() => setDeleteConfirmModal(true)} style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel="Delete learner account" accessibilityHint="Permanently deletes this user and all their data">
+              <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.error, '14') }]}><Ionicons name="trash-outline" size={18} color={colors.error} /></View>
               <Text style={[styles.actionLabel, { color: colors.error }]}>Delete account</Text>
             </Pressable>
           </View>
@@ -283,37 +253,17 @@ export default function AdminUserDetailScreen() {
       </ScrollView>
 
       {/* Role change modal */}
-      <Modal
-        visible={roleModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setRoleModal(false)}
-        accessibilityViewIsModal
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setRoleModal(false)}
-          accessibilityLabel="Close dialog"
-        >
+      <Modal visible={roleModal} transparent animationType="fade" onRequestClose={() => setRoleModal(false)} accessibilityViewIsModal>
+        <Pressable style={styles.modalOverlay} onPress={() => setRoleModal(false)} accessibilityLabel="Close dialog">
           <Pressable style={styles.modalCard} onPress={() => { /* stops propagation */ }}>
             <Text style={styles.modalTitle}>Change role</Text>
             <Text style={styles.modalSub}>{detail.displayName}</Text>
-
             <View style={styles.roleList}>
               {ROLES.map((r) => {
                 const selected = (pendingRole ?? detail.role) === r;
                 return (
-                  <Pressable
-                    key={r}
-                    onPress={() => setPendingRole(r)}
-                    style={[styles.roleRow, selected && styles.roleRowSelected]}
-                    accessibilityRole="radio"
-                    accessibilityState={{ checked: selected }}
-                    accessibilityLabel={ROLE_LABELS[r]}
-                  >
-                    <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>
-                      {selected && <View style={styles.radioInner} />}
-                    </View>
+                  <Pressable key={r} onPress={() => setPendingRole(r)} style={[styles.roleRow, selected && styles.roleRowSelected]} accessibilityRole="radio" accessibilityState={{ checked: selected }} accessibilityLabel={ROLE_LABELS[r]}>
+                    <View style={[styles.radioOuter, selected && styles.radioOuterSelected]}>{selected && <View style={styles.radioInner} />}</View>
                     <View style={styles.roleCopy}>
                       <Text style={[styles.roleLabel, selected && styles.roleLabelSelected]}>{r}</Text>
                       <Text style={styles.roleDesc}>{ROLE_LABELS[r]}</Text>
@@ -322,20 +272,8 @@ export default function AdminUserDetailScreen() {
                 );
               })}
             </View>
-
-            <Button
-              title={roleSaving ? 'Saving…' : 'Save role'}
-              onPress={handleSaveRole}
-              disabled={roleSaving || pendingRole === detail.role}
-              style={styles.saveBtn}
-              accessibilityLabel="Save role change"
-            />
-            <Pressable
-              onPress={() => setRoleModal(false)}
-              style={styles.cancelBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
-            >
+            <Button title={roleSaving ? 'Saving…' : 'Save role'} onPress={handleSaveRole} disabled={roleSaving || pendingRole === detail.role} style={styles.saveBtn} accessibilityLabel="Save role change" />
+            <Pressable onPress={() => setRoleModal(false)} style={styles.cancelBtn} accessibilityRole="button" accessibilityLabel="Cancel">
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </Pressable>
@@ -343,42 +281,16 @@ export default function AdminUserDetailScreen() {
       </Modal>
 
       {/* Delete confirmation modal */}
-      <Modal
-        visible={deleteConfirmModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setDeleteConfirmModal(false)}
-        accessibilityViewIsModal
-      >
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setDeleteConfirmModal(false)}
-          accessibilityLabel="Close dialog"
-        >
+      <Modal visible={deleteConfirmModal} transparent animationType="fade" onRequestClose={() => setDeleteConfirmModal(false)} accessibilityViewIsModal>
+        <Pressable style={styles.modalOverlay} onPress={() => setDeleteConfirmModal(false)} accessibilityLabel="Close dialog">
           <Pressable style={styles.modalCard} onPress={() => { /* stops propagation */ }}>
-            <View style={styles.deleteIconWrap}>
-              <Ionicons name="warning-outline" size={28} color={colors.error} />
-            </View>
+            <View style={styles.deleteIconWrap}><Ionicons name="warning-outline" size={28} color={colors.error} /></View>
             <Text style={styles.modalTitle}>Delete account?</Text>
             <Text style={styles.deleteWarning}>
-              This will permanently delete{' '}
-              <Text style={{ fontFamily: Typography.bodyBold }}>{detail.displayName}</Text>'s account,
-              all completions, quiz history, and certificates. This cannot be undone.
+              This will permanently delete <Text style={{ fontFamily: Typography.bodyBold }}>{detail.displayName}</Text>'s account, all completions, quiz history, and certificates. This cannot be undone.
             </Text>
-
-            <Button
-              title={deleting ? 'Deleting…' : 'Yes, delete account'}
-              onPress={handleDeleteUser}
-              disabled={deleting}
-              style={styles.deleteBtn}
-              accessibilityLabel="Confirm delete account"
-            />
-            <Pressable
-              onPress={() => setDeleteConfirmModal(false)}
-              style={styles.cancelBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
-            >
+            <Button title={deleting ? 'Deleting…' : 'Yes, delete account'} onPress={handleDeleteUser} disabled={deleting} style={styles.deleteBtn} accessibilityLabel="Confirm delete account" />
+            <Pressable onPress={() => setDeleteConfirmModal(false)} style={styles.cancelBtn} accessibilityRole="button" accessibilityLabel="Cancel">
               <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </Pressable>
@@ -388,32 +300,17 @@ export default function AdminUserDetailScreen() {
   );
 }
 
-function MetaTile({
-  label, value, icon, colors, textScale,
-}: {
-  label: string; value: string; icon: keyof typeof Ionicons.glyphMap;
-  colors: ReturnType<typeof usePreferences>['colors']; textScale: number;
-}) {
+function MetaTile({ label, value, icon, colors, textScale }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap; colors: ReturnType<typeof usePreferences>['colors']; textScale: number }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 4 }}>
       <Ionicons name={icon} size={16} color={colors.textSecondary} />
-      <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.text, textAlign: 'center' }}>
-        {value}
-      </Text>
-      <Text style={{ fontSize: 10 * textScale, fontFamily: Typography.body, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-        {label}
-      </Text>
+      <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.text, textAlign: 'center' }}>{value}</Text>
+      <Text style={{ fontSize: 10 * textScale, fontFamily: Typography.body, color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</Text>
     </View>
   );
 }
 
-function CompletionRow({
-  item, colors, styles,
-}: {
-  item: AdminUserCompletion;
-  colors: ReturnType<typeof usePreferences>['colors'];
-  styles: ReturnType<typeof createStyles>;
-}) {
+function CompletionRow({ item, colors, styles }: { item: AdminUserCompletion; colors: ReturnType<typeof usePreferences>['colors']; styles: ReturnType<typeof createStyles> }) {
   const date = new Date(item.completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   return (
     <View style={styles.compRow}>
@@ -423,21 +320,14 @@ function CompletionRow({
         <Text style={styles.compDate}>{date}</Text>
       </View>
       <View style={styles.compRight}>
-        <Text style={[styles.compScore, { color: item.passed ? colors.success : colors.error }]}>
-          {item.score}%
-        </Text>
-        {item.passed && item.ceuValue > 0 && (
-          <Text style={styles.compCeu}>{item.ceuValue} CEU</Text>
-        )}
+        <Text style={[styles.compScore, { color: item.passed ? colors.success : colors.error }]}>{item.score}%</Text>
+        {item.passed && item.ceuValue > 0 && <Text style={styles.compCeu}>{item.ceuValue} CEU</Text>}
       </View>
     </View>
   );
 }
 
-const createStyles = (
-  colors: ReturnType<typeof usePreferences>['colors'],
-  textScale: number,
-) =>
+const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
   StyleSheet.create({
     center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: colors.background },
     emptyTitle: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.textSecondary },
@@ -445,35 +335,20 @@ const createStyles = (
     content: { padding: 16, paddingBottom: 40, gap: 14 },
     headerCard: { gap: 16 },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-    avatar: {
-      width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '16'), flexShrink: 0,
-    },
+    avatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '16'), flexShrink: 0 },
     avatarText: { fontSize: 22 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
     headerCopy: { flex: 1, gap: 6 },
     displayName: { fontSize: 20 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
     badgeRow: { flexDirection: 'row', gap: 6, flexWrap: 'wrap', alignItems: 'center' },
-    editRoleBtn: {
-      flexDirection: 'row', alignItems: 'center', gap: 4,
-      paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8,
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
+    editRoleBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, backgroundColor: withAlpha(colors.primary, '12') },
     editRoleText: { fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold, color: colors.primary },
-    metaGrid: {
-      flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border,
-      paddingTop: 14, gap: 8,
-    },
-    // Admin actions card
+    metaGrid: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 14, gap: 8 },
     actionsCard: { gap: 12 },
     actionsTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
     actionRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap' },
-    actionBtn: {
-      flex: 1, minWidth: 90, alignItems: 'center', gap: 8,
-      paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: colors.border,
-    },
+    actionBtn: { flex: 1, minWidth: 90, alignItems: 'center', gap: 8, paddingVertical: 12, borderRadius: 14, borderWidth: 1, borderColor: colors.border },
     actionIcon: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
     actionLabel: { fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text, textAlign: 'center' },
-    // CEU card
     ceuCard: { gap: 10 },
     ceuHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     ceuTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
@@ -484,10 +359,7 @@ const createStyles = (
     sectionCount: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
     emptyCard: { paddingVertical: 20, alignItems: 'center' },
     emptyText: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
-    compRow: {
-      flexDirection: 'row', alignItems: 'center', gap: 12,
-      paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.border,
-    },
+    compRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: colors.border },
     compDot: { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
     compCopy: { flex: 1 },
     compTitle: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 2 },
@@ -495,27 +367,14 @@ const createStyles = (
     compRight: { alignItems: 'flex-end' },
     compScore: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold },
     compCeu: { fontSize: 11 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
-    // Modals
-    modalOverlay: {
-      flex: 1, backgroundColor: withAlpha(colors.shadow, '8C'),
-      alignItems: 'center', justifyContent: 'center', padding: 24,
-    },
-    modalCard: {
-      width: '100%', maxWidth: 400, borderRadius: 24,
-      backgroundColor: colors.card, padding: 24, gap: 4,
-    },
+    modalOverlay: { flex: 1, backgroundColor: withAlpha(colors.shadow, '8C'), alignItems: 'center', justifyContent: 'center', padding: 24 },
+    modalCard: { width: '100%', maxWidth: 400, borderRadius: 24, backgroundColor: colors.card, padding: 24, gap: 4 },
     modalTitle: { fontSize: 20 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text, marginBottom: 2 },
     modalSub: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 16 },
     roleList: { gap: 8, marginBottom: 20 },
-    roleRow: {
-      flexDirection: 'row', alignItems: 'center', gap: 14,
-      padding: 14, borderRadius: 14, borderWidth: 1.5, borderColor: colors.border,
-    },
+    roleRow: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, borderRadius: 14, borderWidth: 1.5, borderColor: colors.border },
     roleRowSelected: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '0A') },
-    radioOuter: {
-      width: 20, height: 20, borderRadius: 10, borderWidth: 2,
-      borderColor: colors.border, alignItems: 'center', justifyContent: 'center',
-    },
+    radioOuter: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
     radioOuterSelected: { borderColor: colors.primary },
     radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary },
     roleCopy: { flex: 1 },
@@ -525,15 +384,7 @@ const createStyles = (
     saveBtn: { marginTop: 4 },
     cancelBtn: { alignItems: 'center', paddingVertical: 14 },
     cancelText: { fontSize: 15 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
-    // Delete modal
-    deleteIconWrap: {
-      width: 56, height: 56, borderRadius: 28,
-      backgroundColor: withAlpha(colors.error, '14'),
-      alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 8,
-    },
-    deleteWarning: {
-      fontSize: 14 * textScale, fontFamily: Typography.body,
-      color: colors.textSecondary, lineHeight: 22, marginBottom: 20, marginTop: 6,
-    },
+    deleteIconWrap: { width: 56, height: 56, borderRadius: 28, backgroundColor: withAlpha(colors.error, '14'), alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 8 },
+    deleteWarning: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, lineHeight: 22, marginBottom: 20, marginTop: 6 },
     deleteBtn: { marginTop: 4, backgroundColor: colors.error },
   });

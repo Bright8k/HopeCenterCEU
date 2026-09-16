@@ -257,202 +257,40 @@ const createStyles = (
   StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     content: { padding: 20, paddingBottom: 48, gap: 14 },
-
-    // Hero
     hero: { paddingTop: 8, paddingBottom: 4 },
-    eyebrow: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textMuted,
-      letterSpacing: 0.3,
-      marginBottom: 6,
-    },
-    heroName: {
-      fontSize: 34 * textScale,
-      lineHeight: 40,
-      fontFamily: Typography.bodyExtraBold,
-      color: colors.text,
-    },
-
-    // Notice
+    eyebrow: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textMuted, letterSpacing: 0.3, marginBottom: 6 },
+    heroName: { fontSize: 34 * textScale, lineHeight: 40, fontFamily: Typography.bodyExtraBold, color: colors.text },
     noticeCard: {},
-    noticeTitle: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    noticeText: {
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-
-    // Section labels
-    sectionLabel: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.textMuted,
-      letterSpacing: 1,
-      marginBottom: 0,
-    },
-    sectionRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 10,
-    },
-    sectionLink: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.primary,
-    },
-
-    // Progress
+    noticeTitle: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 4 },
+    noticeText: { fontSize: 13 * textScale, lineHeight: 20, color: colors.textSecondary, fontFamily: Typography.body },
+    sectionLabel: { fontSize: 11 * textScale, fontFamily: Typography.bodyBold, color: colors.textMuted, letterSpacing: 1, marginBottom: 0 },
+    sectionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+    sectionLink: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.primary },
     progressCard: {},
-    progressTitle: {
-      fontSize: 20 * textScale,
-      lineHeight: 26,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-    },
-    ceuRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: 8,
-      marginBottom: 14,
-    },
-    ceuBig: {
-      fontSize: 48 * textScale,
-      lineHeight: 52,
-      fontFamily: Typography.bodyExtraBold,
-      color: colors.text,
-    },
-    ceuDenomWrap: {
-      paddingBottom: 6,
-    },
-    ceuDenom: {
-      fontSize: 18 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textSecondary,
-      lineHeight: 22,
-    },
-    ceuUnit: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textMuted,
-      letterSpacing: 0.2,
-    },
-    progressCaption: {
-      marginTop: 10,
-      fontSize: 13 * textScale,
-      lineHeight: 18,
-      color: colors.textMuted,
-      fontFamily: Typography.body,
-    },
-
-    // Stats strip
-    statsStrip: {
-      flexDirection: 'row',
-      backgroundColor: colors.card,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: 'hidden',
-    },
-    statItem: {
-      flex: 1,
-      alignItems: 'center',
-      paddingVertical: 16,
-      gap: 4,
-    },
-    statsDivider: {
-      width: 1,
-      backgroundColor: colors.border,
-      marginVertical: 14,
-    },
-    statValue: {
-      fontSize: 22 * textScale,
-      fontFamily: Typography.bodyExtraBold,
-      lineHeight: 26,
-    },
-    statLabel: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textMuted,
-      letterSpacing: 0.3,
-    },
-
-    // Course list
+    progressTitle: { fontSize: 20 * textScale, lineHeight: 26, fontFamily: Typography.headingSemiBold, color: colors.text },
+    ceuRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginBottom: 14 },
+    ceuBig: { fontSize: 48 * textScale, lineHeight: 52, fontFamily: Typography.bodyExtraBold, color: colors.text },
+    ceuDenomWrap: { paddingBottom: 6 },
+    ceuDenom: { fontSize: 18 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary, lineHeight: 22 },
+    ceuUnit: { fontSize: 11 * textScale, fontFamily: Typography.body, color: colors.textMuted, letterSpacing: 0.2 },
+    progressCaption: { marginTop: 10, fontSize: 13 * textScale, lineHeight: 18, color: colors.textMuted, fontFamily: Typography.body },
+    statsStrip: { flexDirection: 'row', backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' },
+    statItem: { flex: 1, alignItems: 'center', paddingVertical: 16, gap: 4 },
+    statsDivider: { width: 1, backgroundColor: colors.border, marginVertical: 14 },
+    statValue: { fontSize: 22 * textScale, fontFamily: Typography.bodyExtraBold, lineHeight: 26 },
+    statLabel: { fontSize: 11 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textMuted, letterSpacing: 0.3 },
     courseListCard: { padding: 0, overflow: 'hidden' },
-    courseRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-    },
+    courseRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14 },
     courseRowPressed: { backgroundColor: withAlpha(colors.primary, '06') },
-    courseIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      flexShrink: 0,
-    },
-    courseTitle: {
-      flex: 1,
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-    },
-    ceuChip: {
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 8,
-      backgroundColor: withAlpha(colors.primary, '10'),
-    },
-    ceuChipText: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.primary,
-    },
-    rowDivider: {
-      height: 1,
-      backgroundColor: colors.border,
-      marginHorizontal: 16,
-    },
+    courseIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    courseTitle: { flex: 1, fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
+    ceuChip: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: withAlpha(colors.primary, '10') },
+    ceuChipText: { fontSize: 11 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
+    rowDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: 16 },
     emptyCard: {},
-    emptyText: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      textAlign: 'center',
-    },
-
-    // Quick actions
-    actionsRow: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    actionTile: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      paddingVertical: 16,
-      borderRadius: 16,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
+    emptyText: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, textAlign: 'center' },
+    actionsRow: { flexDirection: 'row', gap: 10 },
+    actionTile: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
     actionTilePressed: { opacity: 0.75 },
-    actionTileLabel: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textSecondary,
-      textAlign: 'center',
-    },
+    actionTileLabel: { fontSize: 11 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary, textAlign: 'center' },
   });

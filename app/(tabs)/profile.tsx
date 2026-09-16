@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
+import { MetricCard } from '@/components/profile/MetricCard';
+import { SummaryRow } from '@/components/profile/SummaryRow';
+import { ActionCard } from '@/components/profile/ActionCard';
 import { useAuth } from '@/context/AuthContext';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { usePreferences } from '@/context/PreferencesContext';
@@ -55,11 +58,7 @@ export default function ProfileScreen() {
   const handleSignOut = () => {
     Alert.alert('Sign out', 'Are you sure you want to leave the Hope Center CEU app?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: signOut,
-      },
+      { text: 'Sign Out', style: 'destructive', onPress: signOut },
     ]);
   };
 
@@ -133,18 +132,8 @@ export default function ProfileScreen() {
       )}
 
       <View style={styles.metricsRow}>
-        <MetricCard
-          label={isStudent ? 'Study Sets' : 'Completed'}
-          value={loading ? '--' : String(completed)}
-          icon="checkmark-done-outline"
-          accent={colors.primary}
-        />
-        <MetricCard
-          label={isStudent ? 'Track' : 'CEUs'}
-          value={isStudent ? 'Exam' : loading ? '--' : earned.toFixed(1)}
-          icon={isStudent ? 'school-outline' : 'ribbon-outline'}
-          accent={colors.accentDark}
-        />
+        <MetricCard label={isStudent ? 'Study Sets' : 'Completed'} value={loading ? '--' : String(completed)} icon="checkmark-done-outline" accent={colors.primary} />
+        <MetricCard label={isStudent ? 'Track' : 'CEUs'} value={isStudent ? 'Exam' : loading ? '--' : earned.toFixed(1)} icon={isStudent ? 'school-outline' : 'ribbon-outline'} accent={colors.accentDark} />
       </View>
 
       <Card variant="elevated" style={styles.summaryCard}>
@@ -210,106 +199,50 @@ export default function ProfileScreen() {
       </Card>
 
       <View style={styles.certificateList}>
-        {displayCertificates
-          .filter((c) => c.passed)
-          .map((certificate) => {
-            const canView = hasSupabaseEnv && !usingPreviewData;
-
-            return (
-              <Pressable
-                key={certificate.id}
-                onPress={() =>
-                  canView
-                    ? router.push(`/certificate/${certificate.id}`)
-                    : undefined
-                }
-                accessibilityRole="button"
-                accessibilityLabel={`View certificate for ${certificate.title}`}
-                accessibilityState={{ disabled: !canView }}
-                style={({ pressed }) => [pressed && canView && { opacity: 0.8 }]}
-              >
-                <Card style={styles.certificateCard}>
-                  <View style={styles.certificateHeader}>
-                    <View style={styles.certificateIconWrap}>
-                      <Ionicons name="document-attach-outline" size={18} color={colors.accentDark} />
-                    </View>
-                    <View style={styles.certificateCopy}>
-                      <Text style={styles.certificateTitle}>{certificate.title}</Text>
-                      <Text style={styles.certificateMeta}>
-                        {formatDate(certificate.completedAt)} · {certificate.ceuValue} CEU
-                      </Text>
-                    </View>
-                    {canView ? (
-                      <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-                    ) : (
-                      <Badge label="Preview" variant="muted" />
-                    )}
+        {displayCertificates.filter((c) => c.passed).map((certificate) => {
+          const canView = hasSupabaseEnv && !usingPreviewData;
+          return (
+            <Pressable key={certificate.id} onPress={() => canView ? router.push(`/certificate/${certificate.id}`) : undefined} accessibilityRole="button" accessibilityLabel={`View certificate for ${certificate.title}`} accessibilityState={{ disabled: !canView }} style={({ pressed }) => [pressed && canView && { opacity: 0.8 }]}>
+              <Card style={styles.certificateCard}>
+                <View style={styles.certificateHeader}>
+                  <View style={styles.certificateIconWrap}><Ionicons name="document-attach-outline" size={18} color={colors.accentDark} /></View>
+                  <View style={styles.certificateCopy}>
+                    <Text style={styles.certificateTitle}>{certificate.title}</Text>
+                    <Text style={styles.certificateMeta}>{formatDate(certificate.completedAt)} · {certificate.ceuValue} CEU</Text>
                   </View>
-                </Card>
-              </Pressable>
-            );
-          })}
+                  {canView ? <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} /> : <Badge label="Preview" variant="muted" />}
+                </View>
+              </Card>
+            </Pressable>
+          );
+        })}
       </View>
 
-      <InteractivePressable
-        onPress={() => router.push('/history')}
-        style={styles.actionPressable}
-        hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
-        accessibilityLabel="View completion history"
-        accessibilityHint="See all course attempts with scores, dates, and pass or fail status"
-      >
+      <InteractivePressable onPress={() => router.push('/history')} style={styles.actionPressable} hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined} accessibilityLabel="View completion history" accessibilityHint="See all course attempts with scores, dates, and pass or fail status">
         {({ hovered }) => (
-          <Card
-            variant="elevated"
-            style={[styles.recordCard, hovered && styles.actionCardHovered]}
-          >
+          <Card variant="elevated" style={[styles.recordCard, hovered && styles.actionCardHovered]}>
             <View style={styles.recordHeader}>
-              <View style={styles.recordIconWrap}>
-                <Ionicons name="list-outline" size={20} color={colors.primary} />
-              </View>
+              <View style={styles.recordIconWrap}><Ionicons name="list-outline" size={20} color={colors.primary} /></View>
               <View style={styles.recordCopy}>
                 <Text style={styles.recordTitle}>Completion history</Text>
-                <Text style={styles.recordText}>
-                  All course attempts — scores, dates, pass and fail.
-                </Text>
+                <Text style={styles.recordText}>All course attempts — scores, dates, pass and fail.</Text>
               </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={hovered ? colors.primary : colors.textSecondary}
-              />
+              <Ionicons name="chevron-forward" size={18} color={hovered ? colors.primary : colors.textSecondary} />
             </View>
           </Card>
         )}
       </InteractivePressable>
 
-      <InteractivePressable
-        onPress={() => router.push('/renewal-tracker')}
-        style={styles.actionPressable}
-        hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
-        accessibilityLabel="Open renewal tracker"
-        accessibilityHint="View your CEU renewal deadline, pace, and completed course timeline"
-      >
+      <InteractivePressable onPress={() => router.push('/renewal-tracker')} style={styles.actionPressable} hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined} accessibilityLabel="Open renewal tracker" accessibilityHint="View your CEU renewal deadline, pace, and completed course timeline">
         {({ hovered }) => (
-          <Card
-            variant="elevated"
-            style={[styles.recordCard, hovered && styles.actionCardHovered]}
-          >
+          <Card variant="elevated" style={[styles.recordCard, hovered && styles.actionCardHovered]}>
             <View style={styles.recordHeader}>
-              <View style={styles.recordIconWrap}>
-                <Ionicons name="time-outline" size={20} color={colors.primary} />
-              </View>
+              <View style={styles.recordIconWrap}><Ionicons name="time-outline" size={20} color={colors.primary} /></View>
               <View style={styles.recordCopy}>
                 <Text style={styles.recordTitle}>Renewal tracker</Text>
-                <Text style={styles.recordText}>
-                  Deadline countdown, pace indicator, and completed course timeline.
-                </Text>
+                <Text style={styles.recordText}>Deadline countdown, pace indicator, and completed course timeline.</Text>
               </View>
-              <Ionicons
-                name="chevron-forward"
-                size={18}
-                color={hovered ? colors.primary : colors.textSecondary}
-              />
+              <Ionicons name="chevron-forward" size={18} color={hovered ? colors.primary : colors.textSecondary} />
             </View>
           </Card>
         )}
@@ -360,423 +293,73 @@ export default function ProfileScreen() {
       <Button title="Sign Out" onPress={handleSignOut} variant="outline" style={styles.signOutButton} />
     </ScrollView>
   );
-
-  function MetricCard({
-    label,
-    value,
-    icon,
-    accent,
-  }: {
-    label: string;
-    value: string;
-    icon: keyof typeof Ionicons.glyphMap;
-    accent: string;
-  }) {
-    return (
-      <View style={styles.metricCard}>
-        <View style={[styles.metricIconWrap, { backgroundColor: withAlpha(accent, '16') }]}>
-          <Ionicons name={icon} size={18} color={accent} />
-        </View>
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricLabel}>{label}</Text>
-      </View>
-    );
-  }
-
-  function SummaryRow({ label, value }: { label: string; value: string }) {
-    return (
-      <View style={styles.summaryRow}>
-        <Text style={styles.summaryLabel}>{label}</Text>
-        <Text style={styles.summaryValue}>{value}</Text>
-      </View>
-    );
-  }
-
-  function ActionCard({
-    icon,
-    title,
-    description,
-    onPress,
-  }: {
-    icon: keyof typeof Ionicons.glyphMap;
-    title: string;
-    description: string;
-    onPress: () => void;
-  }) {
-    return (
-      <InteractivePressable
-        onPress={onPress}
-        style={styles.actionPressable}
-        hoverStyle={!preferences.reducedMotion ? styles.hoverLift : undefined}
-        accessibilityLabel={title}
-        accessibilityHint={description}
-      >
-        {({ hovered }) => (
-          <Card variant="elevated" style={[styles.actionCard, hovered && styles.actionCardHovered]}>
-            <View style={[styles.actionIconWrap, hovered && styles.actionIconWrapHovered]}>
-              <Ionicons name={icon} size={22} color={hovered ? colors.primaryLight : colors.primary} />
-            </View>
-            <View style={styles.actionCopy}>
-              <Text style={[styles.actionTitle, hovered && styles.actionTitleHovered]}>{title}</Text>
-              <Text style={styles.actionDescription}>{description}</Text>
-            </View>
-            <Ionicons
-              name="chevron-forward"
-              size={20}
-              color={hovered ? colors.primary : colors.textSecondary}
-            />
-          </Card>
-        )}
-      </InteractivePressable>
-    );
-  }
 }
 
-const createStyles = (
-  colors: ReturnType<typeof usePreferences>['colors'],
-  textScale: number,
-) =>
+const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    content: {
-      padding: 16,
-      paddingBottom: 36,
-    },
-    profileErrorBanner: {
-      backgroundColor: withAlpha(colors.error, '12'),
-      borderRadius: 10,
-      padding: 12,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: withAlpha(colors.error, '30'),
-    },
-    profileErrorText: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.body,
-      color: colors.error,
-    },
-    hero: {
-      borderRadius: 20,
-      padding: 20,
-      marginBottom: 14,
-      backgroundColor: colors.card,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 16,
-      shadowOpacity: 0.08,
-      elevation: 4,
-    },
-    avatarWrap: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 16,
-    },
-    avatar: {
-      width: 78,
-      height: 78,
-      borderRadius: 39,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '15'),
-      borderWidth: 2,
-      borderColor: withAlpha(colors.primary, '25'),
-    },
-    avatarImage: {
-      width: 78,
-      height: 78,
-      borderRadius: 39,
-    },
-    avatarText: {
-      fontSize: 26 * textScale,
-      fontFamily: Typography.bodyExtraBold,
-      color: colors.primary,
-    },
-    heroCopy: {
-      flex: 1,
-    },
-    name: {
-      fontSize: 22 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 3,
-    },
-    email: {
-      fontSize: 13 * textScale,
-      color: colors.textSecondary,
-      marginBottom: 10,
-      fontFamily: Typography.body,
-    },
-    badgeRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    metricsRow: {
-      flexDirection: 'row',
-      gap: 10,
-      marginBottom: 14,
-    },
-    metricCard: {
-      flex: 1,
-      borderRadius: 16,
-      padding: 16,
-      backgroundColor: colors.card,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 1 },
-      shadowRadius: 4,
-      shadowOpacity: 0.06,
-      elevation: 2,
-    },
-    metricIconWrap: {
-      width: 36,
-      height: 36,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginBottom: 12,
-    },
-    metricValue: {
-      fontSize: 22 * textScale,
-      fontFamily: Typography.bodyExtraBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    metricLabel: {
-      fontSize: 12 * textScale,
-      color: colors.textSecondary,
-      fontFamily: Typography.bodySemiBold,
-    },
+    container: { flex: 1, backgroundColor: colors.background },
+    content: { padding: 16, paddingBottom: 36 },
+    profileErrorBanner: { backgroundColor: withAlpha(colors.error, '12'), borderRadius: 10, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: withAlpha(colors.error, '30') },
+    profileErrorText: { fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.error },
+    hero: { borderRadius: 20, padding: 20, marginBottom: 14, backgroundColor: colors.card, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 4 }, shadowRadius: 16, shadowOpacity: 0.08, elevation: 4 },
+    avatarWrap: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    avatar: { width: 78, height: 78, borderRadius: 39, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '15'), borderWidth: 2, borderColor: withAlpha(colors.primary, '25') },
+    avatarImage: { width: 78, height: 78, borderRadius: 39 },
+    avatarText: { fontSize: 26 * textScale, fontFamily: Typography.bodyExtraBold, color: colors.primary },
+    heroCopy: { flex: 1 },
+    name: { fontSize: 22 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text, marginBottom: 3 },
+    email: { fontSize: 13 * textScale, color: colors.textSecondary, marginBottom: 10, fontFamily: Typography.body },
+    badgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    metricsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
+    metricCard: { flex: 1, borderRadius: 16, padding: 16, backgroundColor: colors.card, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 1 }, shadowRadius: 4, shadowOpacity: 0.06, elevation: 2 },
+    metricIconWrap: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+    metricValue: { fontSize: 22 * textScale, fontFamily: Typography.bodyExtraBold, color: colors.text, marginBottom: 4 },
+    metricLabel: { fontSize: 12 * textScale, color: colors.textSecondary, fontFamily: Typography.bodySemiBold },
     summaryCard: {
       marginBottom: 18,
     },
-    sectionEyebrow: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      letterSpacing: 0.5,
-      textTransform: 'uppercase',
-      color: colors.primary,
-      marginBottom: 6,
-    },
-    sectionTitle: {
-      fontSize: 18 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    sectionHeader: {
-      marginBottom: 10,
-    },
-    sectionHint: {
-      fontSize: 13 * textScale,
-      color: colors.textSecondary,
-      marginBottom: 10,
-      fontFamily: Typography.body,
-    },
-    summaryText: {
-      fontSize: 14 * textScale,
-      lineHeight: 21,
-      color: colors.textSecondary,
-      marginBottom: 14,
-      fontFamily: Typography.body,
-    },
-    summaryList: {
-      gap: 12,
-    },
-    summaryRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingTop: 10,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
-    summaryLabel: {
-      fontSize: 13 * textScale,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    summaryValue: {
-      flexShrink: 1,
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      textAlign: 'right',
-    },
-    recordCard: {
-      marginBottom: 12,
-    },
-    recordHeader: {
-      flexDirection: 'row',
-      gap: 12,
-      marginBottom: 14,
-    },
-    recordIconWrap: {
-      width: 40,
-      height: 40,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    recordCopy: {
-      flex: 1,
-    },
-    recordTitle: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    recordText: {
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    actionPressable: {
-      marginBottom: 12,
-    },
-    actionCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    actionCardHovered: {
-      borderColor: withAlpha(colors.primary, '44'),
-      shadowColor: colors.primary,
-      shadowOpacity: 0.18,
-      shadowRadius: 18,
-      backgroundColor: colors.card,
-    },
-    hoverLift: {
-      transform: [{ translateY: -2 }],
-    },
-    actionIconWrap: {
-      width: 46,
-      height: 46,
-      borderRadius: 15,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    actionIconWrapHovered: {
-      backgroundColor: withAlpha(colors.primary, '1A'),
-    },
-    actionCopy: {
-      flex: 1,
-    },
-    actionTitle: {
-      fontSize: 16 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-      ...(getWebTransitionStyle('color') ?? {}),
-    },
-    actionTitleHovered: {
-      color: colors.primary,
-    },
-    actionDescription: {
-      fontSize: 13 * textScale,
-      lineHeight: 19,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    signOutButton: {
-      marginTop: 6,
-    },
-    certificateList: {
-      marginBottom: 12,
-    },
-    certificateCard: {
-      marginBottom: 10,
-    },
-    certificateHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    certificateIconWrap: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.accent, '22'),
-    },
-    certificateCopy: {
-      flex: 1,
-    },
-    certificateTitle: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    certificateMeta: {
-      fontSize: 12 * textScale,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    certDownloadBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    editBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '10'),
-      alignSelf: 'flex-start',
-    },
-    completionCard: {
-      marginBottom: 14,
-      borderColor: withAlpha(colors.accent, '66'),
-      borderWidth: 1,
-    },
-    completionRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: 10,
-      marginBottom: 12,
-    },
+    sectionEyebrow: { fontSize: 12 * textScale, fontFamily: Typography.bodyBold, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.primary, marginBottom: 6 },
+    sectionTitle: { fontSize: 18 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text, marginBottom: 4 },
+    sectionHeader: { marginBottom: 10 },
+    sectionHint: { fontSize: 13 * textScale, color: colors.textSecondary, marginBottom: 10, fontFamily: Typography.body },
+    summaryText: { fontSize: 14 * textScale, lineHeight: 21, color: colors.textSecondary, marginBottom: 14, fontFamily: Typography.body },
+    summaryList: { gap: 12 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
+    summaryLabel: { fontSize: 13 * textScale, color: colors.textSecondary, fontFamily: Typography.body },
+    summaryValue: { flexShrink: 1, fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.text, textAlign: 'right' },
+    recordCard: { marginBottom: 12 },
+    recordHeader: { flexDirection: 'row', gap: 12, marginBottom: 14 },
+    recordIconWrap: { width: 40, height: 40, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '12') },
+    recordCopy: { flex: 1 },
+    recordTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 4 },
+    recordText: { fontSize: 13 * textScale, lineHeight: 20, color: colors.textSecondary, fontFamily: Typography.body },
+    actionPressable: { marginBottom: 12 },
+    actionCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    actionCardHovered: { borderColor: withAlpha(colors.primary, '44'), shadowColor: colors.primary, shadowOpacity: 0.18, shadowRadius: 18, backgroundColor: colors.card },
+    hoverLift: { transform: [{ translateY: -2 }] },
+    actionIconWrap: { width: 46, height: 46, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '12') },
+    actionIconWrapHovered: { backgroundColor: withAlpha(colors.primary, '1A') },
+    actionCopy: { flex: 1 },
+    actionTitle: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 4, ...(getWebTransitionStyle('color') ?? {}) },
+    actionTitleHovered: { color: colors.primary },
+    actionDescription: { fontSize: 13 * textScale, lineHeight: 19, color: colors.textSecondary, fontFamily: Typography.body },
+    signOutButton: { marginTop: 6 },
+    certificateList: { marginBottom: 12 },
+    certificateCard: { marginBottom: 10 },
+    certificateHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    certificateIconWrap: { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.accent, '22') },
+    certificateCopy: { flex: 1 },
+    certificateTitle: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 2 },
+    certificateMeta: { fontSize: 12 * textScale, color: colors.textSecondary, fontFamily: Typography.body },
+    certDownloadBtn: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '12') },
+    editBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '10'), alignSelf: 'flex-start' },
+    completionCard: { marginBottom: 14, borderColor: withAlpha(colors.accent, '66'), borderWidth: 1 },
+    completionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
     completionCopy: { flex: 1 },
-    completionTitle: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 3,
-    },
-    completionText: {
-      fontSize: 13 * textScale,
-      lineHeight: 19,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-    completionBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      alignSelf: 'flex-start',
-      minHeight: 44,
-      paddingVertical: 10,
-      paddingHorizontal: 14,
-      borderRadius: 10,
-      backgroundColor: withAlpha(colors.primary, '0E'),
-    },
-    completionBtnText: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.primary,
-    },
+    completionTitle: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 3 },
+    completionText: { fontSize: 13 * textScale, lineHeight: 19, fontFamily: Typography.body, color: colors.textSecondary },
+    completionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 44, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: withAlpha(colors.primary, '0E') },
+    completionBtnText: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
   });
 
 function formatDate(value: string) {

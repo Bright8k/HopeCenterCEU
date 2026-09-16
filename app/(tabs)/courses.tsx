@@ -21,6 +21,7 @@ import { ROLE_LABELS, type UserRole } from '@/constants/roles';
 import { hasSupabaseEnv } from '@/lib/supabase';
 import { useCourses } from '@/hooks/useCourses';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { CourseLibrarySkeleton } from '@/components/ui/CourseLibrarySkeleton';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
 
 type TrackFilter = 'ALL' | UserRole;
@@ -70,74 +71,7 @@ export default function CoursesScreen() {
   }
 
   if (loading) {
-    return (
-      <ScrollView
-        style={{ flex: 1, backgroundColor: colors.background }}
-        contentContainerStyle={styles.content}
-        scrollEnabled={false}
-        accessibilityLabel="Loading course library"
-      >
-        {/* Hero */}
-        <View style={[styles.hero, { gap: 10 }]}>
-          <Skeleton
-            width={104}
-            height={26}
-            borderRadius={13}
-            style={{ backgroundColor: withAlpha(colors.textMuted, '30') }}
-          />
-          <Skeleton
-            width="68%"
-            height={32}
-            borderRadius={8}
-            style={{ backgroundColor: withAlpha(colors.textMuted, '30') }}
-          />
-          <Skeleton
-            height={14}
-            borderRadius={6}
-            style={{ backgroundColor: withAlpha(colors.textMuted, '25') }}
-          />
-          <Skeleton
-            width="75%"
-            height={14}
-            borderRadius={6}
-            style={{ backgroundColor: withAlpha(colors.textMuted, '25') }}
-          />
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-            <Skeleton
-              width="48%"
-              height={54}
-              borderRadius={18}
-              style={{ backgroundColor: withAlpha(colors.textMuted, '22') }}
-            />
-            <Skeleton
-              width="48%"
-              height={54}
-              borderRadius={18}
-              style={{ backgroundColor: withAlpha(colors.textMuted, '22') }}
-            />
-          </View>
-        </View>
-        {/* Search */}
-        <Skeleton height={44} borderRadius={12} style={{ marginBottom: 14 }} />
-        {/* Filter chips */}
-        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 18 }}>
-          {[78, 52, 62, 78].map((w, i) => (
-            <Skeleton key={i} width={w} height={34} borderRadius={17} />
-          ))}
-        </View>
-        {/* Featured card */}
-        <Skeleton height={162} borderRadius={16} style={{ marginBottom: 18 }} />
-        {/* Section header */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <Skeleton width={148} height={18} borderRadius={6} />
-          <Skeleton width={26} height={18} borderRadius={6} />
-        </View>
-        {/* Course card rows */}
-        {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} height={104} borderRadius={16} style={{ marginBottom: 10 }} />
-        ))}
-      </ScrollView>
-    );
+    return <CourseLibrarySkeleton />;
   }
 
   return (
@@ -370,287 +304,57 @@ function formatDuration(durationSeconds: number | null) {
   return `${minutes} min`;
 }
 
-const createStyles = (
-  colors: ReturnType<typeof usePreferences>['colors'],
-  textScale: number,
-) =>
+const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
   StyleSheet.create({
-    center: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 24,
-      backgroundColor: colors.background,
-    },
-    loadingText: {
-      marginTop: 14,
-      fontSize: 14 * textScale,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    content: {
-      padding: 16,
-      paddingBottom: 36,
-      backgroundColor: colors.background,
-    },
-    headerWrap: {
-      marginBottom: 8,
-    },
-    hero: {
-      borderRadius: 20,
-      padding: 20,
-      marginBottom: 14,
-      backgroundColor: colors.card,
-      shadowColor: colors.shadow,
-      shadowOffset: { width: 0, height: 4 },
-      shadowRadius: 16,
-      shadowOpacity: 0.08,
-      elevation: 4,
-    },
-    heroBadge: {
-      alignSelf: 'flex-start',
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      marginBottom: 14,
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    heroBadgeText: {
-      color: colors.primary,
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      letterSpacing: 0.4,
-    },
-    heroTitle: {
-      color: colors.text,
-      fontSize: 26 * textScale,
-      fontFamily: Typography.heading,
-      marginBottom: 8,
-    },
-    heroText: {
-      color: colors.textSecondary,
-      fontSize: 14 * textScale,
-      lineHeight: 21,
-      marginBottom: 18,
-      fontFamily: Typography.body,
-    },
-    heroStats: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    statPill: {
-      flex: 1,
-      borderRadius: 16,
-      paddingVertical: 14,
-      paddingHorizontal: 12,
-      backgroundColor: colors.surface,
-    },
-    statValue: {
-      color: colors.text,
-      fontSize: 20 * textScale,
-      fontFamily: Typography.bodyExtraBold,
-      marginBottom: 2,
-    },
-    statLabel: {
-      color: colors.textMuted,
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodySemiBold,
-    },
-    noticeCard: {
-      marginBottom: 14,
-    },
-    noticeTitle: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    noticeText: {
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    retryButton: {
-      marginTop: 12,
-    },
-    searchWrap: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      marginBottom: 12,
-    },
-    searchInput: {
-      flex: 1,
-      marginLeft: 10,
-      fontSize: 15 * textScale,
-      color: colors.text,
-      fontFamily: Typography.body,
-    },
-    filterRow: {
-      paddingBottom: 12,
-      gap: 10,
-    },
-    filterChip: {
-      borderRadius: 999,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    filterChipActive: {
-      borderColor: colors.primary,
-      backgroundColor: withAlpha(colors.primary, '14'),
-    },
-    filterChipHover: {
-      transform: [{ translateY: -1 }],
-      borderColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-    },
-    filterChipText: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textSecondary,
-      ...(getWebTransitionStyle('color') ?? {}),
-    },
-    filterChipTextActive: {
-      color: colors.primary,
-    },
-    filterChipTextHovered: {
-      color: colors.primary,
-    },
-    featuredCard: {
-      marginBottom: 16,
-    },
-    featuredHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    featuredDuration: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textSecondary,
-    },
-    featuredTitle: {
-      fontSize: 20 * textScale,
-      lineHeight: 27,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-      marginBottom: 8,
-    },
-    featuredDescription: {
-      fontSize: 14 * textScale,
-      lineHeight: 21,
-      color: colors.textSecondary,
-      marginBottom: 14,
-      fontFamily: Typography.body,
-    },
-    featuredMeta: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    sectionTitle: {
-      fontSize: 18 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-    },
-    sectionCount: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.primary,
-    },
-    emptyCard: {
-      alignItems: 'center',
-      paddingVertical: 28,
-    },
-    emptyTitle: {
-      fontSize: 17 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 6,
-    },
-    emptyText: {
-      fontSize: 13 * textScale,
-      lineHeight: 20,
-      textAlign: 'center',
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    coursePressable: {
-      marginBottom: 12,
-    },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: colors.background },
+    loadingText: { marginTop: 14, fontSize: 14 * textScale, color: colors.textSecondary, fontFamily: Typography.body },
+    content: { padding: 16, paddingBottom: 36, backgroundColor: colors.background },
+    headerWrap: { marginBottom: 8 },
+    hero: { borderRadius: 20, padding: 20, marginBottom: 14, backgroundColor: colors.card, shadowColor: colors.shadow, shadowOffset: { width: 0, height: 4 }, shadowRadius: 16, shadowOpacity: 0.08, elevation: 4 },
+    heroBadge: { alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 14, backgroundColor: withAlpha(colors.primary, '12') },
+    heroBadgeText: { color: colors.primary, fontSize: 12 * textScale, fontFamily: Typography.bodyBold, letterSpacing: 0.4 },
+    heroTitle: { color: colors.text, fontSize: 26 * textScale, fontFamily: Typography.heading, marginBottom: 8 },
+    heroText: { color: colors.textSecondary, fontSize: 14 * textScale, lineHeight: 21, marginBottom: 18, fontFamily: Typography.body },
+    heroStats: { flexDirection: 'row', gap: 10 },
+    statPill: { flex: 1, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 12, backgroundColor: colors.surface },
+    statValue: { color: colors.text, fontSize: 20 * textScale, fontFamily: Typography.bodyExtraBold, marginBottom: 2 },
+    statLabel: { color: colors.textMuted, fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold },
+    noticeCard: { marginBottom: 14 },
+    noticeTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 4 },
+    noticeText: { fontSize: 13 * textScale, lineHeight: 20, color: colors.textSecondary, fontFamily: Typography.body },
+    retryButton: { marginTop: 12 },
+    searchWrap: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 12 },
+    searchInput: { flex: 1, marginLeft: 10, fontSize: 15 * textScale, color: colors.text, fontFamily: Typography.body },
+    filterRow: { paddingBottom: 12, gap: 10 },
+    filterChip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card },
+    filterChipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '14') },
+    filterChipHover: { transform: [{ translateY: -1 }], borderColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.12, shadowRadius: 12 },
+    filterChipText: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary, ...(getWebTransitionStyle('color') ?? {}) },
+    filterChipTextActive: { color: colors.primary },
+    filterChipTextHovered: { color: colors.primary },
+    featuredCard: { marginBottom: 16 },
+    featuredHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+    featuredDuration: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    featuredTitle: { fontSize: 20 * textScale, lineHeight: 27, fontFamily: Typography.headingSemiBold, color: colors.text, marginBottom: 8 },
+    featuredDescription: { fontSize: 14 * textScale, lineHeight: 21, color: colors.textSecondary, marginBottom: 14, fontFamily: Typography.body },
+    featuredMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    sectionTitle: { fontSize: 18 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
+    sectionCount: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
+    emptyCard: { alignItems: 'center', paddingVertical: 28 },
+    emptyTitle: { fontSize: 17 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 6 },
+    emptyText: { fontSize: 13 * textScale, lineHeight: 20, textAlign: 'center', color: colors.textSecondary, fontFamily: Typography.body },
+    coursePressable: { marginBottom: 12 },
     courseCard: {},
-    courseCardHovered: {
-      borderColor: withAlpha(colors.primary, '44'),
-      shadowColor: colors.primary,
-      shadowOpacity: 0.18,
-      shadowRadius: 18,
-      backgroundColor: colors.card,
-    },
-    lastCard: {
-      marginBottom: 0,
-    },
-    hoverLift: {
-      transform: [{ translateY: -2 }],
-    },
-    courseTop: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      marginBottom: 14,
-      gap: 12,
-    },
-    courseHeaderText: {
-      flex: 1,
-    },
-    courseTitle: {
-      fontSize: 17 * textScale,
-      lineHeight: 23,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 6,
-      ...(getWebTransitionStyle('color') ?? {}),
-    },
-    courseTitleHovered: {
-      color: colors.primary,
-    },
-    courseDescription: {
-      fontSize: 14 * textScale,
-      lineHeight: 20,
-      color: colors.textSecondary,
-      fontFamily: Typography.body,
-    },
-    courseIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    courseIconWrapHovered: {
-      backgroundColor: withAlpha(colors.primary, '1A'),
-    },
-    courseMeta: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
+    courseCardHovered: { borderColor: withAlpha(colors.primary, '44'), shadowColor: colors.primary, shadowOpacity: 0.18, shadowRadius: 18, backgroundColor: colors.card },
+    lastCard: { marginBottom: 0 },
+    hoverLift: { transform: [{ translateY: -2 }] },
+    courseTop: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14, gap: 12 },
+    courseHeaderText: { flex: 1 },
+    courseTitle: { fontSize: 17 * textScale, lineHeight: 23, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 6, ...(getWebTransitionStyle('color') ?? {}) },
+    courseTitleHovered: { color: colors.primary },
+    courseDescription: { fontSize: 14 * textScale, lineHeight: 20, color: colors.textSecondary, fontFamily: Typography.body },
+    courseIconWrap: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '12') },
+    courseIconWrapHovered: { backgroundColor: withAlpha(colors.primary, '1A') },
+    courseMeta: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   });

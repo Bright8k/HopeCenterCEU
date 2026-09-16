@@ -307,34 +307,16 @@ export default function RenewalTrackerScreen() {
 
 }
 
-function CategoryRow({
-  label,
-  required,
-  earned,
-  colors,
-  textScale,
-}: {
-  label: string;
-  required: number;
-  earned: number;
-  colors: ReturnType<typeof usePreferences>['colors'];
-  textScale: number;
-}) {
+function CategoryRow({ label, required, earned, colors, textScale }: { label: string; required: number; earned: number; colors: ReturnType<typeof usePreferences>['colors']; textScale: number }) {
   const capped = Math.min(earned, required);
   const met = capped >= required;
-  const barColor = met ? colors.success : colors.primary;
-
   return (
     <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 12, marginTop: 12, gap: 8 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text }}>
-          {label}
-        </Text>
-        <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: met ? colors.success : colors.textSecondary }}>
-          {earned.toFixed(1)} / {required}
-        </Text>
+        <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text }}>{label}</Text>
+        <Text style={{ fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: met ? colors.success : colors.textSecondary }}>{earned.toFixed(1)} / {required}</Text>
       </View>
-      <ProgressBar value={capped} max={required} height={5} color={barColor} />
+      <ProgressBar value={capped} max={required} height={5} color={met ? colors.success : colors.primary} />
     </View>
   );
 }
@@ -347,239 +329,63 @@ function formatDate(iso: string): string {
   });
 }
 
-const createStyles = (
-  colors: ReturnType<typeof usePreferences>['colors'],
-  textScale: number,
-) =>
+const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: colors.background },
-    loadingWrap: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 14,
-      padding: 32,
-    },
+    loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32 },
     loadingText: { fontSize: 15 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      gap: 10,
-    },
-    backBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surface,
-    },
-    headerTitle: {
-      flex: 1,
-      fontSize: 17 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      textAlign: 'center',
-    },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 10 },
+    backBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+    headerTitle: { flex: 1, fontSize: 17 * textScale, fontFamily: Typography.bodyBold, color: colors.text, textAlign: 'center' },
     headerRight: { width: 44 },
     content: { padding: 16, paddingBottom: 36 },
     roleRow: { flexDirection: 'row', gap: 8, marginBottom: 14 },
-    // Countdown card
     countdownCard: { marginBottom: 12 },
-    countdownTop: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: 16,
-    },
+    countdownTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
     countdownCopy: { flex: 1 },
-    countdownLabel: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      letterSpacing: 0.5,
-      textTransform: 'uppercase',
-      color: colors.primary,
-      marginBottom: 4,
-    },
-    countdownDate: {
-      fontSize: 20 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-    },
+    countdownLabel: { fontSize: 12 * textScale, fontFamily: Typography.bodyBold, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.primary, marginBottom: 4 },
+    countdownDate: { fontSize: 20 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
     countdownNumber: { alignItems: 'flex-end' },
-    countdownDays: {
-      fontSize: 26 * textScale,
-      fontFamily: Typography.heading,
-    },
-    countdownRemaining: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textSecondary,
-    },
-    barRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 8,
-    },
+    countdownDays: { fontSize: 26 * textScale, fontFamily: Typography.heading },
+    countdownRemaining: { fontSize: 11 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    barRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
     barLabel: { fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
     barValue: { fontSize: 12 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
-    setDateBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      alignSelf: 'flex-start',
-      marginTop: 10,
-      minHeight: 44,
-      paddingVertical: 10,
-      paddingHorizontal: 14,
-      borderRadius: 10,
-      backgroundColor: withAlpha(colors.primary, '0E'),
-    },
-    setDateText: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.primary,
-    },
-    // Progress card
+    setDateBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: 10, minHeight: 44, paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10, backgroundColor: withAlpha(colors.primary, '0E') },
+    setDateText: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
     progressCard: { marginBottom: 12 },
-    progressHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      marginBottom: 14,
-    },
-    progressEyebrow: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      letterSpacing: 0.5,
-      textTransform: 'uppercase',
-      color: colors.primary,
-      marginBottom: 4,
-    },
-    progressTitle: {
-      fontSize: 20 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-    },
-    percentBadge: {
-      borderRadius: 14,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      minWidth: 60,
-      alignItems: 'center',
-    },
-    percentValue: {
-      fontSize: 18 * textScale,
-      fontFamily: Typography.bodyBold,
-    },
-    progressSub: {
-      marginTop: 10,
-      fontSize: 13 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-    // Status card
+    progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
+    progressEyebrow: { fontSize: 12 * textScale, fontFamily: Typography.bodyBold, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.primary, marginBottom: 4 },
+    progressTitle: { fontSize: 20 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
+    percentBadge: { borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8, minWidth: 60, alignItems: 'center' },
+    percentValue: { fontSize: 18 * textScale, fontFamily: Typography.bodyBold },
+    progressSub: { marginTop: 10, fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
     statusCard: { marginBottom: 12, borderWidth: 1 },
     statusRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-    statusIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+    statusIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
     statusCopy: { flex: 1 },
     statusLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-    statusLabel: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-    },
-    statusMessage: {
-      fontSize: 13 * textScale,
-      lineHeight: 19,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-    // Requirements card
+    statusLabel: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold },
+    statusMessage: { fontSize: 13 * textScale, lineHeight: 19, fontFamily: Typography.body, color: colors.textSecondary },
     reqCard: { marginBottom: 12 },
-    reqTitle: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    reqHint: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      marginBottom: 12,
-      lineHeight: 18,
-    },
+    reqTitle: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 4 },
+    reqHint: { fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 12, lineHeight: 18 },
     reqList: { gap: 10 },
-    reqRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      paddingTop: 10,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
+    reqRow: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 10, borderTopWidth: 1, borderTopColor: colors.border },
     reqLabel: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text },
     reqValue: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
-    // Timeline
-    timelineHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    timelineTitle: {
-      fontSize: 17 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-    },
-    timelineCount: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.primary,
-    },
+    timelineHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+    timelineTitle: { fontSize: 17 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
+    timelineCount: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
     timelineList: { gap: 0 },
     timelineCard: { marginBottom: 10, borderRadius: 14 },
     lastCard: { marginBottom: 0 },
     timelineRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    timelineDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: colors.primary,
-      flexShrink: 0,
-    },
+    timelineDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary, flexShrink: 0 },
     timelineCopy: { flex: 1 },
-    timelineCourse: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    timelineMeta: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
+    timelineCourse: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 2 },
+    timelineMeta: { fontSize: 12 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
     emptyCard: { alignItems: 'center', gap: 8, paddingVertical: 24 },
-    emptyTitle: {
-      fontSize: 16 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-    },
-    emptyText: {
-      fontSize: 13 * textScale,
-      lineHeight: 19,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      textAlign: 'center',
-    },
+    emptyTitle: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
+    emptyText: { fontSize: 13 * textScale, lineHeight: 19, fontFamily: Typography.body, color: colors.textSecondary, textAlign: 'center' },
   });

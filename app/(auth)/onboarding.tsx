@@ -15,14 +15,12 @@ import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { AppBrand } from '@/components/ui/AppBrand';
+import { RoleStep } from '@/components/onboarding/RoleStep';
 import { Input } from '@/components/ui/Input';
-import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
-import { ROLE_LABELS, ROLE_CEU_REQUIREMENTS, type UserRole } from '@/constants/roles';
+import { type UserRole } from '@/constants/roles';
 import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme';
-
-const ROLES: UserRole[] = ['RBT', 'BCBA', 'STUDENT'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const CURRENT_YEAR = new Date().getFullYear();
 const RENEWAL_YEARS = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR + i);
@@ -162,73 +160,7 @@ export default function Onboarding() {
         )}
 
         {/* ── Step 1: Role ─────────────────────────────────────────────── */}
-        {step === 1 && (
-          <ScrollView
-            contentContainerStyle={styles.stepContainer}
-            showsVerticalScrollIndicator={false}
-          >
-            <Text style={styles.stepEyebrow}>Step 1 of 2</Text>
-            <Text style={styles.stepTitle}>Choose your learning path</Text>
-            <Text style={styles.stepSubtitle}>
-              Pick the role that matches your training track. This shapes your library, CEU targets, and renewal plan.
-            </Text>
-
-            {ROLES.map((role) => {
-              const isSelected = selectedRole === role;
-              const req = ROLE_CEU_REQUIREMENTS[role];
-              const isStudent = role === 'STUDENT';
-
-              return (
-                <InteractivePressable
-                  key={role}
-                  style={[styles.roleCard, isSelected && styles.roleCardSelected]}
-                  hoverStyle={styles.roleCardHover}
-                  onPress={() => setSelectedRole(role)}
-                  accessibilityLabel={ROLE_LABELS[role]}
-                  accessibilityHint={`Selects the ${role} learning track`}
-                  accessibilityState={{ selected: isSelected }}
-                >
-                  <View style={styles.roleCardHeader}>
-                    <View style={styles.roleCardCopy}>
-                      <Text style={[styles.roleCode, isSelected && styles.roleCodeSelected]}>
-                        {role}
-                      </Text>
-                      <Text style={[styles.roleTitle, isSelected && styles.roleTitleSelected]}>
-                        {ROLE_LABELS[role]}
-                      </Text>
-                    </View>
-                    <View style={[styles.roleIconWrap, isSelected && styles.roleIconWrapSelected]}>
-                      <Ionicons
-                        name={
-                          isStudent
-                            ? 'school-outline'
-                            : role === 'BCBA'
-                              ? 'ribbon-outline'
-                              : 'medkit-outline'
-                        }
-                        size={20}
-                        color={isSelected ? colors.white : colors.primary}
-                      />
-                    </View>
-                  </View>
-                  <Text style={[styles.roleDesc, isSelected && styles.roleDescSelected]}>
-                    {req.description}
-                  </Text>
-                  <View style={styles.rolePillRow}>
-                    <Pill
-                      label={isStudent ? 'Board prep' : `${req.total} CEUs`}
-                      active={isSelected}
-                    />
-                    <Pill
-                      label={isStudent ? 'Student track' : `${req.cycleYears}-year cycle`}
-                      active={isSelected}
-                    />
-                  </View>
-                </InteractivePressable>
-              );
-            })}
-          </ScrollView>
-        )}
+        {step === 1 && <RoleStep selectedRole={selectedRole} onSelect={setSelectedRole} />}
 
         {/* ── Step 2: Profile setup ─────────────────────────────────────── */}
         {step === 2 && (
@@ -376,306 +308,45 @@ export default function Onboarding() {
     );
   }
 
-  function Pill({ label, active }: { label: string; active: boolean }) {
-    return (
-      <View style={[styles.pill, active && styles.pillActive]}>
-        <Text style={[styles.pillText, active && styles.pillTextActive]}>{label}</Text>
-      </View>
-    );
-  }
 }
 
-const createStyles = (
-  colors: ReturnType<typeof usePreferences>['colors'],
-  textScale: number,
-) =>
+const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: colors.background },
-    progressRow: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-      paddingTop: 16,
-      paddingBottom: 10,
-    },
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.border,
-    },
-    dotActive: {
-      width: 24,
-      borderRadius: 4,
-      backgroundColor: colors.primary,
-    },
-    dotDone: {
-      backgroundColor: withAlpha(colors.primary, '60'),
-    },
-    animatedContent: {
-      flex: 1,
-    },
-    stepContainer: {
-      padding: 24,
-      paddingBottom: 16,
-    },
-    // Welcome step
-    welcomeWrap: {
-      alignItems: 'center',
-      paddingTop: 12,
-    },
-    brandLarge: {
-      alignSelf: 'center',
-      marginBottom: 28,
-    },
-    welcomeOrb: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-      borderWidth: 1.5,
-      borderColor: withAlpha(colors.accent, '66'),
-      marginBottom: 28,
-    },
-    welcomeTitle: {
-      fontSize: 32 * textScale,
-      lineHeight: 40,
-      fontFamily: Typography.heading,
-      color: colors.text,
-      textAlign: 'center',
-      marginBottom: 14,
-    },
-    welcomeSubtitle: {
-      fontSize: 15 * textScale,
-      lineHeight: 23,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      marginBottom: 28,
-      maxWidth: 320,
-    },
-    featureList: {
-      width: '100%',
-      gap: 14,
-    },
-    featureRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    featureIcon: {
-      width: 36,
-      height: 36,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '10'),
-    },
-    featureLabel: {
-      flex: 1,
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.text,
-    },
-    // Shared step header
-    stepEyebrow: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      letterSpacing: 0.5,
-      textTransform: 'uppercase',
-      color: colors.primary,
-      marginBottom: 8,
-    },
-    stepTitle: {
-      fontSize: 28 * textScale,
-      lineHeight: 35,
-      fontFamily: Typography.heading,
-      color: colors.text,
-      marginBottom: 10,
-    },
-    stepSubtitle: {
-      fontSize: 14 * textScale,
-      lineHeight: 21,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      marginBottom: 22,
-    },
-    // Role cards
-    roleCard: {
-      borderRadius: 18,
-      padding: 18,
-      marginBottom: 12,
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-    },
-    roleCardSelected: {
-      borderColor: colors.primary,
-      backgroundColor: withAlpha(colors.primary, '10'),
-    },
-    roleCardHover: {
-      transform: [{ translateY: -1 }],
-      borderColor: colors.primary,
-      shadowColor: colors.primary,
-      shadowOpacity: 0.12,
-      shadowRadius: 12,
-    },
-    roleCardHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'flex-start',
-      gap: 12,
-      marginBottom: 10,
-    },
-    roleCardCopy: { flex: 1 },
-    roleCode: {
-      fontSize: 11 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.textSecondary,
-      letterSpacing: 1.5,
-      textTransform: 'uppercase',
-      marginBottom: 4,
-    },
-    roleCodeSelected: { color: colors.primary },
-    roleTitle: {
-      fontSize: 18 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-    },
-    roleTitleSelected: { color: colors.primary },
-    roleIconWrap: {
-      width: 42,
-      height: 42,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    roleIconWrapSelected: { backgroundColor: colors.primary },
-    roleDesc: {
-      fontSize: 13 * textScale,
-      lineHeight: 19,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      marginBottom: 12,
-    },
-    roleDescSelected: { color: withAlpha(colors.primary, 'CC') },
-    rolePillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    pill: {
-      borderRadius: 999,
-      paddingHorizontal: 10,
-      paddingVertical: 5,
-      backgroundColor: colors.surfaceMuted,
-    },
-    pillActive: { backgroundColor: withAlpha(colors.accent, '2A') },
-    pillText: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.textSecondary,
-    },
-    pillTextActive: { color: colors.accentDark },
-    // Profile step
-    renewalSection: {
-      marginTop: 6,
-      padding: 18,
-      borderRadius: 18,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.surface,
-    },
-    renewalTitle: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 4,
-    },
-    renewalHint: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      marginBottom: 16,
-    },
-    chipGroupLabel: {
-      fontSize: 12 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.textSecondary,
-      letterSpacing: 0.4,
-      textTransform: 'uppercase',
-      marginBottom: 10,
-    },
-    chipGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-      marginBottom: 18,
-    },
-    chip: {
-      borderRadius: 10,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.card,
-      minWidth: 50,
-      alignItems: 'center',
-    },
+    progressRow: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingTop: 16, paddingBottom: 10 },
+    dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.border },
+    dotActive: { width: 24, borderRadius: 4, backgroundColor: colors.primary },
+    dotDone: { backgroundColor: withAlpha(colors.primary, '60') },
+    animatedContent: { flex: 1 },
+    stepContainer: { padding: 24, paddingBottom: 16 },
+    welcomeWrap: { alignItems: 'center', paddingTop: 12 },
+    brandLarge: { alignSelf: 'center', marginBottom: 28 },
+    welcomeOrb: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '12'), borderWidth: 1.5, borderColor: withAlpha(colors.accent, '66'), marginBottom: 28 },
+    welcomeTitle: { fontSize: 32 * textScale, lineHeight: 40, fontFamily: Typography.heading, color: colors.text, textAlign: 'center', marginBottom: 14 },
+    welcomeSubtitle: { fontSize: 15 * textScale, lineHeight: 23, fontFamily: Typography.body, color: colors.textSecondary, textAlign: 'center', marginBottom: 28, maxWidth: 320 },
+    featureList: { width: '100%', gap: 14 },
+    featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    featureIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: withAlpha(colors.primary, '10') },
+    featureLabel: { flex: 1, fontSize: 14 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text },
+    stepEyebrow: { fontSize: 12 * textScale, fontFamily: Typography.bodyBold, letterSpacing: 0.5, textTransform: 'uppercase', color: colors.primary, marginBottom: 8 },
+    stepTitle: { fontSize: 28 * textScale, lineHeight: 35, fontFamily: Typography.heading, color: colors.text, marginBottom: 10 },
+    stepSubtitle: { fontSize: 14 * textScale, lineHeight: 21, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 22 },
+    renewalSection: { marginTop: 6, padding: 18, borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface },
+    renewalTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 4 },
+    renewalHint: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary, marginBottom: 16 },
+    chipGroupLabel: { fontSize: 12 * textScale, fontFamily: Typography.bodyBold, color: colors.textSecondary, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 10 },
+    chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 18 },
+    chip: { borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, minWidth: 50, alignItems: 'center' },
     chipWide: { minWidth: 70 },
-    chipActive: {
-      borderColor: colors.primary,
-      backgroundColor: withAlpha(colors.primary, '12'),
-    },
-    chipText: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.textSecondary,
-    },
-    chipTextActive: {
-      color: colors.primary,
-      fontFamily: Typography.bodyBold,
-    },
-    // Footer navigation
-    footer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-      paddingHorizontal: 24,
-      paddingVertical: 16,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.card,
-    },
+    chipActive: { borderColor: colors.primary, backgroundColor: withAlpha(colors.primary, '12') },
+    chipText: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
+    chipTextActive: { color: colors.primary, fontFamily: Typography.bodyBold },
+    footer: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingVertical: 16, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.card },
     footerSpacer: { flex: 1 },
-    backBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-      minHeight: 44,
-      paddingHorizontal: 4,
-    },
-    backBtnText: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.bodySemiBold,
-      color: colors.text,
-      ...(getWebTransitionStyle('color') ?? {}),
-    },
-    nextBtn: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8,
-      minHeight: 52,
-      borderRadius: 14,
-      backgroundColor: colors.primary,
-    },
+    backBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 4 },
+    backBtnText: { fontSize: 15 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text, ...(getWebTransitionStyle('color') ?? {}) },
+    nextBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, borderRadius: 14, backgroundColor: colors.primary },
     nextBtnDisabled: { opacity: 0.45 },
     nextBtnPressed: { opacity: 0.88 },
-    nextBtnText: {
-      fontSize: 16 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.white,
-      ...(getWebTransitionStyle('opacity') ?? {}),
-    },
+    nextBtnText: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.white, ...(getWebTransitionStyle('opacity') ?? {}) },
   });
