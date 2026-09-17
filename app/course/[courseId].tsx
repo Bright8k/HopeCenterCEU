@@ -8,6 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
@@ -31,6 +32,30 @@ export default function CourseViewerScreen() {
   const player = useVideoPlayer(course?.video_url ?? null, (p) => {
     p.loop = false;
   });
+
+  // Watch-time tracking — 80% must be watched; seeking forward doesn't count
+  const WATCH_THRESHOLD = 0.8;
+  const [watchedWatermark, setWatchedWatermark] = useState(0);
+  const prevTimeRef = useRef(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      const current = player.currentTime;
+      if (player.playing) {
+        const jump = current - prevTimeRef.current;
+        prevTimeRef.current = current;
+        // Natural forward playback only — reject jumps > 2.5 s (seeks)
+        if (jump > 0 && jump <= 2.5) {
+          setWatchedWatermark(prev => {
+            // Only extend the watermark if we are playing near its edge
+            return current <= prev + 3.5 ? Math.max(prev, current) : prev;
+          });
+        }
+      }
+      // Deliberately don't update prevTimeRef while paused: detects seek-during-pause
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // player object is a stable ref from useVideoPlayer
 
   if (loading) {
     return (
@@ -87,6 +112,13 @@ export default function CourseViewerScreen() {
   const durationLabel = course.duration_seconds
     ? formatDuration(course.duration_seconds)
     : null;
+
+  const hasVideo = Boolean(course.video_url);
+  const quizRequired = course.quiz_required;
+  // player.duration becomes non-zero once the video is loaded; fall back to metadata
+  const duration = player.duration > 0 ? player.duration : (course.duration_seconds ?? 0);
+  const watchFraction = hasVideo && duration > 0 ? Math.min(watchedWatermark / duration, 1) : 1;
+  const quizUnlocked = !hasVideo || watchFraction >= WATCH_THRESHOLD;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -185,50 +217,69 @@ export default function CourseViewerScreen() {
             <Text style={styles.description}>{course.description}</Text>
           ) : null}
 
-          {/* Quiz requirements card */}
-          <Card style={styles.requirementsCard}>
-            <Text style={styles.requirementsTitle}>Quiz requirements</Text>
-            <View style={styles.requirementRow}>
-              <Ionicons
-                name="checkmark-circle-outline"
-                size={18}
-                color={colors.success}
-                accessibilityElementsHidden
-              />
-              <Text style={styles.requirementText}>
-                Passing score:{' '}
-                <Text style={styles.requirementValue}>{course.pass_score}%</Text>
-              </Text>
-            </View>
-            <View style={styles.requirementRow}>
-              <Ionicons
-                name="ribbon-outline"
-                size={18}
-                color={colors.primary}
-                accessibilityElementsHidden
-              />
-              <Text style={styles.requirementText}>
-                Earn{' '}
-                <Text style={styles.requirementValue}>
-                  {course.ceu_value} CEU{course.ceu_value !== 1 ? 's' : ''}
-                </Text>{' '}
-                on passing
-              </Text>
-            </View>
-          </Card>
+          {/* Quiz requirements / series info card */}
+          {quizRequired ? (
+            <Card style={styles.requirementsCard}>
+              <Text style={styles.requirementsTitle}>Quiz requirements</Text>
+              <View style={styles.requirementRow}>
+                <Ionicons name="checkmark-circle-outline" size={18} color={colors.success} accessibilityElementsHidden />
+                <Text style={styles.requirementText}>
+                  Passing score: <Text style={styles.requirementValue}>{course.pass_score}%</Text>
+                </Text>
+              </View>
+              <View style={styles.requirementRow}>
+                <Ionicons name="ribbon-outline" size={18} color={colors.primary} accessibilityElementsHidden />
+                <Text style={styles.requirementText}>
+                  Earn <Text style={styles.requirementValue}>{course.ceu_value} CEU{course.ceu_value !== 1 ? 's' : ''}</Text> on passing
+                </Text>
+              </View>
+              {hasVideo && (
+                <View style={styles.requirementRow}>
+                  <Ionicons name="eye-outline" size={18} color={colors.textSecondary} accessibilityElementsHidden />
+                  <Text style={styles.requirementText}>Watch <Text style={styles.requirementValue}>80%</Text> of the video to unlock</Text>
+                </View>
+              )}
+            </Card>
+          ) : (
+            <Card style={styles.requirementsCard}>
+              <Text style={styles.requirementsTitle}>Part of a series</Text>
+              <View style={styles.requirementRow}>
+                <Ionicons name="layers-outline" size={18} color={colors.primary} accessibilityElementsHidden />
+                <Text style={styles.requirementText}>No standalone quiz for this lesson</Text>
+              </View>
+              <View style={styles.requirementRow}>
+                <Ionicons name="ribbon-outline" size={18} color={colors.accentDark} accessibilityElementsHidden />
+                <Text style={styles.requirementText}>CEUs awarded on series completion</Text>
+              </View>
+            </Card>
+          )}
         </View>
       </ScrollView>
 
       {/* ── Sticky footer ───────────────────────────────────────────────── */}
-      <View style={styles.footer}>
-        <Button
-          title="Take Quiz"
-          onPress={() => router.push(`/quiz/${courseId}`)}
-          style={styles.quizButton}
-          accessibilityLabel="Start the quiz for this course"
-          accessibilityHint="Navigates to the quiz screen"
-        />
-      </View>
+      {quizRequired && (
+        <View style={styles.footer}>
+          {!quizUnlocked && (
+            <View style={styles.watchProgress}>
+              <View style={styles.watchProgressRow}>
+                <Ionicons name="lock-closed-outline" size={14} color={colors.textSecondary} accessibilityElementsHidden />
+                <Text style={styles.watchProgressLabel}>Watch 80% to unlock quiz</Text>
+                <Text style={styles.watchProgressPct}>{Math.round(watchFraction * 100)}%</Text>
+              </View>
+              <View style={styles.watchTrack}>
+                <View style={[styles.watchFill, { width: `${Math.round(watchFraction * 100)}%` as `${number}%` }]} />
+              </View>
+            </View>
+          )}
+          <Button
+            title="Take Quiz"
+            onPress={() => router.push(`/quiz/${courseId}`)}
+            disabled={!quizUnlocked}
+            style={styles.quizButton}
+            accessibilityLabel={quizUnlocked ? 'Start the quiz for this course' : `Quiz locked — watch ${Math.round((WATCH_THRESHOLD - watchFraction) * 100)}% more to unlock`}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 
@@ -251,156 +302,41 @@ function formatDuration(seconds: number) {
   return `${minutes} min`;
 }
 
-const createStyles = (
-  colors: ReturnType<typeof usePreferences>['colors'],
-  textScale: number,
-) =>
+const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
   StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: colors.background },
-    loadingWrap: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: 32,
-      gap: 14,
-    },
-    loadingText: {
-      fontSize: 15 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-    errorTitle: {
-      fontSize: 18 * textScale,
-      fontFamily: Typography.headingSemiBold,
-      color: colors.text,
-    },
-    errorText: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-      textAlign: 'center',
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      gap: 10,
-    },
-    backBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surface,
-    },
-    headerTitle: {
-      flex: 1,
-      fontSize: 16 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-    },
+    loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 14 },
+    loadingText: { fontSize: 15 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
+    errorTitle: { fontSize: 18 * textScale, fontFamily: Typography.headingSemiBold, color: colors.text },
+    errorText: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, textAlign: 'center' },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 10 },
+    backBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+    headerTitle: { flex: 1, fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
     headerRight: { width: 44 },
-    downloadBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.surface,
-    },
+    downloadBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
     content: { paddingBottom: 24 },
-    videoSection: {
-      width: '100%',
-      aspectRatio: 16 / 9,
-      backgroundColor: colors.primary,
-    },
-    video: {
-      width: '100%',
-      height: '100%',
-    },
-    videoPlaceholder: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 12,
-    },
-    thumbnailDim: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: withAlpha('#000000', '44'),
-    },
-    playIconWrap: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    placeholderText: {
-      fontSize: 16 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.white,
-    },
-    placeholderSubtext: {
-      fontSize: 13 * textScale,
-      fontFamily: Typography.body,
-      color: withAlpha(colors.white, 'CC'),
-      textAlign: 'center',
-      paddingHorizontal: 32,
-    },
-    body: {
-      padding: 20,
-      gap: 14,
-    },
-    metaRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
-    },
-    title: {
-      fontSize: 22 * textScale,
-      lineHeight: 30,
-      fontFamily: Typography.heading,
-      color: colors.text,
-    },
-    description: {
-      fontSize: 15 * textScale,
-      lineHeight: 23,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-    requirementsCard: {
-      gap: 10,
-    },
-    requirementsTitle: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-      marginBottom: 2,
-    },
-    requirementRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-    },
-    requirementText: {
-      fontSize: 14 * textScale,
-      fontFamily: Typography.body,
-      color: colors.textSecondary,
-    },
-    requirementValue: {
-      fontFamily: Typography.bodyBold,
-      color: colors.text,
-    },
-    footer: {
-      paddingHorizontal: 20,
-      paddingVertical: 14,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-      backgroundColor: colors.card,
-    },
+    videoSection: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.primary },
+    video: { width: '100%', height: '100%' },
+    videoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
+    thumbnailDim: { ...StyleSheet.absoluteFillObject, backgroundColor: withAlpha('#000000', '44') },
+    playIconWrap: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center' },
+    placeholderText: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.white },
+    placeholderSubtext: { fontSize: 13 * textScale, fontFamily: Typography.body, color: withAlpha(colors.white, 'CC'), textAlign: 'center', paddingHorizontal: 32 },
+    body: { padding: 20, gap: 14 },
+    metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    title: { fontSize: 22 * textScale, lineHeight: 30, fontFamily: Typography.heading, color: colors.text },
+    description: { fontSize: 15 * textScale, lineHeight: 23, fontFamily: Typography.body, color: colors.textSecondary },
+    requirementsCard: { gap: 10 },
+    requirementsTitle: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 2 },
+    requirementRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    requirementText: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
+    requirementValue: { fontFamily: Typography.bodyBold, color: colors.text },
+    footer: { paddingHorizontal: 20, paddingVertical: 14, borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.card, gap: 10 },
     quizButton: {},
+    watchProgress: { gap: 6 },
+    watchProgressRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    watchProgressLabel: { flex: 1, fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
+    watchProgressPct: { fontSize: 13 * textScale, fontFamily: Typography.bodyBold, color: colors.primary },
+    watchTrack: { height: 4, borderRadius: 2, backgroundColor: colors.border },
+    watchFill: { height: 4, borderRadius: 2, backgroundColor: colors.primary },
   });

@@ -1,4 +1,4 @@
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '@/components/ui/Badge';
@@ -12,31 +12,49 @@ export default function HistoryScreen() {
   const { records, loading, refetch } = useCompletionHistory();
   const styles = createStyles(colors, textScale);
 
+  function Header() {
+    return (
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back" style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Completion history</Text>
+        <View style={styles.headerRight} />
+      </View>
+    );
+  }
+
   if (loading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} accessibilityLabel="Loading completion history" />
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={colors.primary} accessibilityLabel="Loading completion history" />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (records.length === 0) {
     return (
-      <View style={styles.centered}>
-        <Ionicons name="school-outline" size={52} color={colors.textMuted} accessibilityElementsHidden />
-        <Text style={styles.emptyTitle}>No completions yet</Text>
-        <Text style={styles.emptyText}>
-          Finish a course quiz to see your scores and certificates here.
-        </Text>
-        <Pressable
-          onPress={() => router.push('/(tabs)/courses')}
-          accessibilityRole="button"
-          accessibilityLabel="Browse course library"
-          style={({ pressed }) => [styles.browseBtn, pressed && { opacity: 0.75 }]}
-        >
-          <Text style={styles.browseBtnText}>Browse courses</Text>
-        </Pressable>
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <Header />
+        <View style={styles.centered}>
+          <Ionicons name="school-outline" size={52} color={colors.textMuted} accessibilityElementsHidden />
+          <Text style={styles.emptyTitle}>No completions yet</Text>
+          <Text style={styles.emptyText}>
+            Finish a course quiz to see your scores and certificates here.
+          </Text>
+          <Pressable
+            onPress={() => router.push('/(tabs)/courses')}
+            accessibilityRole="button"
+            accessibilityLabel="Browse course library"
+            style={({ pressed }) => [styles.browseBtn, pressed && { opacity: 0.75 }]}
+          >
+            <Text style={styles.browseBtnText}>Browse courses</Text>
+          </Pressable>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -46,6 +64,8 @@ export default function HistoryScreen() {
     .reduce((sum, r) => sum + r.ceuValue, 0);
 
   return (
+    <SafeAreaView style={styles.safeArea}>
+    <Header />
     <FlatList
       data={records}
       keyExtractor={(r) => r.id}
@@ -111,6 +131,7 @@ export default function HistoryScreen() {
         </Pressable>
       )}
     />
+    </SafeAreaView>
   );
 
   function SummaryTile({ label, value, icon, color }: { label: string; value: string; icon: keyof typeof Ionicons.glyphMap; color: string }) {
@@ -135,8 +156,13 @@ const createStyles = (
   textScale: number,
 ) =>
   StyleSheet.create({
+    safeArea: { flex: 1, backgroundColor: colors.background },
+    header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 10 },
+    backBtn: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
+    headerTitle: { flex: 1, fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.text, textAlign: 'center' },
+    headerRight: { width: 44 },
     centered: {
-      flex: 1, backgroundColor: colors.background,
+      flex: 1,
       alignItems: 'center', justifyContent: 'center',
       padding: 36, gap: 12,
     },

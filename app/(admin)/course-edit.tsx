@@ -72,6 +72,7 @@ export default function CourseEdit() {
   const [durationMinutes, setDurationMinutes] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
+  const [quizRequired, setQuizRequired] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Workflow state
@@ -92,6 +93,7 @@ export default function CourseEdit() {
       setDurationMinutes(c.duration_seconds ? String(Math.round(c.duration_seconds / 60)) : '');
       setVideoUrl(c.video_url ?? '');
       setThumbnailUrl(c.thumbnail_url ?? '');
+      setQuizRequired(c.quiz_required);
       setCurrentStatus((c.status as CourseStatus) ?? 'draft');
       setReviewNote(c.review_note ?? null);
     }
@@ -152,6 +154,7 @@ export default function CourseEdit() {
       duration_seconds: durationMinutes ? Math.round(parseFloat(durationMinutes) * 60) : null,
       video_url: videoUrl.trim() || null,
       thumbnail_url: thumbnailUrl.trim() || null,
+      quiz_required: quizRequired,
     };
     // cast required: supabase client insert/update types resolve to never with this schema config
     const table = supabase.from('courses') as any;
@@ -320,6 +323,22 @@ export default function CourseEdit() {
         <Text style={styles.fieldHint}>
           Host videos externally (Vimeo, Cloudflare Stream, S3). Large files are not uploaded directly.
         </Text>
+
+        {/* ── Quiz requirement ── */}
+        <Text style={styles.fieldLabel}>Quiz required</Text>
+        <Text style={styles.fieldHint}>Disable for series lessons where CEUs are awarded on final-lesson completion.</Text>
+        <View style={styles.chipRow} accessibilityRole="radiogroup" accessibilityLabel="Quiz required">
+          {([{ label: 'Required', value: true }, { label: 'Not required', value: false }] as { label: string; value: boolean }[]).map(({ label, value }) => {
+            const sel = quizRequired === value;
+            return (
+              <Pressable key={String(value)} onPress={() => setQuizRequired(value)} accessibilityRole="radio" accessibilityLabel={label} accessibilityState={{ checked: sel }}
+                style={({ pressed }) => [styles.chip, sel && { backgroundColor: colors.primary, borderColor: colors.primary }, pressed && { opacity: 0.75 }]}
+              >
+                <Text style={[styles.chipText, sel && { color: colors.white }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
 
         {/* ── Save ── */}
         <Button

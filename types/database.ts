@@ -41,6 +41,7 @@ export type Database = {
           thumbnail_url: string | null;
           duration_seconds: number | null;
           pass_score: number;
+          quiz_required: boolean;
           is_published: boolean;
           status: 'draft' | 'pending_review' | 'published' | 'archived';
           review_note: string | null;
@@ -57,6 +58,7 @@ export type Database = {
           thumbnail_url?: string | null;
           duration_seconds?: number | null;
           pass_score?: number;
+          quiz_required?: boolean;
           is_published?: boolean;
           status?: 'draft' | 'pending_review' | 'published' | 'archived';
           review_note?: string | null;
@@ -72,6 +74,7 @@ export type Database = {
           thumbnail_url?: string | null;
           duration_seconds?: number | null;
           pass_score?: number;
+          quiz_required?: boolean;
           is_published?: boolean;
           status?: 'draft' | 'pending_review' | 'published' | 'archived';
           review_note?: string | null;
