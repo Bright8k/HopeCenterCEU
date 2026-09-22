@@ -178,20 +178,15 @@ export default function CourseViewerScreen() {
               <View style={[styles.playIconWrap, { backgroundColor: withAlpha('#000000', '44') }]}>
                 <Ionicons name="play-circle-outline" size={64} color={colors.white} />
               </View>
-              <Text style={styles.placeholderText}>Video coming soon</Text>
-              <Text style={styles.placeholderSubtext}>
-                Complete the quiz below to earn your CEUs
-              </Text>
             </ImageBackground>
           ) : (
             <View style={styles.videoPlaceholder}>
               <View style={[styles.playIconWrap, { backgroundColor: withAlpha(colors.white, '18') }]}>
                 <Ionicons name="play-circle-outline" size={64} color={colors.white} />
               </View>
-              <Text style={styles.placeholderText}>Video coming soon</Text>
-              <Text style={styles.placeholderSubtext}>
-                Complete the quiz below to earn your CEUs
-              </Text>
+              {quizRequired && (
+                <Text style={styles.placeholderSubtext}>Complete the quiz below to earn your CEUs</Text>
+              )}
             </View>
           )}
         </View>
@@ -320,7 +315,6 @@ const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textS
     videoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
     thumbnailDim: { ...StyleSheet.absoluteFillObject, backgroundColor: withAlpha('#000000', '44') },
     playIconWrap: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center' },
-    placeholderText: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.white },
     placeholderSubtext: { fontSize: 13 * textScale, fontFamily: Typography.body, color: withAlpha(colors.white, 'CC'), textAlign: 'center', paddingHorizontal: 32 },
     body: { padding: 20, gap: 14 },
     metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },

@@ -29,7 +29,7 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
-  const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
+  const devAuthBypass = __DEV__ && Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
 
   const handleSignIn = async () => {

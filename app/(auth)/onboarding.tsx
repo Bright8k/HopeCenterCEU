@@ -29,7 +29,7 @@ const TOTAL_STEPS = 3;
 export default function Onboarding() {
   const { user, refetchRole } = useAuth();
   const { colors, textScale } = usePreferences();
-  const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
+  const devAuthBypass = __DEV__ && Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
 
   const [step, setStep] = useState(0);

@@ -204,6 +204,25 @@ export default function DashboardScreen() {
         )}
       </Animated.View>
 
+      {/* ── Study Resources ── */}
+      <Animated.View entering={fade(isStudent ? 150 : 210)}>
+        <Pressable
+          onPress={() => router.push('/resources')}
+          accessibilityRole="button"
+          accessibilityLabel="Study resources — books, articles, and websites to help you prepare"
+          style={({ pressed }) => [styles.resourcesBanner, pressed && { opacity: 0.82 }]}
+        >
+          <View style={[styles.resourcesIcon, { backgroundColor: withAlpha(colors.accent, '18') }]}>
+            <Ionicons name="library-outline" size={22} color={colors.accent} accessibilityElementsHidden />
+          </View>
+          <View style={styles.resourcesCopy}>
+            <Text style={styles.resourcesTitle}>Study Resources</Text>
+            <Text style={styles.resourcesDesc}>Books, articles & websites to help you prepare</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} accessibilityElementsHidden />
+        </Pressable>
+      </Animated.View>
+
       {/* ── Quick actions ── */}
       <Animated.View entering={fade(isStudent ? 180 : 240)} style={styles.actionsRow}>
         <Pressable
@@ -289,6 +308,11 @@ const createStyles = (
     rowDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: 16 },
     emptyCard: {},
     emptyText: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, textAlign: 'center' },
+    resourcesBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
+    resourcesIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    resourcesCopy: { flex: 1 },
+    resourcesTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 2 },
+    resourcesDesc: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary },
     actionsRow: { flexDirection: 'row', gap: 10 },
     actionTile: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
     actionTilePressed: { opacity: 0.75 },

@@ -218,6 +218,46 @@ export type Database = {
         };
         Relationships: [];
       };
+      resources: {
+        Row: {
+          id: string;
+          title: string;
+          author: string | null;
+          type: 'book' | 'article' | 'website';
+          description: string | null;
+          url: string | null;
+          track: 'RBT' | 'BCBA' | 'STUDENT' | null;
+          category: 'ethics' | 'supervision' | 'behavior-reduction' | 'measurement' | 'general' | null;
+          is_featured: boolean;
+          published_year: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          author?: string | null;
+          type: 'book' | 'article' | 'website';
+          description?: string | null;
+          url?: string | null;
+          track?: 'RBT' | 'BCBA' | 'STUDENT' | null;
+          category?: 'ethics' | 'supervision' | 'behavior-reduction' | 'measurement' | 'general' | null;
+          is_featured?: boolean;
+          published_year?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          title?: string;
+          author?: string | null;
+          type?: 'book' | 'article' | 'website';
+          description?: string | null;
+          url?: string | null;
+          track?: 'RBT' | 'BCBA' | 'STUDENT' | null;
+          category?: 'ethics' | 'supervision' | 'behavior-reduction' | 'measurement' | 'general' | null;
+          is_featured?: boolean;
+          published_year?: number | null;
+        };
+        Relationships: [];
+      };
       push_tokens: {
         Row: {
           user_id: string;

@@ -17,7 +17,7 @@ export default function TabLayout() {
   const { isAdmin } = useAdminRole();
   const { bottom } = useSafeAreaInsets();
   const isStudent = role === 'STUDENT';
-  const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
+  const devAuthBypass = __DEV__ && Boolean(Constants.expoConfig?.extra?.devAuthBypass);
 
   // Declarative auth guard: redirect to sign-in when the Supabase session is cleared (sign-out).
   // Bypassed in dev-bypass mode (no real session exists there by design).

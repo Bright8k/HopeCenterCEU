@@ -22,6 +22,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { PreferencesProvider, usePreferences } from '@/context/PreferencesContext';
 import { LightColors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { setupNotificationHandler, setupAndroidChannel, registerPushToken } from '@/lib/notifications';
 
 function AppNavigator() {
@@ -71,6 +72,7 @@ function AppNavigator() {
       <Stack.Screen name="exam" />
       <Stack.Screen name="certificate" />
       <Stack.Screen name="history" />
+      <Stack.Screen name="resources" />
       <Stack.Screen name="report-bug" />
       <Stack.Screen name="+not-found" />
     </Stack>
@@ -109,11 +111,13 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PreferencesProvider>
-        <AuthProvider>
-          <AppNavigator />
-        </AuthProvider>
-      </PreferencesProvider>
+      <ErrorBoundary>
+        <PreferencesProvider>
+          <AuthProvider>
+            <AppNavigator />
+          </AuthProvider>
+        </PreferencesProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

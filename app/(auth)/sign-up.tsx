@@ -31,7 +31,7 @@ export default function SignUp() {
   const [formError, setFormError] = useState<string | null>(null);
   const [accountCreated, setAccountCreated] = useState(false);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
-  const devAuthBypass = Boolean(Constants.expoConfig?.extra?.devAuthBypass);
+  const devAuthBypass = __DEV__ && Boolean(Constants.expoConfig?.extra?.devAuthBypass);
   const styles = createStyles(colors, textScale);
 
   const handleSignUp = async () => {

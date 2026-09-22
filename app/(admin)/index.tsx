@@ -140,6 +140,12 @@ export default function AdminOverview() {
         onPress={() => router.push('/(admin)/invite')}
       />
       <NavRow
+        icon="library-outline"
+        title="Study Resources"
+        description="Add and manage books, articles, and websites to help learners prepare."
+        onPress={() => router.push('/(admin)/resources')}
+      />
+      <NavRow
         icon="bug-outline"
         title={`Bug Reports${stats && stats.openBugReports > 0 ? ` (${stats.openBugReports} open)` : ''}`}
         description="Review and triage user-submitted bug reports."
