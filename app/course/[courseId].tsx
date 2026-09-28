@@ -16,13 +16,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useCourse } from '@/hooks/useCourse';
+import { logCourseView } from '@/hooks/useLastLesson';
 import { useOfflineCourse } from '@/hooks/useOfflineStorage';
 import { Typography, withAlpha } from '@/constants/theme';
 
 export default function CourseViewerScreen() {
   const { courseId } = useLocalSearchParams<{ courseId: string }>();
+  const { user } = useAuth();
   const { colors, textScale } = usePreferences();
   const { course, loading, error } = useCourse(courseId);
   const { isCached, saving, download, remove, available } = useOfflineCourse(courseId);
@@ -56,6 +59,11 @@ export default function CourseViewerScreen() {
     }, 1000);
     return () => clearInterval(id);
   }, []); // player object is a stable ref from useVideoPlayer
+
+  // Log a view once the course is confirmed loaded so "Continue" on the dashboard stays fresh
+  useEffect(() => {
+    if (course?.id && user?.id) void logCourseView(user.id, course.id);
+  }, [course?.id, user?.id]);
 
   if (loading) {
     return (

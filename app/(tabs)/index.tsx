@@ -6,8 +6,11 @@ import { useAuth } from '@/context/AuthContext';
 import { useCEUProgress } from '@/hooks/useCEUProgress';
 import { useCourses } from '@/hooks/useCourses';
 import { useStreak } from '@/hooks/useStreak';
+import { useLastLesson } from '@/hooks/useLastLesson';
+import { useSmartAlerts } from '@/hooks/useSmartAlerts';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Card } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { ROLE_CEU_REQUIREMENTS, ROLE_LABELS } from '@/constants/roles';
 import { hasSupabaseEnv } from '@/lib/supabase';
@@ -23,6 +26,8 @@ function getGreeting() {
 export default function DashboardScreen() {
   const { user, role } = useAuth();
   const { progress, loading } = useCEUProgress();
+  const { lastLesson } = useLastLesson();
+  const { alerts, dismiss } = useSmartAlerts();
   const { displayCourses } = useCourses(role);
   const { data: streak } = useStreak();
   const { colors, textScale, preferences } = usePreferences();
@@ -65,6 +70,81 @@ export default function DashboardScreen() {
             Supabase is not configured — this is a layout preview.
           </Text>
         </Card>
+      )}
+
+      {/* ── Smart alerts ── */}
+      {alerts.length > 0 && (
+        <Animated.View entering={fade(30)} style={styles.alertsWrap}>
+          {alerts.map((alert) => (
+            <View
+              key={alert.id}
+              style={[
+                styles.alertCard,
+                alert.type === 'renewal' ? { borderLeftColor: colors.warning } : { borderLeftColor: colors.primary },
+              ]}
+            >
+              <Ionicons
+                name={alert.icon as 'calendar-outline' | 'sparkles-outline'}
+                size={18}
+                color={alert.type === 'renewal' ? colors.warning : colors.primary}
+                accessibilityElementsHidden
+                style={styles.alertIcon}
+              />
+              <View style={styles.alertBody}>
+                <Text style={styles.alertTitle}>{alert.title}</Text>
+                <Text style={styles.alertText}>{alert.body}</Text>
+                {alert.actionLabel && alert.actionRoute && (
+                  <Pressable
+                    onPress={() => router.push(alert.actionRoute as never)}
+                    accessibilityRole="button"
+                    accessibilityLabel={alert.actionLabel}
+                    style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, alignSelf: 'flex-start', marginTop: 4 })}
+                  >
+                    <Text style={[styles.alertAction, alert.type === 'renewal' ? { color: colors.warning } : {}]}>
+                      {alert.actionLabel} →
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+              <Pressable
+                onPress={() => dismiss(alert.id)}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss alert"
+                style={styles.alertDismiss}
+              >
+                <Ionicons name="close" size={16} color={colors.textMuted} accessibilityElementsHidden />
+              </Pressable>
+            </View>
+          ))}
+        </Animated.View>
+      )}
+
+      {/* ── Continue last lesson ── */}
+      {lastLesson && (
+        <Animated.View entering={fade(40)}>
+          <Pressable
+            onPress={() => router.push(`/course/${lastLesson.id}`)}
+            accessibilityRole="button"
+            accessibilityLabel={`Continue ${lastLesson.title}`}
+            accessibilityHint="Resumes this course"
+            style={({ pressed }) => [styles.continueBanner, pressed && { opacity: 0.82 }]}
+          >
+            <View style={[styles.continueIcon, { backgroundColor: withAlpha(colors.primary, '14') }]}>
+              <Ionicons name="play-circle-outline" size={26} color={colors.primary} accessibilityElementsHidden />
+            </View>
+            <View style={styles.continueCopy}>
+              <Text style={styles.continueEyebrow}>CONTINUE WHERE YOU LEFT OFF</Text>
+              <Text style={styles.continueTitle} numberOfLines={1}>{lastLesson.title}</Text>
+              <View style={styles.continueMeta}>
+                {lastLesson.track && <Badge label={lastLesson.track} variant="primary" />}
+                {lastLesson.ceu_value > 0 && (
+                  <Text style={styles.continueCeu}>{lastLesson.ceu_value} CEU{lastLesson.ceu_value !== 1 ? 's' : ''}</Text>
+                )}
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} accessibilityElementsHidden />
+          </Pressable>
+        </Animated.View>
       )}
 
       {/* ── Progress card ── */}
@@ -308,6 +388,21 @@ const createStyles = (
     rowDivider: { height: 1, backgroundColor: colors.border, marginHorizontal: 16 },
     emptyCard: {},
     emptyText: { fontSize: 14 * textScale, fontFamily: Typography.body, color: colors.textSecondary, textAlign: 'center' },
+    alertsWrap: { gap: 8 },
+    alertCard: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14, borderRadius: 14, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderLeftWidth: 3 },
+    alertIcon: { marginTop: 1 },
+    alertBody: { flex: 1 },
+    alertTitle: { fontSize: 14 * textScale, fontFamily: Typography.bodyBold, color: colors.text, marginBottom: 2 },
+    alertText: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.textSecondary, lineHeight: 19 },
+    alertAction: { fontSize: 13 * textScale, fontFamily: Typography.bodySemiBold, color: colors.primary },
+    alertDismiss: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+    continueBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: withAlpha(colors.primary, '30') },
+    continueIcon: { width: 48, height: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    continueCopy: { flex: 1, gap: 4 },
+    continueEyebrow: { fontSize: 10 * textScale, fontFamily: Typography.bodyBold, color: colors.primary, letterSpacing: 0.7, textTransform: 'uppercase' },
+    continueTitle: { fontSize: 15 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
+    continueMeta: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    continueCeu: { fontSize: 12 * textScale, fontFamily: Typography.bodySemiBold, color: colors.textSecondary },
     resourcesBanner: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderRadius: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
     resourcesIcon: { width: 44, height: 44, borderRadius: 13, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     resourcesCopy: { flex: 1 },

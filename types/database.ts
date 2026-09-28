@@ -218,6 +218,37 @@ export type Database = {
         };
         Relationships: [];
       };
+      course_views: {
+        Row: {
+          user_id: string;
+          course_id: string;
+          last_viewed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          course_id: string;
+          last_viewed_at?: string;
+        };
+        Update: {
+          last_viewed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'course_views_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'course_views_course_id_fkey';
+            columns: ['course_id'];
+            isOneToOne: false;
+            referencedRelation: 'courses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       resources: {
         Row: {
           id: string;
