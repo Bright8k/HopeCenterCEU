@@ -39,17 +39,18 @@ export function useAdminUsers() {
     let active = true;
 
     async function run() {
+      type CompletionForUserList = { user_id: string; passed: boolean; courses: { ceu_value: number } | null };
+
       const [profilesRes, completionsRes, streaksRes] = await Promise.all([
         supabase.from('profiles').select('id, display_name, role, renewal_date').not('role', 'is', null),
-        // relational join syntax (courses(ceu_value)) requires as any until Supabase generates relationship types
-        (supabase as any).from('completions').select('user_id, passed, courses(ceu_value)'),
+        supabase.from('completions').select('user_id, passed, courses(ceu_value)').returns<CompletionForUserList[]>(),
         supabase.from('streaks').select('user_id, current_streak'),
       ]);
 
       if (!active) return;
 
       const profiles = profilesRes.data ?? [];
-      const completions: any[] = completionsRes.data ?? [];
+      const completions: CompletionForUserList[] = completionsRes.data ?? [];
       const streaks = streaksRes.data ?? [];
 
       const streakMap: Record<string, number> = {};
@@ -57,11 +58,11 @@ export function useAdminUsers() {
 
       const compMap: Record<string, { count: number; ceus: number }> = {};
       for (const c of completions) {
-        const uid = c.user_id as string;
+        const uid = c.user_id;
         if (!compMap[uid]) compMap[uid] = { count: 0, ceus: 0 };
         if (c.passed) {
           compMap[uid].count++;
-          compMap[uid].ceus += (c.courses?.ceu_value as number) ?? 0;
+          compMap[uid].ceus += c.courses?.ceu_value ?? 0;
         }
       }
 
@@ -101,14 +102,22 @@ export function useAdminUserDetail(userId: string) {
     let active = true;
 
     async function run() {
+      type CompletionForUserDetail = {
+        id: string;
+        passed: boolean;
+        score: number | null;
+        completed_at: string;
+        courses: { title: string; ceu_value: number } | null;
+      };
+
       const [profileRes, completionsRes, streakRes] = await Promise.all([
         supabase.from('profiles').select('id, display_name, role, renewal_date').eq('id', userId).single(),
-        // relational join syntax requires as any until Supabase generates relationship types
-        (supabase as any)
+        supabase
           .from('completions')
           .select('id, passed, score, completed_at, courses(title, ceu_value)')
           .eq('user_id', userId)
-          .order('completed_at', { ascending: false }),
+          .order('completed_at', { ascending: false })
+          .returns<CompletionForUserDetail[]>(),
         supabase.from('streaks').select('current_streak, longest_streak').eq('user_id', userId).maybeSingle(),
       ]);
 
@@ -117,13 +126,13 @@ export function useAdminUserDetail(userId: string) {
       const p = profileRes.data;
       const streak = streakRes.data;
 
-      const completions: AdminUserCompletion[] = ((completionsRes.data as any[]) ?? []).map((c) => ({
-        id: c.id as string,
-        courseTitle: (c.courses?.title as string) ?? 'Untitled',
-        ceuValue: (c.courses?.ceu_value as number) ?? 0,
-        score: c.score as number,
-        passed: c.passed as boolean,
-        completedAt: c.completed_at as string,
+      const completions: AdminUserCompletion[] = (completionsRes.data ?? []).map((c) => ({
+        id: c.id,
+        courseTitle: c.courses?.title ?? 'Untitled',
+        ceuValue: c.courses?.ceu_value ?? 0,
+        score: c.score ?? 0,
+        passed: c.passed,
+        completedAt: c.completed_at,
       }));
 
       setDetail({

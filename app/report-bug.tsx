@@ -49,8 +49,7 @@ export default function ReportBugScreen() {
       return;
     }
     setSubmitting(true);
-    // bug_reports table is new; cast is removed once `supabase gen types` is run post-migration
-    const { error } = await (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const { error } = await supabase
       .from('bug_reports')
       .insert({ user_id: user.id, title: title.trim(), description: description.trim(), category });
     setSubmitting(false);

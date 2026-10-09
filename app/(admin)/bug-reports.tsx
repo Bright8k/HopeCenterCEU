@@ -54,8 +54,7 @@ export default function BugReportsScreen() {
   const load = useCallback(async () => {
     if (!hasSupabaseEnv) { setLoading(false); return; }
     setLoading(true);
-    // bug_reports not yet in generated types; cast removed once `supabase gen types` is run
-    const q = (supabase as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+    const q = supabase
       .from('bug_reports')
       .select('id, user_id, title, description, category, status, admin_notes, created_at, updated_at')
       .order('created_at', { ascending: false });
@@ -67,9 +66,8 @@ export default function BugReportsScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  async function setStatus(id: string, status: string) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from('bug_reports').update({ status }).eq('id', id);
+  async function setStatus(id: string, status: 'open' | 'in_progress' | 'resolved') {
+    await supabase.from('bug_reports').update({ status }).eq('id', id);
     void load();
   }
 

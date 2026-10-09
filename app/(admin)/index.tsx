@@ -32,8 +32,7 @@ export default function AdminOverview() {
       supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
       supabase.from('questions').select('*', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
-      // bug_reports not yet in generated types; cast removed once `supabase gen types` is run
-      (supabase as any).from('bug_reports').select('*', { count: 'exact', head: true }).eq('status', 'open'), // eslint-disable-line @typescript-eslint/no-explicit-any
+      supabase.from('bug_reports').select('*', { count: 'exact', head: true }).eq('status', 'open'),
     ]).then(([all, pub, pending, q, learners, bugs]) => {
       setStats({
         totalCourses:    all.count     ?? 0,

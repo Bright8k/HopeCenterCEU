@@ -1,6 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1'
-import { createServiceClient, requireUser } from '../_shared/auth.ts'
+import { createServiceClient, requireUser, handleCors, CORS_HEADERS } from '../_shared/auth.ts'
 
 // Brand colors (0-1 scale)
 const PURPLE = rgb(0.545, 0.102, 0.561)   // #8B1A8F
@@ -13,7 +13,7 @@ const LIGHT  = rgb(0.937, 0.898, 0.937)   // subtle purple tint
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
   })
 }
 
@@ -205,6 +205,9 @@ async function generateCertificatePdf(params: {
 }
 
 Deno.serve(async (req) => {
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405)
   }

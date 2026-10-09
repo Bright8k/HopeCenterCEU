@@ -331,6 +331,47 @@ export type Database = {
         };
         Relationships: [];
       };
+      bug_reports: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          description: string;
+          category: string;
+          status: 'open' | 'in_progress' | 'resolved';
+          admin_notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          description: string;
+          category: string;
+          status?: 'open' | 'in_progress' | 'resolved';
+          admin_notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          title?: string;
+          description?: string;
+          category?: string;
+          status?: 'open' | 'in_progress' | 'resolved';
+          admin_notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'bug_reports_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: {};
     Functions: {

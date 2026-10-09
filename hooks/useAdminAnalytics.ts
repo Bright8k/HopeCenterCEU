@@ -59,34 +59,43 @@ export function useAdminAnalytics(period: AnalyticsPeriod = 'month') {
     let active = true;
     setLoading(true);
 
+    type CompletionAnalyticsRow = {
+      id: string;
+      user_id: string;
+      passed: boolean;
+      score: number | null;
+      completed_at: string;
+      courses: { id: string; title: string; ceu_value: number; track: 'RBT' | 'BCBA' | 'STUDENT' | null } | null;
+    };
+
     async function run() {
       const cutoff = periodCutoff(period);
 
       // Fetch completions with course data
-      let q = (supabase as any)
+      let q = supabase
         .from('completions')
         .select('id, user_id, passed, score, completed_at, courses(id, title, ceu_value, track)')
         .order('completed_at', { ascending: false })
         .limit(1000);
       if (cutoff) q = q.gte('completed_at', cutoff);
 
-      const { data: rows } = await q;
+      const { data: rows } = await q.returns<CompletionAnalyticsRow[]>();
       if (!active) return;
 
-      const completions: any[] = rows ?? [];
+      const completions: CompletionAnalyticsRow[] = rows ?? [];
 
       // Fetch profiles for the users in this result set
-      const userIds = [...new Set<string>(completions.map((c) => c.user_id as string))];
+      const userIds = [...new Set<string>(completions.map((c) => c.user_id))];
       let profileMap: Record<string, { displayName: string; role: string | null }> = {};
       if (userIds.length > 0) {
-        const { data: profiles } = await (supabase as any)
+        const { data: profiles } = await supabase
           .from('profiles')
           .select('id, display_name, role')
           .in('id', userIds);
-        for (const p of (profiles as any[]) ?? []) {
-          profileMap[p.id as string] = {
-            displayName: (p.display_name as string | null) ?? 'Learner',
-            role: p.role as string | null,
+        for (const p of profiles ?? []) {
+          profileMap[p.id] = {
+            displayName: p.display_name ?? 'Learner',
+            role: p.role,
           };
         }
       }
@@ -98,19 +107,19 @@ export function useAdminAnalytics(period: AnalyticsPeriod = 'month') {
       const uniqueLearners = userIds.length;
       const ceusAwarded = completions
         .filter((c) => c.passed)
-        .reduce((sum, c) => sum + ((c.courses?.ceu_value as number) ?? 0), 0);
+        .reduce((sum, c) => sum + (c.courses?.ceu_value ?? 0), 0);
 
       // Aggregate course stats
       const courseMap: Record<string, CourseStat> = {};
       for (const c of completions) {
-        const cid = (c.courses?.id ?? c.course_id) as string;
+        const cid = c.courses?.id;
         if (!cid) continue;
         if (!courseMap[cid]) {
           courseMap[cid] = {
             courseId: cid,
-            title: (c.courses?.title as string) ?? 'Untitled',
-            track: (c.courses?.track as string | null) ?? null,
-            ceuValue: (c.courses?.ceu_value as number) ?? 0,
+            title: c.courses?.title ?? 'Untitled',
+            track: c.courses?.track ?? null,
+            ceuValue: c.courses?.ceu_value ?? 0,
             attempts: 0,
             passes: 0,
             passRate: 0,
@@ -119,7 +128,7 @@ export function useAdminAnalytics(period: AnalyticsPeriod = 'month') {
         }
         courseMap[cid].attempts++;
         if (c.passed) courseMap[cid].passes++;
-        courseMap[cid].avgScore += c.score as number;
+        courseMap[cid].avgScore += c.score ?? 0;
       }
       const courseStats: CourseStat[] = Object.values(courseMap).map((cs) => ({
         ...cs,
@@ -130,14 +139,14 @@ export function useAdminAnalytics(period: AnalyticsPeriod = 'month') {
 
       // Recent completions (last 15)
       const recentCompletions: RecentCompletion[] = completions.slice(0, 15).map((c) => ({
-        id: c.id as string,
-        userId: c.user_id as string,
-        displayName: profileMap[c.user_id as string]?.displayName ?? 'Learner',
-        role: profileMap[c.user_id as string]?.role ?? null,
-        courseTitle: (c.courses?.title as string) ?? 'Untitled',
-        score: c.score as number,
-        passed: c.passed as boolean,
-        completedAt: c.completed_at as string,
+        id: c.id,
+        userId: c.user_id,
+        displayName: profileMap[c.user_id]?.displayName ?? 'Learner',
+        role: profileMap[c.user_id]?.role ?? null,
+        courseTitle: c.courses?.title ?? 'Untitled',
+        score: c.score ?? 0,
+        passed: c.passed,
+        completedAt: c.completed_at,
       }));
 
       if (active) {

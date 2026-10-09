@@ -43,8 +43,8 @@ export function useOfflineCourse(courseId: string) {
 
     // Fetch course + questions from Supabase
     const [courseRes, questionsRes] = await Promise.all([
-      (supabase as any).from('courses').select('*').eq('id', courseId).single(),
-      (supabase as any).from('questions').select('*').eq('course_id', courseId),
+      supabase.from('courses').select('*').eq('id', courseId).single(),
+      supabase.from('questions').select('*').eq('course_id', courseId),
     ]);
 
     if (courseRes.error || !courseRes.data) {
@@ -52,8 +52,8 @@ export function useOfflineCourse(courseId: string) {
       return false;
     }
 
-    const c = courseRes.data as any;
-    const qs: any[] = questionsRes.data ?? [];
+    const c = courseRes.data;
+    const qs = questionsRes.data ?? [];
 
     await saveCourseOffline(
       {
@@ -64,7 +64,7 @@ export function useOfflineCourse(courseId: string) {
       },
       qs.map((q) => ({
         id: q.id, course_id: q.course_id, stem: q.stem,
-        options: Array.isArray(q.options) ? q.options : JSON.parse(q.options ?? '[]'),
+        options: Object.values(q.options),
         answer: q.answer, domain: q.domain ?? null,
       })),
     );

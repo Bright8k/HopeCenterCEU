@@ -40,14 +40,11 @@ export default function AdminUserDetailScreen() {
   const styles = createStyles(colors, textScale);
 
   // Check whether the target user has admin status via a security-definer RPC.
-  // Direct admin_roles queries are blocked by RLS for cross-user reads.
-  // Cast needed: is_user_admin is a new migration not yet reflected in generated types.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useEffect(() => {
     if (!id || !hasSupabaseEnv) return;
-    (supabase as any)
+    supabase
       .rpc('is_user_admin', { target_user_id: id })
-      .then(({ data }: { data: boolean | null }) => {
+      .then(({ data }) => {
         setIsAdmin(data === true);
         setAdminChecked(true);
       });

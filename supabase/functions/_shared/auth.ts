@@ -1,5 +1,19 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
+export const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+} as const;
+
+/** Returns a 200 OK for CORS preflight requests. */
+export function handleCors(req: Request): Response | null {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS_HEADERS });
+  }
+  return null;
+}
+
 export function getAuthToken(req: Request) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader) throw new Error('Missing authorization header')

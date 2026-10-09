@@ -3,6 +3,7 @@ import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { updateStreak } from '@/lib/streaks';
 import { getCachedCourse, getCachedQuestions } from '@/lib/offline';
 import { useAuth } from '@/context/AuthContext';
+import { scoreQuiz } from '@/lib/quiz';
 import type { Database } from '@/types/database';
 
 type Question = Database['public']['Tables']['questions']['Row'];
@@ -120,10 +121,7 @@ export function useQuiz(courseId: string) {
     setState((s) => ({ ...s, submitting: true }));
 
     // Score is pure local math — calculate before any network call
-    const correct = questions.filter((q) => answers[q.id] === q.answer).length;
-    const total = questions.length;
-    const score = Math.round((correct / total) * 100);
-    const passed = score >= course.pass_score;
+    const { score, passed, correct, total } = scoreQuiz(questions, answers, course.pass_score);
 
     // Show result immediately so the user always gets feedback
     setState((s) => ({

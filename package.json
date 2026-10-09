@@ -7,6 +7,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
     "typecheck": "tsc --noEmit",
     "doctor": "npx expo-doctor"
   },
@@ -45,9 +47,16 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "@testing-library/jest-native": "^5.4.3",
+    "@testing-library/react-native": "^14.1.0",
     "@types/aes-js": "^3.1.4",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
+    "jest": "^30.5.2",
+    "jest-expo": "^57.0.5",
     "playwright": "^1.61.1",
+    "react-test-renderer": "^19.3.0",
+    "test-renderer": "^1.3.0",
     "typescript": "~5.9.2"
   },
   "private": true
