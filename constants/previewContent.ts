@@ -19,6 +19,7 @@ export const PREVIEW_COURSES: Course[] = [
     is_published: true,
     status: 'published',
     review_note: null,
+    transcript: null,
     created_at: '2026-04-16T00:00:00Z',
   },
   {
@@ -37,6 +38,7 @@ export const PREVIEW_COURSES: Course[] = [
     is_published: true,
     status: 'published',
     review_note: null,
+    transcript: null,
     created_at: '2026-04-15T00:00:00Z',
   },
   {
@@ -55,6 +57,7 @@ export const PREVIEW_COURSES: Course[] = [
     is_published: true,
     status: 'published',
     review_note: null,
+    transcript: null,
     created_at: '2026-04-14T00:00:00Z',
   },
 ];

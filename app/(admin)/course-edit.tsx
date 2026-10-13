@@ -73,6 +73,7 @@ export default function CourseEdit() {
   const [videoUrl, setVideoUrl] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [quizRequired, setQuizRequired] = useState(true);
+  const [transcript, setTranscript] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Workflow state
@@ -94,6 +95,7 @@ export default function CourseEdit() {
       setVideoUrl(c.video_url ?? '');
       setThumbnailUrl(c.thumbnail_url ?? '');
       setQuizRequired(c.quiz_required);
+      setTranscript(c.transcript ?? '');
       setCurrentStatus((c.status as CourseStatus) ?? 'draft');
       setReviewNote(c.review_note ?? null);
     }
@@ -106,7 +108,10 @@ export default function CourseEdit() {
     const errs: Record<string, string> = {};
     if (!title.trim()) errs.title = 'Title is required';
     const ceu = parseFloat(ceuValue);
-    if (isNaN(ceu) || ceu <= 0) errs.ceuValue = 'Must be a positive number';
+    // Student exam-prep lessons carry no CEUs
+    if (isNaN(ceu) || ceu < 0 || (ceu === 0 && track !== 'STUDENT')) {
+      errs.ceuValue = track === 'STUDENT' ? 'Must be 0 or more' : 'Must be a positive number';
+    }
     const pass = parseInt(passScore, 10);
     if (isNaN(pass) || pass < 0 || pass > 100) errs.passScore = 'Must be between 0 and 100';
     setErrors(errs);
@@ -155,6 +160,7 @@ export default function CourseEdit() {
       video_url: videoUrl.trim() || null,
       thumbnail_url: thumbnailUrl.trim() || null,
       quiz_required: quizRequired,
+      transcript: transcript.trim() || null,
     };
     // cast required: supabase client insert/update types resolve to never with this schema config
     const table = supabase.from('courses') as any;
@@ -324,6 +330,18 @@ export default function CourseEdit() {
           Host videos externally (Vimeo, Cloudflare Stream, S3). Large files are not uploaded directly.
         </Text>
 
+        <Input
+          label="Transcript"
+          value={transcript}
+          onChangeText={setTranscript}
+          placeholder="Paste the full lesson transcript"
+          multiline
+          style={styles.transcript}
+        />
+        <Text style={styles.fieldHint}>
+          Shown below the video for accessibility. Start a line with "## " for a section heading; separate paragraphs with a blank line.
+        </Text>
+
         {/* ── Quiz requirement ── */}
         <Text style={styles.fieldLabel}>Quiz required</Text>
         <Text style={styles.fieldHint}>Disable for series lessons where CEUs are awarded on final-lesson completion.</Text>
@@ -383,6 +401,7 @@ const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textS
     chip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.card, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
     chipText: { fontSize: 14 * textScale, fontFamily: Typography.bodySemiBold, color: colors.text },
     multiline: { minHeight: 80, textAlignVertical: 'top', paddingTop: 12 },
+    transcript: { minHeight: 160, maxHeight: 320, textAlignVertical: 'top', paddingTop: 12 },
     thumbWrap: { marginBottom: 10 },
     thumbPreview: { width: '100%', aspectRatio: 16 / 9, borderRadius: 12, backgroundColor: colors.surface },
     thumbChangeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingVertical: 6 },

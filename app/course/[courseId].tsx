@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { TranscriptCard } from '@/components/course/TranscriptCard';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useCourse } from '@/hooks/useCourse';
@@ -256,6 +257,8 @@ export default function CourseViewerScreen() {
               </View>
             </Card>
           )}
+
+          {course.transcript ? <TranscriptCard transcript={course.transcript} /> : null}
         </View>
       </ScrollView>
 

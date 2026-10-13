@@ -11,11 +11,12 @@ A mobile-first (iOS/Android/Web) CEU (Continuing Education Unit) platform for be
 Before marking **any** task complete, run both commands and confirm they pass:
 
 ```powershell
-npx expo export --platform all --no-bundle-compress 2>&1 | Select-String -Pattern "error|Error" | Select-Object -First 20
+npx expo export --platform all --output-dir "$env:TEMP\hcceu-export" *>&1 | Select-String -Pattern "error|Error" | Select-Object -First 20
 npx tsc --noEmit
 ```
 
-- If either command produces errors, fix them before reporting the task as done.
+- If either command produces errors, fix them before reporting the task as done. (Asset filenames like `expo-router/assets/error.png` match the pattern — ignore those.)
+- `--no-bundle-compress` is not supported by this Expo CLI version; don't add it back.
 - Never skip the typecheck. TypeScript errors introduced silently break other contributors' workflows.
 - A passing typecheck does not mean the feature is correct — also manually verify the golden path if a UI change was made.
 
@@ -25,7 +26,7 @@ npx tsc --noEmit
 
 - **Do not restructure the project.** The existing folder layout is intentional:
   - `app/` — Expo Router file-based routes only. Do not add non-route files here.
-  - `components/` — Shared, reusable UI components.
+  - `components/` — Shared, reusable UI components, grouped by feature: `ui/` (generic primitives: Button, Card, Input, Badge, Skeleton, ProgressBar, ErrorBoundary…), `admin/`, `course/`, `onboarding/`, `profile/`. Check `components/ui/` before building a new primitive.
   - `context/` — React Context providers only.
   - `hooks/` — Custom React hooks only.
   - `lib/` — Utility functions and Supabase client.
@@ -33,6 +34,9 @@ npx tsc --noEmit
   - `constants/` — App-wide constants (colors, config values).
   - `supabase/` — Migrations and Edge Functions. Never import from here in app code.
   - `assets/` — Static media. Do not generate programmatic assets here.
+  - `__tests__/` — Jest tests (`lib/` utilities and hooks), with a Supabase mock in `__tests__/__helpers__/mockSupabase.ts`.
+  - `docs/` — Backend security and Edge Function notes.
+  - `scripts/` — Playwright visual-test script and its screenshots.
 - Adding a new top-level directory requires explicit user approval.
 - Routing changes (adding/removing routes) require explicit user approval.
 
@@ -53,9 +57,10 @@ npx tsc --noEmit
 - Target Expo SDK 54+ conventions. Use Expo Router v6+ file-based routing.
 - Use React 19 patterns: `use()`, server components where Expo Router supports them, automatic batching. Avoid legacy lifecycle methods.
 - Prefer functional components and hooks exclusively.
-- Do not use `useEffect` for data fetching — use `useSWR`, Supabase realtime subscriptions, or React Query instead.
+- Data fetching lives in custom hooks in `hooks/` (one per resource, e.g. `useCourse`, `useCourses`). The established pattern is `useEffect` + `useState` with an `active` flag to ignore stale results, returning `{ data, loading, error/errorMessage, refetch }`. SWR / React Query are **not** installed — follow the existing pattern unless the user approves adding one.
+- Hooks check `hasSupabaseEnv` (from `@/lib/supabase`) and fall back to preview fixtures in `constants/previewContent.ts` so the app runs without a backend.
 - Extract logic into custom hooks in `hooks/`. Components should render, not compute.
-- Keep component files under 200 lines. Split into subcomponents if larger.
+- Aim to keep new component files under 200 lines. Several existing screens exceed this (some ~500 lines); when adding to a large screen, put new UI in a subcomponent under `components/<feature>/` rather than growing the screen further. Don't refactor existing screens unless asked.
 - Use `expo-router`'s `Link` and `router` for all navigation. Never use `react-navigation` APIs directly.
 - Use `expo-secure-store` for any sensitive data. Never store credentials or tokens in `AsyncStorage`.
 - Prefer `expo-*` modules over bare React Native equivalents for cross-platform compatibility.
@@ -63,15 +68,22 @@ npx tsc --noEmit
 
 ---
 
-## NativeWind / Styling
+## Styling
 
-- All styling goes through NativeWind (Tailwind utility classes via `className`).
-- Use the design token colors defined in `tailwind.config.js`:
-  - Primary: `primary` (`#8B1A8F`), `primary-dark`
-  - Accent: `accent` (`#D4A843`), `accent-dark`
-  - Surface: `surface`
-- Do not introduce inline `StyleSheet.create` objects except where NativeWind cannot reach (e.g., animated styles driven by `Animated.Value`).
-- Use custom fonts (Cormorant Garamond, Nunito, Source Sans 3) via the loaded font map — never hardcode font family strings outside of the config.
+- NativeWind is installed and configured, but **no screens currently use `className`**. The established pattern is `StyleSheet.create` inside a `createStyles(colors, textScale)` factory at the bottom of each file:
+  ```ts
+  const { colors, textScale } = usePreferences();
+  const styles = createStyles(colors, textScale);
+  // ...
+  const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textScale: number) =>
+    StyleSheet.create({ title: { fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.text } });
+  ```
+  Follow this pattern for consistency. Ask before introducing NativeWind `className` styling.
+- Colors always come from `usePreferences().colors` (light/dark/high-contrast aware, defined in `constants/theme.ts` as `LightColors`/`DarkColors`). Never hardcode hex values in components; use `withAlpha(color, 'AA')` for transparency.
+- Multiply font sizes by `textScale` (the user's "larger text" preference) to support font scaling.
+- Spacing, radius, and shadow tokens: `Spacing`, `Radius`, `Shadow` in `constants/theme.ts`. Use `getWebTransitionStyle()` for web hover transitions.
+- Fonts: use `Typography` from `constants/theme.ts` — Cormorant Garamond (`Typography.heading*`) for hero headings/brand moments only, Nunito (`Typography.body*`) for all UI text. Fonts are loaded in `app/_layout.tsx`. Never hardcode font family strings. (Source Sans 3 is installed but not loaded or used.)
+- Icons: `Ionicons` from `@expo/vector-icons`; mark decorative icons `accessibilityElementsHidden`.
 
 ---
 
@@ -82,9 +94,21 @@ npx tsc --noEmit
 - All database access must go through Row Level Security (RLS). Every new table must have RLS enabled with explicit policies before shipping.
 - Privileged operations (issuing certificates, publishing courses, admin actions) must live in Supabase Edge Functions — not in the mobile client.
 - Every schema change must be written as a new file in `supabase/migrations/` following the existing naming convention. Never edit past migrations.
-- Use Supabase Realtime for live data (progress tracking, notifications) rather than polling.
+- Use Supabase Realtime for live data (progress tracking, notifications) rather than polling. Give each channel a unique name (existing hooks append a random suffix) to avoid channel collisions.
+- The client is `supabase` from `@/lib/supabase` (typed `createClient<Database>`; encrypted SecureStore session storage on native, localStorage on web). When a schema change adds/changes columns, update `types/database.ts` (Row/Insert/Update) and the fixtures in `constants/previewContent.ts` by hand.
+- Edge Functions share helpers in `supabase/functions/_shared/auth.ts` (`requireUser`, `requireAdmin`, `createServiceClient`, CORS). Call them from the client with `supabase.functions.invoke('<name>', { body })`.
+- Admin status is the `admin_roles` table (checked via `useAdminRole`), separate from the learner `profiles.role` (`RBT` | `BCBA` | `STUDENT`). Courses follow a `draft → pending_review → published → archived` workflow driven by the `review-course` function; `is_published` is synced from `status` by trigger.
 - Use Supabase Storage with signed URLs for all user-uploaded or sensitive content. Never expose bucket contents publicly unless explicitly required.
 - Validate all user inputs server-side within Edge Functions. Client-side validation is UX only.
+
+- Migration filenames are `YYYYMMDDNNNNNN_description.sql` (e.g. `20261013000001_add_course_transcript.sql`).
+
+---
+
+## Testing
+
+- Jest (`jest-expo`) — `npm test`. CI (`.github/workflows/ci.yml`) runs `tsc --noEmit` and `jest --ci --coverage` on every push/PR to `main`.
+- Add tests for new pure functions in `lib/` and for non-trivial hooks, using the Supabase mock helper.
 
 ---
 
