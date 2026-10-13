@@ -2,20 +2,22 @@ import {
   ActivityIndicator,
   ImageBackground,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect, useRef, useState } from 'react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { router, useLocalSearchParams } from 'expo-router';
 import { VideoView, useVideoPlayer } from 'expo-video';
+import { useEventListener } from 'expo';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { SlidesCard } from '@/components/course/SlidesCard';
 import { TranscriptCard } from '@/components/course/TranscriptCard';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
@@ -35,6 +37,7 @@ export default function CourseViewerScreen() {
   // Always called unconditionally; source updates reactively as course loads
   const player = useVideoPlayer(course?.video_url ?? null, (p) => {
     p.loop = false;
+    p.timeUpdateEventInterval = 1;
   });
 
   // Watch-time tracking — 80% must be watched; seeking forward doesn't count
@@ -42,24 +45,17 @@ export default function CourseViewerScreen() {
   const [watchedWatermark, setWatchedWatermark] = useState(0);
   const prevTimeRef = useRef(0);
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      const current = player.currentTime;
-      if (player.playing) {
-        const jump = current - prevTimeRef.current;
-        prevTimeRef.current = current;
-        // Natural forward playback only — reject jumps > 2.5 s (seeks)
-        if (jump > 0 && jump <= 2.5) {
-          setWatchedWatermark(prev => {
-            // Only extend the watermark if we are playing near its edge
-            return current <= prev + 3.5 ? Math.max(prev, current) : prev;
-          });
-        }
-      }
-      // Deliberately don't update prevTimeRef while paused: detects seek-during-pause
-    }, 1000);
-    return () => clearInterval(id);
-  }, []); // player object is a stable ref from useVideoPlayer
+  // Native 1 s time events instead of a JS timer — nothing runs while there's no playback
+  useEventListener(player, 'timeUpdate', ({ currentTime: current }) => {
+    if (!player.playing) return; // Don't update prevTimeRef while paused: detects seek-during-pause
+    const jump = current - prevTimeRef.current;
+    prevTimeRef.current = current;
+    // Natural forward playback only — reject jumps > 2.5 s (seeks)
+    if (jump > 0 && jump <= 2.5) {
+      // Only extend the watermark if we are playing near its edge
+      setWatchedWatermark((prev) => (current <= prev + 3.5 ? Math.max(prev, current) : prev));
+    }
+  });
 
   // Log a view once the course is confirmed loaded so "Continue" on the dashboard stays fresh
   useEffect(() => {
@@ -257,6 +253,8 @@ export default function CourseViewerScreen() {
               </View>
             </Card>
           )}
+
+          {course.slides_path ? <SlidesCard slidesPath={course.slides_path} /> : null}
 
           {course.transcript ? <TranscriptCard transcript={course.transcript} /> : null}
         </View>

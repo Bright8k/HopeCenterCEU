@@ -26,6 +26,8 @@ export default {
     scheme: 'hopecenterceu',
     privacy: 'unlisted',
     orientation: 'portrait',
+    // Follow the system light/dark setting (requires expo-system-ui); in-app theme can still override.
+    userInterfaceStyle: 'automatic',
     icon: './assets/icon.png',
     splash: { image: './assets/splash-icon.png', resizeMode: 'contain', backgroundColor: '#8B1A8F' },
     ios: {
@@ -43,6 +45,8 @@ export default {
     android: {
       adaptiveIcon: { foregroundImage: './assets/adaptive-icon.png', backgroundColor: '#8B1A8F' },
       package: 'com.hopecenter.ceu',
+      // Android 15+ enforces edge-to-edge; screens handle insets via react-native-safe-area-context.
+      edgeToEdgeEnabled: true,
       versionCode: 1,
       // Android 13+ requires POST_NOTIFICATIONS to be declared; vibrate is for notification ringtones.
       // RECEIVE_BOOT_COMPLETED lets scheduled notifications survive a device reboot.

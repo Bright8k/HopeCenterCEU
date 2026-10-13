@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { StatusBanner } from '@/components/admin/StatusBanner';
 import { WorkflowActions } from '@/components/admin/WorkflowActions';
+import { SlidesUpload } from '@/components/admin/SlidesUpload';
 import { usePreferences } from '@/context/PreferencesContext';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
@@ -74,6 +75,7 @@ export default function CourseEdit() {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [quizRequired, setQuizRequired] = useState(true);
   const [transcript, setTranscript] = useState('');
+  const [slidesPath, setSlidesPath] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Workflow state
@@ -96,6 +98,7 @@ export default function CourseEdit() {
       setThumbnailUrl(c.thumbnail_url ?? '');
       setQuizRequired(c.quiz_required);
       setTranscript(c.transcript ?? '');
+      setSlidesPath(c.slides_path ?? '');
       setCurrentStatus((c.status as CourseStatus) ?? 'draft');
       setReviewNote(c.review_note ?? null);
     }
@@ -161,6 +164,7 @@ export default function CourseEdit() {
       thumbnail_url: thumbnailUrl.trim() || null,
       quiz_required: quizRequired,
       transcript: transcript.trim() || null,
+      slides_path: slidesPath || null,
     };
     // cast required: supabase client insert/update types resolve to never with this schema config
     const table = supabase.from('courses') as any;
@@ -205,7 +209,7 @@ export default function CourseEdit() {
   }
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.content}
@@ -329,6 +333,8 @@ export default function CourseEdit() {
         <Text style={styles.fieldHint}>
           Host videos externally (Vimeo, Cloudflare Stream, S3). Large files are not uploaded directly.
         </Text>
+
+        <SlidesUpload slidesPath={slidesPath} onChange={setSlidesPath} />
 
         <Input
           label="Transcript"

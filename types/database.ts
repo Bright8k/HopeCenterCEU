@@ -46,6 +46,7 @@ export type Database = {
           status: 'draft' | 'pending_review' | 'published' | 'archived';
           review_note: string | null;
           transcript: string | null;
+          slides_path: string | null;
           created_at: string;
         };
         Insert: {
@@ -64,6 +65,7 @@ export type Database = {
           status?: 'draft' | 'pending_review' | 'published' | 'archived';
           review_note?: string | null;
           transcript?: string | null;
+          slides_path?: string | null;
           created_at?: string;
         };
         Update: {
@@ -81,6 +83,7 @@ export type Database = {
           status?: 'draft' | 'pending_review' | 'published' | 'archived';
           review_note?: string | null;
           transcript?: string | null;
+          slides_path?: string | null;
         };
         Relationships: [];
       };

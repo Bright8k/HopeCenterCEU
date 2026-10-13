@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, Shadow, getWebTransitionStyle } from '@/constants/theme';
+import { tapHaptic } from '@/lib/haptics';
 
 type ButtonProps = {
   title: string;
@@ -36,7 +37,7 @@ export function Button({
   accessibilityLabel,
   accessibilityHint,
 }: ButtonProps) {
-  const { colors } = usePreferences();
+  const { colors, preferences } = usePreferences();
   const [isHovered, setIsHovered] = useState(false);
   const isDisabled = disabled || loading;
 
@@ -80,6 +81,7 @@ export function Button({
         style,
       ]}
       onPress={onPress}
+      onPressIn={() => tapHaptic(preferences.haptics)}
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}
       disabled={isDisabled}

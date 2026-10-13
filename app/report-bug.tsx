@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
@@ -29,6 +30,15 @@ const CATEGORIES = [
 type Category = (typeof CATEGORIES)[number]['key'];
 
 export default function ReportBugScreen() {
+  const { colors } = usePreferences();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
+      <ReportBugScreenContent />
+    </SafeAreaView>
+  );
+}
+
+function ReportBugScreenContent() {
   const { user } = useAuth();
   const { colors, textScale } = usePreferences();
   const styles = createStyles(colors, textScale);
@@ -85,7 +95,7 @@ export default function ReportBugScreen() {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.background }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.header}>
         <Pressable

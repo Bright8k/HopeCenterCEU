@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { usePreferences } from '@/context/PreferencesContext';
 import { getWebTransitionStyle } from '@/constants/theme';
+import { tapHaptic } from '@/lib/haptics';
 
 type InteractivePressableProps = {
   children:
@@ -49,6 +50,7 @@ export function InteractivePressable({
       accessibilityState={{ disabled, ...accessibilityState }}
       disabled={disabled}
       onPress={onPress}
+      onPressIn={onPress ? () => tapHaptic(preferences.haptics) : undefined}
       onHoverIn={() => setIsHovered(true)}
       onHoverOut={() => setIsHovered(false)}
       style={({ pressed }) => [

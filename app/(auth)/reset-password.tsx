@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
@@ -18,6 +19,15 @@ import { usePreferences } from '@/context/PreferencesContext';
 import { Typography, withAlpha } from '@/constants/theme';
 
 export default function ResetPasswordScreen() {
+  const { colors } = usePreferences();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
+      <ResetPasswordScreenContent />
+    </SafeAreaView>
+  );
+}
+
+function ResetPasswordScreenContent() {
   const { colors, textScale } = usePreferences();
   // PKCE flow sends ?code=XXX&type=recovery as query params
   const { code } = useLocalSearchParams<{ code?: string }>();

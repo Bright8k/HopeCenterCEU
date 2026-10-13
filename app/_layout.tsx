@@ -1,6 +1,7 @@
 import '../global.css';
 import { useEffect } from 'react';
 import { Stack, router } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useFonts } from 'expo-font';
@@ -26,7 +27,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { setupNotificationHandler, setupAndroidChannel, registerPushToken } from '@/lib/notifications';
 
 function AppNavigator() {
-  const { colors } = usePreferences();
+  const { colors, resolvedTheme } = usePreferences();
   const { user } = useAuth();
 
   useEffect(() => {
@@ -54,28 +55,31 @@ function AppNavigator() {
   }, [user?.id]);
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: colors.background },
-      }}
-    >
-      <Stack.Screen name="index" />
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(admin)" />
-      <Stack.Screen name="settings" />
-      <Stack.Screen name="course" />
-      <Stack.Screen name="quiz" />
-      <Stack.Screen name="profile-edit" />
-      <Stack.Screen name="renewal-tracker" />
-      <Stack.Screen name="exam" />
-      <Stack.Screen name="certificate" />
-      <Stack.Screen name="history" />
-      <Stack.Screen name="resources" />
-      <Stack.Screen name="report-bug" />
-      <Stack.Screen name="+not-found" />
-    </Stack>
+    <>
+      <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: colors.background },
+        }}
+      >
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(admin)" />
+        <Stack.Screen name="settings" />
+        <Stack.Screen name="course" />
+        <Stack.Screen name="quiz" />
+        <Stack.Screen name="profile-edit" />
+        <Stack.Screen name="renewal-tracker" />
+        <Stack.Screen name="exam" />
+        <Stack.Screen name="certificate" />
+        <Stack.Screen name="history" />
+        <Stack.Screen name="resources" />
+        <Stack.Screen name="report-bug" />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </>
   );
 }
 

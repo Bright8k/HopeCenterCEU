@@ -9,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { Link, router } from 'expo-router';
@@ -22,6 +23,15 @@ import { Typography, getWebTransitionStyle, withAlpha } from '@/constants/theme'
 import { HOPE_CENTER_LOGO } from '@/constants/brand';
 
 export default function SignIn() {
+  const { colors } = usePreferences();
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'bottom']}>
+      <SignInContent />
+    </SafeAreaView>
+  );
+}
+
+function SignInContent() {
   const { signIn } = useAuth();
   const { colors, textScale } = usePreferences();
   const [email, setEmail] = useState('');
