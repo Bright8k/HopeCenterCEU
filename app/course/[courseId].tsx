@@ -286,19 +286,24 @@ export default function CourseViewerScreen() {
       )}
     </SafeAreaView>
   );
+}
 
-  function BackButton({ label }: { label: string }) {
-    return (
-      <Pressable
-        onPress={() => router.dismiss()}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-        style={styles.backBtn}
-      >
-        <Ionicons name="arrow-back" size={22} color={colors.text} />
-      </Pressable>
-    );
-  }
+// Module-level so it isn't remounted on every render — video time updates re-render the screen
+// each second during playback, and a remount mid-tap swallows the press.
+function BackButton({ label }: { label: string }) {
+  const { colors, textScale } = usePreferences();
+  const styles = createStyles(colors, textScale);
+  return (
+    <Pressable
+      // No history after a deep link or web refresh — fall back to the library
+      onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/courses'))}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={styles.backBtn}
+    >
+      <Ionicons name="arrow-back" size={22} color={colors.text} />
+    </Pressable>
+  );
 }
 
 function formatDuration(seconds: number) {
