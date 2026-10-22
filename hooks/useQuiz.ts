@@ -3,10 +3,9 @@ import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import { updateStreak } from '@/lib/streaks';
 import { getCachedCourse, getCachedQuestions } from '@/lib/offline';
 import { useAuth } from '@/context/AuthContext';
-import { scoreQuiz } from '@/lib/quiz';
-import type { Database } from '@/types/database';
+import type { Database, LearnerQuestion } from '@/types/database';
 
-type Question = Database['public']['Tables']['questions']['Row'];
+type Question = LearnerQuestion;
 type Course = Database['public']['Tables']['courses']['Row'];
 
 export type QuizResult = {
@@ -26,6 +25,7 @@ type QuizState = {
   certUrl: string | null;
   certGenerating: boolean;
   error: string | null;
+  submitError: string | null;
 };
 
 function shuffle<T>(arr: T[]): T[] {
@@ -49,6 +49,7 @@ export function useQuiz(courseId: string) {
     certUrl: null,
     certGenerating: false,
     error: null,
+    submitError: null,
   });
 
   useEffect(() => {
@@ -59,7 +60,7 @@ export function useQuiz(courseId: string) {
       if (hasSupabaseEnv) {
         const [courseRes, questionsRes] = await Promise.all([
           supabase.from('courses').select('*').eq('id', courseId).single(),
-          supabase.from('questions').select('*').eq('course_id', courseId),
+          supabase.from('questions').select('id, course_id, domain, stem, options, track').eq('course_id', courseId),
         ]);
 
         if (!active) return;
@@ -118,75 +119,53 @@ export function useQuiz(courseId: string) {
     const { questions, course, answers } = state;
     if (!user || !course || questions.length === 0) return;
 
-    setState((s) => ({ ...s, submitting: true }));
+    if (!hasSupabaseEnv) {
+      setState((s) => ({ ...s, submitError: 'Quizzes can only be submitted when connected to Hope Center.' }));
+      return;
+    }
 
-    // Score is pure local math — calculate before any network call
-    const { score, passed, correct, total } = scoreQuiz(questions, answers, course.pass_score);
+    setState((s) => ({ ...s, submitting: true, submitError: null }));
 
-    // Show result immediately so the user always gets feedback
+    // Graded server-side: answer keys never reach the client and completions can't be self-written
+    const { data, error } = await supabase.functions.invoke('submit-quiz', {
+      body: { courseId, answers },
+    });
+
+    if (error || !data || typeof data.score !== 'number') {
+      setState((s) => ({
+        ...s,
+        submitting: false,
+        submitError: 'Your quiz could not be submitted. Check your connection and try again — your answers are saved.',
+      }));
+      return;
+    }
+
+    const result: QuizResult = { score: data.score, passed: data.passed, correct: data.correct, total: data.total };
+    const completionId: string | null = data.completionId ?? null;
+
     setState((s) => ({
       ...s,
       submitting: false,
-      result: { score, passed, correct, total },
-      certGenerating: passed && hasSupabaseEnv,
+      result,
+      certGenerating: result.passed && !!completionId,
     }));
 
-    if (!hasSupabaseEnv) return;
+    if (result.passed) void updateStreak(user.id);
 
-    // All DB work is background — result screen is already visible
-    try {
-      // cast required: supabase-js v2 upsert types resolve to never[] on composite-PK tables;
-      // cert_url reset to null so a fresh cert is generated on each passing attempt
-      const completionsTable = supabase.from('completions') as any;
-      const { data: inserted, error: upsertErr } = await completionsTable
-        .upsert(
-          {
-            user_id: user.id,
-            course_id: courseId,
-            score,
-            passed,
-            cert_url: null,
-            completed_at: new Date().toISOString(),
-          },
-          { onConflict: 'user_id,course_id', ignoreDuplicates: false },
-        )
-        .select('id')
-        .single();
-
-      const completionId: string | null = upsertErr ? null : (inserted?.id ?? null);
-
-      // Record individual question responses (best-effort; ignore errors)
-      const attemptsTable = supabase.from('attempts') as any;
-      void attemptsTable.insert(
-        questions.map((q) => ({
-          user_id: user.id,
-          question_id: q.id,
-          selected: answers[q.id] ?? null,
-          is_correct: answers[q.id] === q.answer,
-        })),
-      );
-
-      if (passed) void updateStreak(user.id);
-
-      if (passed && completionId) {
-        const { data, error: certErr } = await supabase.functions.invoke('issue-certificate', {
-          body: { completionId },
-        });
-        setState((s) => ({
-          ...s,
-          certUrl: !certErr && data?.signedUrl ? (data.signedUrl as string) : null,
-          certGenerating: false,
-        }));
-      } else {
-        setState((s) => ({ ...s, certGenerating: false }));
-      }
-    } catch {
-      setState((s) => ({ ...s, certGenerating: false }));
+    if (result.passed && completionId) {
+      const { data: cert, error: certErr } = await supabase.functions.invoke('issue-certificate', {
+        body: { completionId },
+      });
+      setState((s) => ({
+        ...s,
+        certUrl: !certErr && cert?.signedUrl ? (cert.signedUrl as string) : null,
+        certGenerating: false,
+      }));
     }
   }, [state, user, courseId]);
 
   const reset = useCallback(() => {
-    setState((s) => ({ ...s, answers: {}, result: null, certUrl: null, certGenerating: false }));
+    setState((s) => ({ ...s, answers: {}, result: null, certUrl: null, certGenerating: false, submitError: null }));
   }, []);
 
   return { ...state, setAnswer, submit, reset };

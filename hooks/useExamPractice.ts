@@ -6,14 +6,20 @@ export interface PracticeQuestion {
   id: string;
   stem: string;
   options: Record<string, string>;
-  answer: number;
   domain: string | null;
+}
+
+/** Revealed by the server only after the set is submitted. */
+export interface PracticeReview {
+  isCorrect: boolean;
+  answer: number;
 }
 
 export interface PracticeResult {
   correct: number;
   total: number;
   score: number;
+  review: Record<string, PracticeReview>;
 }
 
 export function useExamPractice(domain: string) {
@@ -24,6 +30,7 @@ export function useExamPractice(domain: string) {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<PracticeResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const fetchQuestions = useCallback(async (signal?: { active: boolean }) => {
     if (!hasSupabaseEnv) {
@@ -36,7 +43,7 @@ export function useExamPractice(domain: string) {
 
     const { data, error: fetchErr } = await supabase
       .from('questions')
-      .select('id, stem, options, answer, domain')
+      .select('id, stem, options, domain')
       .eq('track', 'STUDENT')
       .eq('domain', domain)
       .limit(20);
@@ -67,30 +74,30 @@ export function useExamPractice(domain: string) {
   }, []);
 
   const submit = useCallback(async () => {
-    if (!questions.length) return;
+    if (!questions.length || !user || !hasSupabaseEnv) return;
 
     setSubmitting(true);
+    setSubmitError(null);
 
-    const total = questions.length;
-    const answerRows = questions
-      .filter((q) => answers[q.id] !== undefined)
-      .map((q) => ({
-        question_id: q.id,
-        selected: answers[q.id] as number,
-        is_correct: answers[q.id] === q.answer,
-      }));
-    const correct = answerRows.filter((r) => r.is_correct).length;
+    // Graded server-side; answers are revealed only in the response
+    const { data, error: submitErr } = await supabase.rpc('submit_practice', { p_answers: answers });
 
-    if (user && hasSupabaseEnv && answerRows.length > 0) {
-      await supabase.from('attempts').insert(
-        answerRows.map((r) => ({ ...r, user_id: user.id })),
-      );
+    if (submitErr || !data) {
+      setSubmitError('Your answers could not be submitted. Check your connection and try again.');
+      setSubmitting(false);
+      return;
     }
 
+    const review: Record<string, PracticeReview> = {};
+    for (const row of data) review[row.question_id] = { isCorrect: row.is_correct, answer: row.answer };
+
+    const total = questions.length;
+    const correct = data.filter((r) => r.is_correct).length;
     setResult({
       correct,
       total,
       score: total > 0 ? Math.round((correct / total) * 100) : 0,
+      review,
     });
     setSubmitting(false);
   }, [questions, answers, user]);
@@ -111,6 +118,7 @@ export function useExamPractice(domain: string) {
     submitting,
     result,
     error,
+    submitError,
     answeredCount,
     allAnswered,
     setAnswer,

@@ -1,45 +1,50 @@
 # Backend Security Baseline
 
-This app uses Supabase as its backend. The goal is to keep the security model simple early, enforce it in SQL, and avoid putting privileged logic into the mobile client.
+The app uses Supabase as its backend. Security is enforced in Postgres (Row Level Security, column privileges, `SECURITY DEFINER` functions) and in Edge Functions — never in the mobile client. The schema and every policy live in [`supabase/migrations/`](../supabase/migrations); the most recent full review is `20261022000001_security_hardening.sql` and `20261022000002_rls_performance_cleanup.sql`.
 
-## Current baseline
+## Keys
 
-- Use the Supabase publishable key only in the app.
-- Never put the `service_role` key in Expo config, app code, EAS public env vars, or client bundles.
-- Keep all app-facing tables in `public` protected by Row Level Security.
-- Version the database schema and policies in [`supabase/migrations/20260417_000001_initial_schema.sql`](../supabase/migrations/20260417_000001_initial_schema.sql).
-- Version storage and admin-role hardening in [`supabase/migrations/20260417_000002_storage_and_admin.sql`](../supabase/migrations/20260417_000002_storage_and_admin.sql).
-- Treat the current `EXPO_PUBLIC_DEV_AUTH_BYPASS` flag as local-only convenience. It must remain `false` in preview and production.
+- The app only ever holds the publishable key (`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY`).
+- The `service_role` key exists only as an Edge Function secret. Never put it in Expo config, app code, EAS public env vars, or client bundles.
+- `EXPO_PUBLIC_DEV_AUTH_BYPASS` is local-only; `app.config.ts` refuses to build production with it enabled.
 
-## Project settings to turn on in Supabase
+## Data access (signed-out visitors can read nothing)
 
-- Require email confirmation for email/password signup.
-- Set password minimum length to at least 8 and enable stronger password rules.
-- Turn on leaked password protection if your plan supports it.
-- Review session duration and inactivity timeout settings based on your compliance needs.
-- Keep redirect URLs exact and environment-specific.
+| Table | Learners (authenticated) | Admins (`admin_roles`) |
+|---|---|---|
+| `profiles` | read/update own row | read/update all |
+| `courses` | read published courses | read/write all |
+| `questions` | read questions on their track (or with no track) **without** `answer`/`explanation` (column privileges) | full rows via `admin_get_questions()` RPC; insert/update/delete |
+| `completions` | read own — **no writes** | read all |
+| `attempts` | read own — **no writes** | read all |
+| `streaks` | read all (leaderboard), write own | — |
+| `course_views`, `push_tokens` | manage own | — |
+| `bug_reports` | create, read own | read/update all |
+| `resources` | read | write |
+| Storage `certificates` | read own folder via signed URL | — |
+| Storage `course-slides` | read via signed URL | upload/remove |
 
-## Data access rules
+## Privileged operations
 
-- `profiles`: users can only read/write their own row.
-- `courses`: authenticated users can only read published courses matching their track.
-- `questions`: authenticated users can only read question sets matching their track.
-- `completions` and `attempts`: users can only read/insert their own records.
-- `storage.objects` in the `certificates` bucket: users can only read files inside their own folder prefix.
-- `admin_roles`: authenticated users can only read their own admin role entries.
+| Operation | Where | Notes |
+|---|---|---|
+| Grade a course quiz, record completion + attempts | `submit-quiz` Edge Function | Keeps the learner's best result; checks course is published and on the learner's track |
+| Grade exam practice | `submit_practice()` RPC | STUDENT accounts and STUDENT-track questions only; answers returned after submission |
+| Issue certificate PDF | `issue-certificate` Edge Function | Only for the caller's own passed completion; short-lived signed URL |
+| Publish / review / delete courses | `publish-course`, `review-course`, `delete-course` | Admin only |
+| Invite, role changes, delete users, password reset | `invite-user`, `set-user-role`, `toggle-admin`, `delete-user`, `send-password-reset` | Admin only |
 
-## Development rules
+RPCs callable by signed-in users each check the caller internally: `get_user_ceu_summary` (own totals, or any for admins), `is_user_admin` (only answers for admins), `get_leaderboard`, `admin_get_questions` (admins only), `submit_practice`.
 
-- Any future admin workflows should use Edge Functions or a secure server environment, not the mobile client.
-- RevenueCat webhooks, certificate generation, and any privileged writes should run server-side only.
-- Storage buckets for certificates should default to private access unless there is a strong reason not to.
-- Any moderation, publishing, or cross-user reporting should be implemented outside the public client with a service key stored only in server secrets.
-- Edge Functions for these workflows are scaffolded under [`supabase/functions`](../supabase/functions).
+## Rules for new work
 
-## Immediate next backend tasks
+- Every new table gets RLS with explicit policies, written as a new migration. Wrap `auth.uid()` as `(select auth.uid())` and use one permissive policy per role/action.
+- Anything that awards credit, money, or elevated access goes through an Edge Function or a checked `SECURITY DEFINER` function — never a client write.
+- `SECURITY DEFINER` functions set `search_path = public` and revoke `EXECUTE` from `anon` unless they are meant to be public.
+- Run `supabase db advisors --linked` after schema changes; it should report no security or performance warnings beyond the expected "authenticated can execute" notices.
 
-1. Apply the migration in Supabase and verify all RLS policies are present.
-2. Turn `EXPO_PUBLIC_DEV_AUTH_BYPASS=false` before any shared testing build.
-3. Deploy the certificate and course-publishing Edge Functions with project secrets configured.
-4. Add server-side PDF generation for certificates, then store paths in `completions.cert_url`.
-5. Move payment and webhook logic into Edge Functions before enabling subscriptions in-app.
+## Project settings (Supabase dashboard)
+
+- Email confirmation required for sign-up; password minimum length ≥ 8.
+- **Leaked password protection** (Authentication → Passwords) — currently off; turn it on.
+- Redirect URLs exact and environment-specific.

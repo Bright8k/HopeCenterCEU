@@ -25,7 +25,7 @@ export default function QuizScreen() {
   const { colors, textScale, preferences } = usePreferences();
   const {
     questions, course, answers, loading, submitting, result,
-    certUrl, certGenerating, error, setAnswer, submit, reset,
+    certUrl, certGenerating, error, submitError, setAnswer, submit, reset,
   } = useQuiz(courseId);
   const [currentIndex, setCurrentIndex] = useState(0);
   const styles = createStyles(colors, textScale);
@@ -239,6 +239,10 @@ export default function QuizScreen() {
         </View>
       </ScrollView>
 
+      {submitError ? (
+        <Text style={styles.submitError} accessibilityRole="alert">{submitError}</Text>
+      ) : null}
+
       <View style={styles.footer}>
         <Pressable
           onPress={() => setCurrentIndex((i) => Math.max(0, i - 1))}
@@ -391,6 +395,7 @@ const createStyles = (
       fontFamily: Typography.body,
       color: colors.text,
     },
+    submitError: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.error, textAlign: 'center', paddingHorizontal: 20, paddingTop: 10 },
     footer: {
       flexDirection: 'row',
       alignItems: 'center',

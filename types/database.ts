@@ -413,6 +413,28 @@ export type Database = {
           completions_count: number;
         }>;
       };
+      submit_practice: {
+        Args: {
+          p_answers: Record<string, number>;
+        };
+        Returns: Array<{
+          question_id: string;
+          selected: number;
+          is_correct: boolean;
+          answer: number;
+          explanation: string | null;
+        }>;
+      };
+      admin_get_questions: {
+        Args: {
+          p_course_id?: string | null;
+          p_question_id?: string | null;
+        };
+        Returns: Database['public']['Tables']['questions']['Row'][];
+      };
     };
   };
 };
+
+/** Question columns readable by learners — answer and explanation are server-only. */
+export type LearnerQuestion = Omit<Database['public']['Tables']['questions']['Row'], 'answer' | 'explanation'>;

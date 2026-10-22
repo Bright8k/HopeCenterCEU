@@ -24,7 +24,7 @@ export default function ExamPracticeScreen() {
   const { domain } = useLocalSearchParams<{ domain: string }>();
   const { colors, textScale, preferences } = usePreferences();
   const {
-    questions, answers, loading, submitting, result, error,
+    questions, answers, loading, submitting, result, error, submitError,
     answeredCount, allAnswered, setAnswer, submit, reset,
   } = useExamPractice(domain ?? '');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -114,10 +114,11 @@ export default function ExamPracticeScreen() {
             <Text style={styles.reviewHeading}>Review</Text>
             {questions.map((q, i) => {
               const chosen = answers[q.id];
-              const isCorrect = chosen === q.answer;
-              const correctLabel = OPTION_LABELS[q.answer];
+              const graded = result.review[q.id];
+              const isCorrect = graded?.isCorrect ?? false;
+              const correctLabel = graded ? OPTION_LABELS[graded.answer] : '–';
               const chosenLabel = chosen !== undefined ? OPTION_LABELS[chosen] : '–';
-              const optionText = (q.options as Record<string, string>)[String(q.answer)] ?? '';
+              const optionText = graded ? (q.options as Record<string, string>)[String(graded.answer)] ?? '' : '';
 
               return (
                 <Card
@@ -234,6 +235,10 @@ export default function ExamPracticeScreen() {
           })}
         </View>
       </ScrollView>
+
+      {submitError ? (
+        <Text style={styles.submitError} accessibilityRole="alert">{submitError}</Text>
+      ) : null}
 
       <View style={styles.footer}>
         <Pressable
@@ -397,6 +402,7 @@ const createStyles = (
       fontFamily: Typography.body,
       color: colors.text,
     },
+    submitError: { fontSize: 13 * textScale, fontFamily: Typography.body, color: colors.error, textAlign: 'center', paddingHorizontal: 20, paddingTop: 10 },
     footer: {
       flexDirection: 'row',
       alignItems: 'center',

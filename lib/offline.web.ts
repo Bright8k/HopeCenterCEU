@@ -19,7 +19,6 @@ export interface OfflineQuestion {
   course_id: string;
   stem: string;
   options: string[];
-  answer: number;
   domain: string | null;
 }
 

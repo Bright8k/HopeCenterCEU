@@ -49,11 +49,8 @@ export default function AdminQuestions() {
   const fetchQuestions = useCallback(async (courseId: string) => {
     if (!hasSupabaseEnv) return;
     setLoadingQuestions(true);
-    const { data } = await supabase
-      .from('questions')
-      .select('*')
-      .eq('course_id', courseId)
-      .order('domain');
+    // Answer keys are column-restricted; admins read full rows through this RPC
+    const { data } = await supabase.rpc('admin_get_questions', { p_course_id: courseId });
     setQuestions((data as Question[]) ?? []);
     setLoadingQuestions(false);
   }, []);

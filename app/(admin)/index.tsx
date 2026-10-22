@@ -30,7 +30,7 @@ export default function AdminOverview() {
       supabase.from('courses').select('*', { count: 'exact', head: true }),
       supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'published'),
       supabase.from('courses').select('*', { count: 'exact', head: true }).eq('status', 'pending_review'),
-      supabase.from('questions').select('*', { count: 'exact', head: true }),
+      supabase.from('questions').select('id', { count: 'exact', head: true }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }),
       supabase.from('bug_reports').select('*', { count: 'exact', head: true }).eq('status', 'open'),
     ]).then(([all, pub, pending, q, learners, bugs]) => {

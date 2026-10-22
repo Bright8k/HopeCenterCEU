@@ -66,7 +66,6 @@ export interface OfflineQuestion {
   course_id: string;
   stem: string;
   options: string[];
-  answer: number;
   domain: string | null;
 }
 
@@ -99,7 +98,8 @@ export async function saveCourseOffline(
     await db.runAsync(
       `INSERT OR REPLACE INTO offline_questions (id, course_id, stem, options, answer, domain)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [q.id, q.course_id, q.stem, JSON.stringify(q.options), q.answer, q.domain ?? null],
+      // answer is NOT NULL in existing installs' schema; keys are server-only, so store a placeholder
+      [q.id, q.course_id, q.stem, JSON.stringify(q.options), -1, q.domain ?? null],
     );
   }
 }
@@ -144,7 +144,6 @@ export async function getCachedQuestions(courseId: string): Promise<OfflineQuest
     course_id: r.course_id as string,
     stem: r.stem as string,
     options: JSON.parse(r.options as string) as string[],
-    answer: r.answer as number,
     domain: (r.domain as string | null) ?? null,
   }));
 }

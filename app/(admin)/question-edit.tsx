@@ -52,8 +52,9 @@ export default function QuestionEdit() {
       setInitialLoading(false);
       return;
     }
-    const { data } = await supabase.from('questions').select('*').eq('id', id).single();
-    const q = data as QuestionRow | null;
+    // Answer keys are column-restricted; admins read full rows through this RPC
+    const { data } = await supabase.rpc('admin_get_questions', { p_question_id: id });
+    const q = ((data as QuestionRow[] | null) ?? [])[0] ?? null;
     if (q) {
       setStem(q.stem);
       setDomain(q.domain ?? '');

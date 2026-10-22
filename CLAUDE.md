@@ -98,6 +98,7 @@ npx tsc --noEmit
 - The client is `supabase` from `@/lib/supabase` (typed `createClient<Database>`; encrypted SecureStore session storage on native, localStorage on web). When a schema change adds/changes columns, update `types/database.ts` (Row/Insert/Update) and the fixtures in `constants/previewContent.ts` by hand.
 - Edge Functions share helpers in `supabase/functions/_shared/auth.ts` (`requireUser`, `requireAdmin`, `createServiceClient`, CORS). Call them from the client with `supabase.functions.invoke('<name>', { body })`.
 - Admin status is the `admin_roles` table (checked via `useAdminRole`), separate from the learner `profiles.role` (`RBT` | `BCBA` | `STUDENT`). Courses follow a `draft → pending_review → published → archived` workflow driven by the `review-course` function; `is_published` is synced from `status` by trigger.
+- Quiz answer keys are server-only: `questions.answer`/`explanation` are column-restricted, so never `select('*')` from `questions` in learner code. Course quizzes are graded by the `submit-quiz` Edge Function, exam practice by the `submit_practice` RPC, and admins read full questions via the `admin_get_questions` RPC. Clients cannot write `completions` or `attempts`.
 - Use Supabase Storage with signed URLs for all user-uploaded or sensitive content. Never expose bucket contents publicly unless explicitly required.
 - Validate all user inputs server-side within Edge Functions. Client-side validation is UX only.
 
