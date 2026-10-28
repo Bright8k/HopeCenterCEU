@@ -110,7 +110,7 @@ export default function AnalyticsScreen() {
               Completions will appear here once learners submit quizzes.
             </Text>
           </Card>
-        ) : null
+        ) : undefined
       }
       renderItem={({ item }) => <CourseRow item={item} colors={colors} textScale={textScale} styles={styles} />}
       ListFooterComponent={
@@ -124,7 +124,7 @@ export default function AnalyticsScreen() {
               <RecentRow key={c.id} item={c} colors={colors} textScale={textScale} styles={styles} />
             ))}
           </View>
-        ) : null
+        ) : undefined
       }
     />
   );

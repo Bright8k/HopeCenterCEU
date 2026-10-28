@@ -1,5 +1,3 @@
-import 'dotenv/config';
-
 const supabaseUrl =
   process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '';
 const supabasePublishableKey =

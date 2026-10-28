@@ -54,7 +54,7 @@ npx tsc --noEmit
 
 ## React & Expo (2026 Best Practices)
 
-- Target Expo SDK 54+ conventions. Use Expo Router v6+ file-based routing.
+- Target Expo SDK 58 conventions (React Native 0.88, React 19.3, TypeScript 6). Use Expo Router file-based routing. Install with `--legacy-peer-deps`, and add/upgrade packages with `npx expo install <pkg> -- --legacy-peer-deps` so versions stay SDK-aligned.
 - Use React 19 patterns: `use()`, server components where Expo Router supports them, automatic batching. Avoid legacy lifecycle methods.
 - Prefer functional components and hooks exclusively.
 - Data fetching lives in custom hooks in `hooks/` (one per resource, e.g. `useCourse`, `useCourses`). The established pattern is `useEffect` + `useState` with an `active` flag to ignore stale results, returning `{ data, loading, error/errorMessage, refetch }`. SWR / React Query are **not** installed — follow the existing pattern unless the user approves adding one.

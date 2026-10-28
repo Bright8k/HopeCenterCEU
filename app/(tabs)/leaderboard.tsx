@@ -162,7 +162,7 @@ export default function LeaderboardScreen() {
               Complete a course to appear on the leaderboard.
             </Text>
           </Card>
-        ) : null
+        ) : undefined
       }
       renderItem={({ item, index }) => (
         <RankRow

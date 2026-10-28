@@ -8,10 +8,10 @@ A mobile-first continuing education platform for behavior professionals at Hope 
 
 | Layer | Technology |
 |---|---|
-| Framework | [Expo SDK 54](https://docs.expo.dev/) + [Expo Router v6](https://docs.expo.dev/router/introduction/) |
+| Framework | [Expo SDK 58](https://docs.expo.dev/) + [Expo Router](https://docs.expo.dev/router/introduction/) |
 | Backend | [Supabase](https://supabase.com/) (Postgres + RLS + Edge Functions + Storage) |
 | Styling | [NativeWind v4](https://www.nativewind.dev/) (Tailwind utility classes) |
-| Language | TypeScript 5 (strict mode) |
+| Language | TypeScript 6 (strict mode) |
 | Auth | Supabase Auth with `expo-secure-store` |
 | Offline | `expo-sqlite` for cached course playback |
 | Certificates | PDF generation via `pdf-lib` in a Supabase Edge Function |
@@ -56,7 +56,7 @@ __tests__/           Jest unit & hook tests
 
 ### Prerequisites
 
-- Node 20+
+- Node 22.13+ (required by Expo SDK 58 / React Native 0.88)
 - [Expo CLI](https://docs.expo.dev/more/expo-cli/) (`npm install -g expo`)
 - A Supabase project (free tier works)
 

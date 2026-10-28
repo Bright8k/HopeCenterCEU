@@ -106,7 +106,7 @@ function ResetPasswordScreenContent() {
     }
 
     // Cold-start: app launched via the reset link
-    Linking.getInitialURL().then(exchangeToken);
+    Linking.getInitialURL().then((url) => exchangeToken(url ?? null));
 
     // Foregrounded: app was already open when the user tapped the email link
     const sub = Linking.addEventListener('url', ({ url }) => exchangeToken(url));

@@ -11,6 +11,8 @@ import { AppBrand } from '@/components/ui/AppBrand';
 import { hasSupabaseEnv } from '@/lib/supabase';
 import { Typography, withAlpha } from '@/constants/theme';
 
+// Tab tint colors are plain strings from the theme; RN 0.88 types them as ColorValue,
+// which is wider than the icon library accepts.
 export default function TabLayout() {
   const { role, session, loading } = useAuth();
   const { colors } = usePreferences();
@@ -80,7 +82,7 @@ export default function TabLayout() {
           title: 'Dashboard',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? tabPill(colors.primary) : undefined}>
-              <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color as string} />
             </View>
           ),
         }}
@@ -91,7 +93,7 @@ export default function TabLayout() {
           title: isStudent ? 'Courses' : 'CEU Library',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? tabPill(colors.primary) : undefined}>
-              <Ionicons name={focused ? 'book' : 'book-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'book' : 'book-outline'} size={22} color={color as string} />
             </View>
           ),
         }}
@@ -102,7 +104,7 @@ export default function TabLayout() {
           title: 'Leaderboard',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? tabPill(colors.primary) : undefined}>
-              <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'trophy' : 'trophy-outline'} size={22} color={color as string} />
             </View>
           ),
         }}
@@ -114,7 +116,7 @@ export default function TabLayout() {
           href: isStudent ? undefined : null,
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? tabPill(colors.primary) : undefined}>
-              <Ionicons name={focused ? 'school' : 'school-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'school' : 'school-outline'} size={22} color={color as string} />
             </View>
           ),
         }}
@@ -125,7 +127,7 @@ export default function TabLayout() {
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? tabPill(colors.primary) : undefined}>
-              <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+              <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color as string} />
             </View>
           ),
         }}

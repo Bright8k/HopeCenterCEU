@@ -169,7 +169,7 @@ export default function CourseViewerScreen() {
               style={styles.video}
               nativeControls
               contentFit="contain"
-              allowsFullscreen
+              fullscreenOptions={{ enable: true }}
               accessibilityLabel={`Video: ${course.title}`}
             />
           ) : course.thumbnail_url ? (
@@ -327,7 +327,7 @@ const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textS
     videoSection: { width: '100%', aspectRatio: 16 / 9, backgroundColor: colors.primary },
     video: { width: '100%', height: '100%' },
     videoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-    thumbnailDim: { ...StyleSheet.absoluteFillObject, backgroundColor: withAlpha('#000000', '44') },
+    thumbnailDim: { ...StyleSheet.absoluteFill, backgroundColor: withAlpha('#000000', '44') },
     playIconWrap: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center' },
     placeholderSubtext: { fontSize: 13 * textScale, fontFamily: Typography.body, color: withAlpha(colors.white, 'CC'), textAlign: 'center', paddingHorizontal: 32 },
     body: { padding: 20, gap: 14 },

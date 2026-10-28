@@ -82,6 +82,6 @@ const createStyles = (colors: ReturnType<typeof usePreferences>['colors'], textS
     iconBtn: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface },
     title: { flex: 1, textAlign: 'center', fontSize: 16 * textScale, fontFamily: Typography.bodyBold, color: colors.text },
     body: { flex: 1, backgroundColor: colors.surface },
-    overlay: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32, backgroundColor: colors.surface },
+    overlay: { ...StyleSheet.absoluteFill, alignItems: 'center', justifyContent: 'center', gap: 14, padding: 32, backgroundColor: colors.surface },
     errorText: { fontSize: 15 * textScale, fontFamily: Typography.body, color: colors.textSecondary, textAlign: 'center' },
   });
