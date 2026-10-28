@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/Button';
 import { PdfViewer } from '@/components/course/PdfViewer';
@@ -16,6 +16,7 @@ interface SlidesViewerModalProps {
 export function SlidesViewerModal({ url, onClose, onOpenExternal }: SlidesViewerModalProps) {
   const { colors, textScale } = usePreferences();
   const styles = createStyles(colors, textScale);
+  const insets = useSafeAreaInsets();
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [pageCount, setPageCount] = useState(0);
 
@@ -25,9 +26,17 @@ export function SlidesViewerModal({ url, onClose, onOpenExternal }: SlidesViewer
 
   return (
     <Modal visible={!!url} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      {/* SafeAreaView measures while the slide-in modal is off-screen on iOS and gets a 0 top inset,
+          leaving the header under the status bar where taps don't land; use the window insets instead. */}
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.header}>
-          <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close slides" style={styles.iconBtn}>
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close slides"
+            hitSlop={8}
+            style={styles.iconBtn}
+          >
             <Ionicons name="close" size={22} color={colors.text} />
           </Pressable>
           <Text style={styles.title} accessibilityRole="header">
@@ -38,6 +47,7 @@ export function SlidesViewerModal({ url, onClose, onOpenExternal }: SlidesViewer
             accessibilityRole="button"
             accessibilityLabel="Open slides in another app"
             accessibilityHint="Opens the PDF outside the app to download or print"
+            hitSlop={8}
             style={styles.iconBtn}
           >
             <Ionicons name="share-outline" size={20} color={colors.text} />
@@ -70,7 +80,7 @@ export function SlidesViewerModal({ url, onClose, onOpenExternal }: SlidesViewer
             </View>
           )}
         </View>
-      </SafeAreaView>
+      </View>
     </Modal>
   );
 }
