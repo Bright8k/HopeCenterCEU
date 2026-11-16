@@ -19,6 +19,10 @@ import { Input } from '@/components/ui/Input';
 import { StatusBanner } from '@/components/admin/StatusBanner';
 import { WorkflowActions } from '@/components/admin/WorkflowActions';
 import { SlidesUpload } from '@/components/admin/SlidesUpload';
+import { AceCourseFields, type AceCourseValues } from '@/components/admin/AceCourseFields';
+import { CourseFeedbackList } from '@/components/admin/CourseFeedbackList';
+import { isHalfIncrement } from '@/lib/ace';
+import { functionErrorMessage } from '@/lib/functionError';
 import { usePreferences } from '@/context/PreferencesContext';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
@@ -76,6 +80,7 @@ export default function CourseEdit() {
   const [quizRequired, setQuizRequired] = useState(true);
   const [transcript, setTranscript] = useState('');
   const [slidesPath, setSlidesPath] = useState('');
+  const [ace, setAce] = useState<AceCourseValues>({ instructorName: '', instructorCredentials: '', learningObjectives: '', disclosures: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Workflow state
@@ -99,6 +104,12 @@ export default function CourseEdit() {
       setQuizRequired(c.quiz_required);
       setTranscript(c.transcript ?? '');
       setSlidesPath(c.slides_path ?? '');
+      setAce({
+        instructorName: c.instructor_name ?? '',
+        instructorCredentials: c.instructor_credentials ?? '',
+        learningObjectives: c.learning_objectives ?? '',
+        disclosures: c.disclosures ?? '',
+      });
       setCurrentStatus((c.status as CourseStatus) ?? 'draft');
       setReviewNote(c.review_note ?? null);
     }
@@ -114,6 +125,8 @@ export default function CourseEdit() {
     // Student exam-prep lessons carry no CEUs
     if (isNaN(ceu) || ceu < 0 || (ceu === 0 && track !== 'STUDENT')) {
       errs.ceuValue = track === 'STUDENT' ? 'Must be 0 or more' : 'Must be a positive number';
+    } else if (!isHalfIncrement(ceu)) {
+      errs.ceuValue = 'Use 0.5 increments (25 minutes = 0.5)';
     }
     const pass = parseInt(passScore, 10);
     if (isNaN(pass) || pass < 0 || pass > 100) errs.passScore = 'Must be between 0 and 100';
@@ -165,6 +178,10 @@ export default function CourseEdit() {
       quiz_required: quizRequired,
       transcript: transcript.trim() || null,
       slides_path: slidesPath || null,
+      instructor_name: ace.instructorName.trim() || null,
+      instructor_credentials: ace.instructorCredentials.trim() || null,
+      learning_objectives: ace.learningObjectives.trim() || null,
+      disclosures: ace.disclosures.trim() || null,
     };
     // cast required: supabase client insert/update types resolve to never with this schema config
     const table = supabase.from('courses') as any;
@@ -182,7 +199,7 @@ export default function CourseEdit() {
       body: { courseId: id, action, note },
     });
     setStatusLoading(false);
-    if (error) { Alert.alert('Action failed', error.message); return; }
+    if (error) { Alert.alert('Action failed', await functionErrorMessage(error, error.message)); return; }
     setCurrentStatus(ACTION_STATUS[action]);
     setReviewNote(action === 'reject' ? (note ?? null) : null);
   };
@@ -271,7 +288,8 @@ export default function CourseEdit() {
         </View>
 
         <Input
-          label="CEU Value *"
+          label="Credits *"
+          hint="CEUs for BCBA courses, PDUs for RBT courses. 50 minutes = 1."
           value={ceuValue}
           onChangeText={setCeuValue}
           keyboardType="decimal-pad"
@@ -291,6 +309,8 @@ export default function CourseEdit() {
           keyboardType="decimal-pad"
           placeholder="e.g. 60"
         />
+
+        <AceCourseFields values={ace} onChange={setAce} />
 
         {/* ── Media ── */}
         <Text style={styles.sectionLabel}>Media</Text>
@@ -375,6 +395,8 @@ export default function CourseEdit() {
 
         {/* ── Workflow actions ── */}
         {isEditing && <WorkflowActions status={currentStatus} loading={statusLoading} onAction={performAction} />}
+
+        {isEditing && id ? <CourseFeedbackList courseId={id} /> : null}
 
         {/* ── Danger zone ── */}
         {isEditing && (

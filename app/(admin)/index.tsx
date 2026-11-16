@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
+import { AceChecklistCard } from '@/components/admin/AceChecklistCard';
 import { InteractivePressable } from '@/components/ui/InteractivePressable';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { usePreferences } from '@/context/PreferencesContext';
@@ -95,6 +96,8 @@ export default function AdminOverview() {
           highlight={!!(stats && stats.openBugReports > 0)}
         />
       </View>
+
+      <AceChecklistCard />
 
       <Text style={styles.sectionTitle}>Quick actions</Text>
 

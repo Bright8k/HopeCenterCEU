@@ -39,6 +39,7 @@ export default function ProfileEditScreen() {
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [renewalMonth, setRenewalMonth] = useState<number | null>(null);
   const [renewalYear, setRenewalYear] = useState<number | null>(null);
+  const [bacbNumber, setBacbNumber] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,6 +54,7 @@ export default function ProfileEditScreen() {
     );
     setSelectedRole((profile.role as UserRole) ?? null);
     setAvatarUri(profile.avatar_url ?? null);
+    setBacbNumber(profile.bacb_cert_number ?? '');
     if (profile.renewal_date) {
       const [year, month] = profile.renewal_date.split('-').map(Number);
       setRenewalYear(year);
@@ -133,12 +135,19 @@ export default function ProfileEditScreen() {
         ? `${renewalYear}-${String(renewalMonth).padStart(2, '0')}-01`
         : null;
 
+    const bacb = bacbNumber.trim();
+    if (needsRenewal && bacb && (bacb.length < 3 || bacb.length > 32)) {
+      Alert.alert('Check your BACB number', 'Enter your BACB certification number as it appears in your BACB account.');
+      return;
+    }
+
     setSaving(true);
     const { error } = await supabase.from('profiles').upsert({
       id: user.id,
       display_name: displayName.trim(),
       role: selectedRole,
       renewal_date: renewalDate,
+      bacb_cert_number: needsRenewal ? bacb || null : null,
     });
     setSaving(false);
 
@@ -279,6 +288,17 @@ export default function ProfileEditScreen() {
         {/* Renewal date (RBT / BCBA only) */}
         {needsRenewal && (
           <View style={styles.renewalSection}>
+            <Text style={styles.sectionLabel}>BACB certification number</Text>
+            <Text style={styles.sectionHint}>Printed on your certificates, as the BACB requires.</Text>
+            <Input
+              value={bacbNumber}
+              onChangeText={setBacbNumber}
+              placeholder="e.g. 1-23-45678"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              accessibilityLabel="BACB certification number"
+            />
+
             <Text style={styles.sectionLabel}>CEU renewal deadline</Text>
             <Text style={styles.sectionHint}>When does your current renewal cycle end?</Text>
 

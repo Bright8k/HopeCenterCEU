@@ -21,6 +21,8 @@ The app uses Supabase as its backend. Security is enforced in Postgres (Row Leve
 | `course_views`, `push_tokens` | manage own | — |
 | `bug_reports` | create, read own | read/update all |
 | `resources` | read | write |
+| `ace_settings` (single row) | read (provider name, coordinator contact) | update (provider number, coordinator, checklist) |
+| `course_feedback` | create/update/read own, only for completed courses | read all |
 | Storage `certificates` | read own folder via signed URL | — |
 | Storage `course-slides` | read via signed URL | upload/remove |
 
@@ -30,8 +32,8 @@ The app uses Supabase as its backend. Security is enforced in Postgres (Row Leve
 |---|---|---|
 | Grade a course quiz, record completion + attempts | `submit-quiz` Edge Function | Keeps the learner's best result; checks course is published and on the learner's track |
 | Grade exam practice | `submit_practice()` RPC | STUDENT accounts and STUDENT-track questions only; answers returned after submission |
-| Issue certificate PDF | `issue-certificate` Edge Function | Only for the caller's own passed completion; short-lived signed URL |
-| Publish / review / delete courses | `publish-course`, `review-course`, `delete-course` | Admin only |
+| Issue certificate PDF | `issue-certificate` Edge Function | Only for the caller's own passed completion; short-lived signed URL. Prints the BACB-required fields; RBT courses get a record of completion (PDUs must use the BACB form) |
+| Publish / review / delete courses | `publish-course`, `review-course`, `delete-course` | Admin only. Approving a CEU/PDU course requires an instructor, objectives, 3 questions per credit, and a duration that supports the credit |
 | Invite, role changes, delete users, password reset | `invite-user`, `set-user-role`, `toggle-admin`, `delete-user`, `send-password-reset` | Admin only |
 
 RPCs callable by signed-in users each check the caller internally: `get_user_ceu_summary` (own totals, or any for admins), `is_user_admin` (only answers for admins), `get_leaderboard`, `admin_get_questions` (admins only), `submit_practice`.

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { usePreferences } from '@/context/PreferencesContext';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
+import { functionErrorMessage } from '@/lib/functionError';
 import type { Database } from '@/types/database';
 import { Typography, withAlpha } from '@/constants/theme';
 
@@ -59,7 +60,7 @@ export default function CourseReview() {
       body: { courseId, action: 'approve' },
     });
     setActingId(null);
-    if (error) { Alert.alert('Failed', error.message); return; }
+    if (error) { Alert.alert('Failed', await functionErrorMessage(error, error.message)); return; }
     removeLocal(courseId);
   };
 

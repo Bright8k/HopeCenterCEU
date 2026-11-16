@@ -16,11 +16,15 @@ import { useAuth } from '@/context/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { usePreferences } from '@/context/PreferencesContext';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
+import { functionErrorMessage } from '@/lib/functionError';
+import { creditUnit, formatCredits } from '@/lib/ace';
+import { useAceSettings } from '@/hooks/useAceSettings';
 import { Typography, withAlpha } from '@/constants/theme';
 
 interface CertData {
   courseTitle: string;
   ceuValue: number;
+  track: 'RBT' | 'BCBA' | 'STUDENT' | null;
   completedAt: string;
   certUrl: string | null;
   passed: boolean;
@@ -44,6 +48,7 @@ export default function CertificateScreen() {
   const [certData, setCertData] = useState<CertData | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const { settings } = useAceSettings();
 
   const fullName =
     profile?.display_name ??
@@ -55,6 +60,7 @@ export default function CertificateScreen() {
       setCertData({
         courseTitle: 'Ethics in Supervision Decisions',
         ceuValue: 2,
+        track: 'BCBA',
         completedAt: new Date().toISOString(),
         certUrl: null,
         passed: true,
@@ -66,17 +72,18 @@ export default function CertificateScreen() {
     let active = true;
     supabase
       .from('completions')
-      .select('passed, cert_url, completed_at, courses(title, ceu_value)')
+      .select('passed, cert_url, completed_at, courses(title, ceu_value, track)')
       .eq('id', completionId)
       .eq('user_id', user.id)
       .single()
       .then(({ data, error }) => {
         if (!active) return;
         if (data && !error) {
-          const course = data.courses as { title: string; ceu_value: number } | null;
+          const course = data.courses as { title: string; ceu_value: number; track: CertData['track'] } | null;
           setCertData({
             courseTitle: course?.title ?? 'Course',
             ceuValue: course?.ceu_value ?? 0,
+            track: course?.track ?? null,
             completedAt: data.completed_at,
             certUrl: data.cert_url ?? null,
             passed: Boolean(data.passed),
@@ -99,7 +106,8 @@ export default function CertificateScreen() {
     });
     setDownloading(false);
     if (error || !data?.signedUrl) {
-      Alert.alert('Download failed', 'Unable to retrieve your certificate. Please try again shortly.');
+      const fallback = 'Unable to retrieve your certificate. Please try again shortly.';
+      Alert.alert('Download failed', error ? await functionErrorMessage(error, fallback) : fallback);
       return;
     }
     await Linking.openURL(data.signedUrl);
@@ -152,7 +160,9 @@ export default function CertificateScreen() {
             <Text style={styles.orgName}>Hope Center for Behavior Change</Text>
 
             {/* Certificate title */}
-            <Text style={styles.certTitle}>Certificate of Completion</Text>
+            <Text style={styles.certTitle}>
+              {creditUnit(certData.track) === 'CEU' && certData.ceuValue > 0 ? 'Certificate of Completion' : 'Record of Completion'}
+            </Text>
 
             <View style={styles.divider} />
 
@@ -185,9 +195,7 @@ export default function CertificateScreen() {
                     color={colors.primary}
                     accessibilityElementsHidden
                   />
-                  <Text style={styles.ceuText}>
-                    {certData.ceuValue} CEU{certData.ceuValue !== 1 ? 's' : ''}
-                  </Text>
+                  <Text style={styles.ceuText}>{formatCredits(certData.ceuValue, certData.track)}</Text>
                 </View>
               )}
             </View>
@@ -196,7 +204,9 @@ export default function CertificateScreen() {
 
             {/* Credential line */}
             <Text style={styles.credentialLine}>
-              Hope Center for Behavior Change · Continuing Education Provider
+              {settings?.provider_number
+                ? `${settings.provider_name} · BACB ACE Provider ${settings.provider_number}`
+                : `${settings?.provider_name ?? 'Hope Center for Behavior Change'} · ACE provider approval pending`}
             </Text>
 
             {/* Bottom accent bar */}
@@ -223,8 +233,11 @@ export default function CertificateScreen() {
           </Pressable>
 
           <Text style={styles.footerNote}>
-            The PDF version of your certificate is suitable for professional submission and
-            continuing education records.
+            {creditUnit(certData.track) === 'PDU'
+              ? 'RBT PDUs are documented on the BACB PD form from the ACE Coordinator. This record is for your own files.'
+              : settings?.provider_number
+                ? 'The PDF includes the details the BACB requires. Upload it to your BACB account.'
+                : 'Hope Center’s ACE provider approval is pending, so this certificate is not yet valid for BACB credit.'}
           </Text>
         </ScrollView>
       )}

@@ -1,5 +1,5 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
-import { PDFDocument, StandardFonts, rgb } from 'npm:pdf-lib@1.17.1'
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'npm:pdf-lib@1.17.1'
 import { createServiceClient, requireUser, handleCors, CORS_HEADERS } from '../_shared/auth.ts'
 
 // Brand colors (0-1 scale)
@@ -9,6 +9,30 @@ const WHITE  = rgb(1, 1, 1)
 const DARK   = rgb(0.125, 0.106, 0.125)   // #201B20
 const MUTED  = rgb(0.353, 0.318, 0.353)   // #5A5157
 const LIGHT  = rgb(0.937, 0.898, 0.937)   // subtle purple tint
+const ALERT  = rgb(0.6, 0.15, 0.1)
+
+// BACB ACE Provider Handbook (2026): CE documentation must show the participant's name and BACB
+// number, completion date, provider name and number, coordinator, event title, instructor, modality,
+// and Learning CEUs with the Ethics/Supervision split. RBT PDUs may only be documented on the
+// BACB's own form, so RBT courses get a record of completion that makes no PDU claim.
+type Kind = 'ceu' | 'pdu' | 'none'
+
+interface CertParams {
+  kind: Kind
+  participantName: string
+  bacbNumber: string | null
+  courseTitle: string
+  credits: number
+  ethicsCredits: number
+  supervisionCredits: number
+  instructorName: string | null
+  providerName: string
+  providerNumber: string | null
+  coordinatorName: string | null
+  score: number
+  completedAt: string
+  certId: string
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -17,196 +41,131 @@ function json(body: unknown, status = 200) {
   })
 }
 
-function centerX(text: string, font: Awaited<ReturnType<PDFDocument['embedFont']>>, size: number, pageWidth: number) {
+// Standard PDF fonts only encode WinAnsi; anything else would throw while drawing
+function safe(text: string) {
+  return text.replace(/[^\x20-\x7E -ÿ–—‘’“”•…]/g, '?')
+}
+
+function centerX(text: string, font: PDFFont, size: number, pageWidth: number) {
   return (pageWidth - font.widthOfTextAtSize(text, size)) / 2
 }
 
-async function generateCertificatePdf(params: {
-  participantName: string
-  courseTitle: string
-  ceuValue: number
-  track: string | null
-  score: number
-  completedAt: string
-  certId: string
-}): Promise<Uint8Array> {
-  const { participantName, courseTitle, ceuValue, track, score, completedAt, certId } = params
+function fit(text: string, font: PDFFont, size: number, maxWidth: number) {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text
+  let t = text
+  while (t.length > 1 && font.widthOfTextAtSize(`${t}…`, size) > maxWidth) t = t.slice(0, -1)
+  return `${t}…`
+}
 
+function wrap(text: string, font: PDFFont, size: number, maxWidth: number) {
+  const lines: string[] = []
+  let current = ''
+  for (const word of text.split(' ')) {
+    const test = current ? `${current} ${word}` : word
+    if (font.widthOfTextAtSize(test, size) > maxWidth && current) {
+      lines.push(current)
+      current = word
+    } else {
+      current = test
+    }
+  }
+  if (current) lines.push(current)
+  return lines
+}
+
+async function generateCertificatePdf(p: CertParams): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
   const page = doc.addPage([612, 792]) // US Letter
   const W = 612
   const H = 792
 
-  const fontBold    = await doc.embedFont(StandardFonts.HelveticaBold)
-  const fontRegular = await doc.embedFont(StandardFonts.Helvetica)
-  const fontItalic  = await doc.embedFont(StandardFonts.HelveticaOblique)
+  const bold    = await doc.embedFont(StandardFonts.HelveticaBold)
+  const regular = await doc.embedFont(StandardFonts.Helvetica)
+  const italic  = await doc.embedFont(StandardFonts.HelveticaOblique)
 
-  // ── Purple header band ─────────────────────────────────────────────────
+  const center = (text: string, font: PDFFont, size: number, y: number, color = DARK) =>
+    page.drawText(text, { x: centerX(text, font, size, W), y, font, size, color })
+
+  // ── Header band and border ─────────────────────────────────────────────
   page.drawRectangle({ x: 0, y: H - 100, width: W, height: 100, color: PURPLE })
-
-  const titleText = 'CERTIFICATE OF COMPLETION'
-  page.drawText(titleText, {
-    x: centerX(titleText, fontBold, 22, W),
-    y: H - 52,
-    font: fontBold,
-    size: 22,
-    color: WHITE,
-  })
-
-  const orgText = 'Hope Center for Behavior Change'
-  page.drawText(orgText, {
-    x: centerX(orgText, fontRegular, 12, W),
-    y: H - 75,
-    font: fontRegular,
-    size: 12,
-    color: LIGHT,
-  })
-
-  // ── Gold accent line ───────────────────────────────────────────────────
+  center(p.kind === 'ceu' ? 'CERTIFICATE OF COMPLETION' : 'RECORD OF COMPLETION', bold, 22, H - 52, WHITE)
+  center(safe(p.providerName), regular, 12, H - 75, LIGHT)
   page.drawRectangle({ x: 0, y: H - 104, width: W, height: 4, color: GOLD })
-
-  // ── Outer border ───────────────────────────────────────────────────────
   page.drawRectangle({ x: 20, y: 20, width: W - 40, height: H - 130, borderColor: PURPLE, borderWidth: 1.5, color: WHITE })
   page.drawRectangle({ x: 26, y: 26, width: W - 52, height: H - 142, borderColor: GOLD, borderWidth: 0.5, color: WHITE })
 
-  // ── Preamble ───────────────────────────────────────────────────────────
-  const preamble = 'This is to certify that'
-  page.drawText(preamble, {
-    x: centerX(preamble, fontItalic, 13, W),
-    y: 618,
-    font: fontItalic,
-    size: 13,
-    color: MUTED,
-  })
+  // ── Participant and course ─────────────────────────────────────────────
+  center('This is to certify that', italic, 13, 640, MUTED)
+  const name = fit(safe(p.participantName), bold, 28, W - 120)
+  center(name, bold, 28, 600, PURPLE)
+  const nameX = centerX(name, bold, 28, W)
+  page.drawLine({ start: { x: nameX, y: 594 }, end: { x: nameX + bold.widthOfTextAtSize(name, 28), y: 594 }, thickness: 1, color: GOLD })
+  center('has successfully completed', regular, 13, 566)
+  wrap(safe(p.courseTitle), bold, 18, W - 110).slice(0, 2).forEach((line, i) => center(line, bold, 18, 536 - i * 24))
 
-  // ── Participant name ───────────────────────────────────────────────────
-  const nameSize = participantName.length > 30 ? 26 : 30
-  page.drawText(participantName, {
-    x: centerX(participantName, fontBold, nameSize, W),
-    y: 568,
-    font: fontBold,
-    size: nameSize,
-    color: PURPLE,
-  })
+  // ── Required details ───────────────────────────────────────────────────
+  const dateStr = new Date(p.completedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  const rows: [string, string][] = [
+    ['BACB certification #', p.bacbNumber ?? 'Not provided'],
+    ['Completion date', dateStr],
+    ['Instructor', p.instructorName ?? 'Not listed'],
+    ['Modality', 'Online asynchronous'],
+  ]
+  if (p.kind === 'ceu') {
+    rows.push(
+      ['Learning CEUs', String(p.credits)],
+      ['Ethics CEUs', String(p.ethicsCredits)],
+      ['Supervision CEUs', String(p.supervisionCredits)],
+    )
+  }
+  rows.push(
+    ['ACE provider', p.providerName],
+    ['ACE provider #', p.providerNumber ?? 'Pending approval'],
+    ['ACE Coordinator', p.coordinatorName ?? 'Not yet designated'],
+    ['Quiz score', `${p.score}%`],
+  )
 
-  // Name underline
-  const nameWidth = fontBold.widthOfTextAtSize(participantName, nameSize)
-  const nameX = centerX(participantName, fontBold, nameSize, W)
-  page.drawLine({ start: { x: nameX, y: 562 }, end: { x: nameX + nameWidth, y: 562 }, thickness: 1, color: GOLD })
+  page.drawLine({ start: { x: 80, y: 476 }, end: { x: W - 80, y: 476 }, thickness: 0.75, color: GOLD })
+  let y = 452
+  for (const [label, value] of rows) {
+    page.drawText(label, { x: 100, y, font: regular, size: 10.5, color: MUTED })
+    page.drawText(fit(safe(value), bold, 10.5, W - 100 - 250), { x: 250, y, font: bold, size: 10.5, color: DARK })
+    y -= 20
+  }
 
-  // ── Completion text ────────────────────────────────────────────────────
-  const completedLine = 'has successfully completed the course'
-  page.drawText(completedLine, {
-    x: centerX(completedLine, fontRegular, 13, W),
-    y: 532,
-    font: fontRegular,
-    size: 13,
-    color: DARK,
-  })
-
-  // ── Course title ───────────────────────────────────────────────────────
-  // Wrap long titles across two lines
-  const maxTitleWidth = W - 100
-  const titleSize = 20
-  const titleWords = courseTitle.split(' ')
-  const lines: string[] = []
-  let currentLine = ''
-
-  for (const word of titleWords) {
-    const test = currentLine ? `${currentLine} ${word}` : word
-    if (fontBold.widthOfTextAtSize(test, titleSize) > maxTitleWidth && currentLine) {
-      lines.push(currentLine)
-      currentLine = word
-    } else {
-      currentLine = test
+  // ── Notices ────────────────────────────────────────────────────────────
+  const notices: string[] = []
+  if (!p.providerNumber) {
+    notices.push('ACE provider approval is pending. This document is not valid for BACB continuing education credit.')
+  }
+  if (p.kind === 'pdu') {
+    notices.push('This is not PDU documentation. RBT professional development units are documented on the BACB PD form issued by the ACE Coordinator.')
+  }
+  y -= 6
+  for (const notice of notices) {
+    for (const line of wrap(notice, italic, 9.5, W - 160)) {
+      center(line, italic, 9.5, y, ALERT)
+      y -= 13
     }
-  }
-  if (currentLine) lines.push(currentLine)
-
-  const lineHeight = 28
-  const titleStartY = 490
-  for (let i = 0; i < Math.min(lines.length, 2); i++) {
-    page.drawText(lines[i], {
-      x: centerX(lines[i], fontBold, titleSize, W),
-      y: titleStartY - i * lineHeight,
-      font: fontBold,
-      size: titleSize,
-      color: DARK,
-    })
+    y -= 4
   }
 
-  // ── CEU value ──────────────────────────────────────────────────────────
-  const ceuLabel = `Earning ${ceuValue} Continuing Education Unit${ceuValue !== 1 ? 's' : ''}`
-  page.drawText(ceuLabel, {
-    x: centerX(ceuLabel, fontRegular, 13, W),
-    y: 414,
-    font: fontRegular,
-    size: 13,
-    color: MUTED,
-  })
-
-  // ── Decorative separator ───────────────────────────────────────────────
-  page.drawLine({ start: { x: 80, y: 388 }, end: { x: W - 80, y: 388 }, thickness: 0.75, color: GOLD })
-
-  // ── Date and score row ─────────────────────────────────────────────────
-  const dateObj = new Date(completedAt)
-  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-  const dateLabel = `Completed: ${dateStr}`
-  const scoreLabel = `Score: ${score}%`
-
-  page.drawText(dateLabel, { x: 80, y: 364, font: fontRegular, size: 11, color: MUTED })
-  page.drawText(scoreLabel, {
-    x: W - 80 - fontRegular.widthOfTextAtSize(scoreLabel, 11),
-    y: 364,
-    font: fontRegular,
-    size: 11,
-    color: MUTED,
-  })
-
-  // ── Track badge (if present) ───────────────────────────────────────────
-  if (track) {
-    const trackLabel = `Track: ${track}`
-    page.drawText(trackLabel, {
-      x: centerX(trackLabel, fontRegular, 11, W),
-      y: 340,
-      font: fontRegular,
-      size: 11,
-      color: MUTED,
-    })
-  }
-
-  // ── Signature section ──────────────────────────────────────────────────
-  page.drawLine({ start: { x: 160, y: 200 }, end: { x: 440, y: 200 }, thickness: 0.75, color: MUTED })
-  const sigLabel = 'Authorized by Hope Center for Behavior Change'
-  page.drawText(sigLabel, {
-    x: centerX(sigLabel, fontRegular, 10, W),
-    y: 186,
-    font: fontRegular,
-    size: 10,
-    color: MUTED,
-  })
+  // ── Signature ──────────────────────────────────────────────────────────
+  page.drawLine({ start: { x: 160, y: 118 }, end: { x: 440, y: 118 }, thickness: 0.75, color: MUTED })
+  center(safe(p.coordinatorName ? `${p.coordinatorName}, ACE Coordinator` : 'ACE Coordinator'), regular, 10, 104, MUTED)
 
   // ── Footer ─────────────────────────────────────────────────────────────
   page.drawRectangle({ x: 0, y: 0, width: W, height: 70, color: PURPLE })
-
-  const certIdText = `Certificate ID: ${certId.slice(0, 8).toUpperCase()}`
-  page.drawText(certIdText, { x: 40, y: 28, font: fontRegular, size: 9, color: LIGHT })
-
-  const verifyText = 'Issued via Hope Center CEU Platform'
-  page.drawText(verifyText, {
-    x: W - 40 - fontRegular.widthOfTextAtSize(verifyText, 9),
-    y: 28,
-    font: fontRegular,
-    size: 9,
-    color: LIGHT,
-  })
+  page.drawText(`Certificate ID: ${p.certId.slice(0, 8).toUpperCase()}`, { x: 40, y: 28, font: regular, size: 9, color: LIGHT })
+  const issued = `Issued ${new Date().toLocaleDateString('en-US')} via Hope Center CEU Platform`
+  page.drawText(issued, { x: W - 40 - regular.widthOfTextAtSize(issued, 9), y: 28, font: regular, size: 9, color: LIGHT })
 
   return doc.save()
 }
 
 Deno.serve(async (req) => {
-  const corsResponse = handleCors(req);
-  if (corsResponse) return corsResponse;
+  const corsResponse = handleCors(req)
+  if (corsResponse) return corsResponse
 
   if (req.method !== 'POST') {
     return json({ error: 'Method not allowed' }, 405)
@@ -222,66 +181,67 @@ Deno.serve(async (req) => {
 
     const service = createServiceClient()
 
-    // Fetch completion with course and profile in one query
-    const { data: completion, error: completionErr } = await service
-      .from('completions')
-      .select('id, user_id, passed, score, completed_at, cert_url, course_id, courses(title, ceu_value, track), profiles(display_name)')
-      .eq('id', completionId)
-      .single()
+    const [{ data: completion, error: completionErr }, { data: settings }] = await Promise.all([
+      service
+        .from('completions')
+        .select('id, user_id, passed, score, completed_at, course_id, courses(title, ceu_value, track, category, instructor_name), profiles(display_name, bacb_cert_number)')
+        .eq('id', completionId)
+        .single(),
+      service.from('ace_settings').select('provider_name, provider_number, coordinator_name').maybeSingle(),
+    ])
 
     if (completionErr || !completion) {
       return json({ error: 'Completion not found' }, 404)
     }
-
     if (completion.user_id !== user.id) {
       return json({ error: 'Forbidden' }, 403)
     }
-
     if (!completion.passed) {
       return json({ error: 'Certificate is only available for passed completions' }, 409)
     }
 
-    // If cert already exists, just return a fresh signed URL
-    if (completion.cert_url) {
-      const { data: signed, error: signErr } = await service.storage
-        .from('certificates')
-        .createSignedUrl(completion.cert_url, 300)
+    const course = completion.courses as {
+      title: string; ceu_value: number; track: string | null; category: string | null; instructor_name: string | null
+    } | null
+    const profile = completion.profiles as { display_name: string | null; bacb_cert_number: string | null } | null
 
-      if (signErr || !signed) {
-        return json({ error: 'Unable to create signed URL' }, 500)
-      }
-      return json({ signedUrl: signed.signedUrl, expiresIn: 300 })
+    const credits = Number(course?.ceu_value ?? 0)
+    const kind: Kind = course?.track === 'STUDENT' || credits <= 0 ? 'none' : course?.track === 'RBT' ? 'pdu' : 'ceu'
+
+    if (kind === 'ceu' && settings?.provider_number && !profile?.bacb_cert_number) {
+      return json({ error: 'Add your BACB certification number in Edit Profile, then download your certificate again.' }, 409)
     }
 
-    // Generate PDF
-    const course = completion.courses as { title: string; ceu_value: number; track: string | null } | null
-    const profile = completion.profiles as { display_name: string | null } | null
-
+    // Regenerated on every request so provider and learner details stay current (replacement
+    // certificates must be available for 3 years); the stored copy is overwritten each time.
     const pdfBytes = await generateCertificatePdf({
+      kind,
       participantName: profile?.display_name ?? user.email ?? 'Participant',
+      bacbNumber: profile?.bacb_cert_number ?? null,
       courseTitle: course?.title ?? 'Course Completion',
-      ceuValue: course?.ceu_value ?? 1,
-      track: course?.track ?? null,
+      credits,
+      ethicsCredits: course?.category === 'ethics' ? credits : 0,
+      supervisionCredits: course?.category === 'supervision' ? credits : 0,
+      instructorName: course?.instructor_name ?? null,
+      providerName: settings?.provider_name ?? 'Hope Center for Behavior Change',
+      providerNumber: settings?.provider_number ?? null,
+      coordinatorName: settings?.coordinator_name ?? null,
       score: completion.score ?? 100,
       completedAt: completion.completed_at,
       certId: completion.id,
     })
 
-    // Upload to private certificates bucket
     const storagePath = `${user.id}/${completionId}.pdf`
-
     const { error: uploadErr } = await service.storage
       .from('certificates')
       .upload(storagePath, pdfBytes, { contentType: 'application/pdf', upsert: true })
 
     if (uploadErr) {
-      return json({ error: `Storage upload failed: ${uploadErr.message}` }, 500)
+      return json({ error: 'The certificate could not be saved. Please try again.' }, 500)
     }
 
-    // Update completions.cert_url
     await service.from('completions').update({ cert_url: storagePath }).eq('id', completionId)
 
-    // Create signed URL (5 minutes)
     const { data: signed, error: signErr } = await service.storage
       .from('certificates')
       .createSignedUrl(storagePath, 300)
@@ -291,7 +251,6 @@ Deno.serve(async (req) => {
     }
 
     return json({ signedUrl: signed.signedUrl, expiresIn: 300 })
-
   } catch (err) {
     return json({ error: err instanceof Error ? err.message : 'Unexpected error' }, 401)
   }

@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { SlidesCard } from '@/components/course/SlidesCard';
 import { TranscriptCard } from '@/components/course/TranscriptCard';
+import { CourseAceInfoCard } from '@/components/course/CourseAceInfoCard';
+import { CourseFeedbackCard } from '@/components/course/CourseFeedbackCard';
+import { formatCredits } from '@/lib/ace';
 import { useAuth } from '@/context/AuthContext';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useCourse } from '@/hooks/useCourse';
@@ -202,10 +205,7 @@ export default function CourseViewerScreen() {
           <View style={styles.metaRow}>
             <Badge label={course.track ?? 'General'} variant="primary" />
             {durationLabel ? <Badge label={durationLabel} variant="muted" /> : null}
-            <Badge
-              label={`${course.ceu_value} CEU${course.ceu_value !== 1 ? 's' : ''}`}
-              variant="success"
-            />
+            <Badge label={formatCredits(course.ceu_value, course.track)} variant="success" />
             {isCached && <Badge label="Offline" variant="accent" />}
           </View>
 
@@ -230,7 +230,9 @@ export default function CourseViewerScreen() {
               <View style={styles.requirementRow}>
                 <Ionicons name="ribbon-outline" size={18} color={colors.primary} accessibilityElementsHidden />
                 <Text style={styles.requirementText}>
-                  Earn <Text style={styles.requirementValue}>{course.ceu_value} CEU{course.ceu_value !== 1 ? 's' : ''}</Text> on passing
+                  {formatCredits(course.ceu_value, course.track) === 'No credit'
+                    ? 'Practice quiz — no CEUs or PDUs'
+                    : <>Earn <Text style={styles.requirementValue}>{formatCredits(course.ceu_value, course.track)}</Text> on passing</>}
                 </Text>
               </View>
               {hasVideo && (
@@ -249,7 +251,9 @@ export default function CourseViewerScreen() {
               </View>
               <View style={styles.requirementRow}>
                 <Ionicons name="ribbon-outline" size={18} color={colors.accentDark} accessibilityElementsHidden />
-                <Text style={styles.requirementText}>CEUs awarded on series completion</Text>
+                <Text style={styles.requirementText}>
+                  {course.ceu_value > 0 ? 'Credit awarded on series completion' : 'Study lesson — no CEUs or PDUs'}
+                </Text>
               </View>
             </Card>
           )}
@@ -257,6 +261,10 @@ export default function CourseViewerScreen() {
           {course.slides_path ? <SlidesCard slidesPath={course.slides_path} /> : null}
 
           {course.transcript ? <TranscriptCard transcript={course.transcript} /> : null}
+
+          <CourseAceInfoCard course={course} />
+
+          <CourseFeedbackCard courseId={course.id} />
         </View>
       </ScrollView>
 

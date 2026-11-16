@@ -9,6 +9,7 @@ export type Database = {
           renewal_date: string | null;
           org_id: string | null;
           avatar_url: string | null;
+          bacb_cert_number: string | null;
           created_at: string;
         };
         Insert: {
@@ -18,6 +19,7 @@ export type Database = {
           renewal_date?: string | null;
           org_id?: string | null;
           avatar_url?: string | null;
+          bacb_cert_number?: string | null;
           created_at?: string;
         };
         Update: {
@@ -26,6 +28,7 @@ export type Database = {
           renewal_date?: string | null;
           org_id?: string | null;
           avatar_url?: string | null;
+          bacb_cert_number?: string | null;
         };
         Relationships: [];
       };
@@ -47,6 +50,11 @@ export type Database = {
           review_note: string | null;
           transcript: string | null;
           slides_path: string | null;
+          instructor_name: string | null;
+          instructor_credentials: string | null;
+          learning_objectives: string | null;
+          disclosures: string | null;
+          published_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -66,6 +74,10 @@ export type Database = {
           review_note?: string | null;
           transcript?: string | null;
           slides_path?: string | null;
+          instructor_name?: string | null;
+          instructor_credentials?: string | null;
+          learning_objectives?: string | null;
+          disclosures?: string | null;
           created_at?: string;
         };
         Update: {
@@ -84,6 +96,58 @@ export type Database = {
           review_note?: string | null;
           transcript?: string | null;
           slides_path?: string | null;
+          instructor_name?: string | null;
+          instructor_credentials?: string | null;
+          learning_objectives?: string | null;
+          disclosures?: string | null;
+        };
+        Relationships: [];
+      };
+      ace_settings: {
+        Row: {
+          id: boolean;
+          provider_name: string;
+          provider_number: string | null;
+          coordinator_name: string | null;
+          coordinator_email: string | null;
+          approval_expires_on: string | null;
+          checklist: Record<string, boolean>;
+          updated_at: string;
+        };
+        Insert: { id?: boolean };
+        Update: {
+          provider_name?: string;
+          provider_number?: string | null;
+          coordinator_name?: string | null;
+          coordinator_email?: string | null;
+          approval_expires_on?: string | null;
+          checklist?: Record<string, boolean>;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      course_feedback: {
+        Row: {
+          id: string;
+          user_id: string;
+          course_id: string;
+          rating: number;
+          comments: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          course_id: string;
+          rating: number;
+          comments?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          rating?: number;
+          comments?: string | null;
+          updated_at?: string;
         };
         Relationships: [];
       };
