@@ -41,6 +41,12 @@ function json(body: unknown, status = 200) {
   })
 }
 
+// jsonb reorders keys, so compare snapshots with sorted keys (values are all primitives)
+function stableStringify(value: unknown) {
+  const obj = (value ?? {}) as Record<string, unknown>
+  return JSON.stringify(Object.keys(obj).sort().map((k) => [k, obj[k]]))
+}
+
 // Standard PDF fonts only encode WinAnsi; anything else would throw while drawing
 function safe(text: string) {
   return text.replace(/[^\x20-\x7E -ÿ–—‘’“”•…]/g, '?')
@@ -212,9 +218,7 @@ Deno.serve(async (req) => {
       return json({ error: 'Add your BACB certification number in Edit Profile, then download your certificate again.' }, 409)
     }
 
-    // Regenerated on every request so provider and learner details stay current (replacement
-    // certificates must be available for 3 years); the stored copy is overwritten each time.
-    const pdfBytes = await generateCertificatePdf({
+    const params: CertParams = {
       kind,
       participantName: profile?.display_name ?? user.email ?? 'Participant',
       bacbNumber: profile?.bacb_cert_number ?? null,
@@ -229,22 +233,49 @@ Deno.serve(async (req) => {
       score: completion.score ?? 100,
       completedAt: completion.completed_at,
       certId: completion.id,
-    })
-
-    const storagePath = `${user.id}/${completionId}.pdf`
-    const { error: uploadErr } = await service.storage
-      .from('certificates')
-      .upload(storagePath, pdfBytes, { contentType: 'application/pdf', upsert: true })
-
-    if (uploadErr) {
-      return json({ error: 'The certificate could not be saved. Please try again.' }, 500)
     }
 
-    await service.from('completions').update({ cert_url: storagePath }).eq('id', completionId)
+    // Every certificate issued is kept for the BACB's 3-year record requirement. A new version is
+    // generated only when the printed details change (e.g. the provider number is added later);
+    // otherwise the learner gets the copy already on file.
+    const { data: latest } = await service
+      .from('certificate_issuances')
+      .select('storage_path, snapshot')
+      .eq('completion_id', completionId)
+      .order('issued_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let storagePath = latest?.storage_path as string | undefined
+    if (!latest || stableStringify(latest.snapshot) !== stableStringify(params)) {
+      const issuanceId = crypto.randomUUID()
+      storagePath = `${user.id}/${completionId}/${issuanceId}.pdf`
+      const pdfBytes = await generateCertificatePdf(params)
+
+      const { error: uploadErr } = await service.storage
+        .from('certificates')
+        .upload(storagePath, pdfBytes, { contentType: 'application/pdf' })
+      if (uploadErr) {
+        return json({ error: 'The certificate could not be saved. Please try again.' }, 500)
+      }
+
+      const { error: logErr } = await service.from('certificate_issuances').insert({
+        id: issuanceId,
+        completion_id: completionId,
+        user_id: user.id,
+        course_id: completion.course_id,
+        storage_path: storagePath,
+        snapshot: params,
+      })
+      if (logErr) {
+        return json({ error: 'The certificate could not be recorded. Please try again.' }, 500)
+      }
+      await service.from('completions').update({ cert_url: storagePath }).eq('id', completionId)
+    }
 
     const { data: signed, error: signErr } = await service.storage
       .from('certificates')
-      .createSignedUrl(storagePath, 300)
+      .createSignedUrl(storagePath!, 300)
 
     if (signErr || !signed) {
       return json({ error: 'PDF generated but unable to create signed URL' }, 500)

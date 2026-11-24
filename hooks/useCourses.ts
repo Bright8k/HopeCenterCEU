@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { hasSupabaseEnv, supabase } from '@/lib/supabase';
 import type { UserRole } from '@/constants/roles';
 import { PREVIEW_COURSES, type Course } from '@/constants/previewContent';
+import { sortCourseLibrary } from '@/lib/courseOrder';
 
 export function useCourses(role: UserRole | null) {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -40,7 +41,7 @@ export function useCourses(role: UserRole | null) {
       setCourses([]);
       setErrorMessage(error.message);
     } else {
-      setCourses((data as Course[]) ?? []);
+      setCourses(sortCourseLibrary((data as Course[]) ?? []));
     }
 
     setLoading(false);

@@ -19,6 +19,15 @@ Deno.serve(async (req) => {
 
     const service = createServiceClient()
 
+    // ACE records (completions, quiz attempts, certificates) must be kept for 3 years
+    const { count: completionCount } = await service
+      .from('completions')
+      .select('id', { count: 'exact', head: true })
+      .eq('course_id', courseId)
+    if ((completionCount ?? 0) > 0) {
+      return json({ error: 'Learners have completed this course, so its records must be kept. Archive it instead.' }, 409)
+    }
+
     // Resolve question IDs so we can cascade-delete attempts
     const { data: questions } = await service
       .from('questions')

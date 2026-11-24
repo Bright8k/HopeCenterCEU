@@ -31,7 +31,7 @@ export const MANUAL_ACE_TASKS: ManualAceTask[] = [
   {
     key: 'records',
     title: 'Keep ACE records for 3 years',
-    detail: 'Course materials, objectives, instructor evidence, quiz results, certificates, feedback and responses, and marketing materials.',
+    detail: 'The app keeps completions, quiz results, every certificate issued, and feedback (use the exports below). Keep course materials, instructor evidence, your responses to feedback, and marketing materials yourself.',
   },
   {
     key: 'disclosures',

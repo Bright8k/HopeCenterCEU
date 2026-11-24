@@ -23,8 +23,9 @@ Deno.serve(async (req) => {
 
     const service = createServiceClient()
 
-    // Deleting the auth user cascades to public.profiles via FK on delete cascade,
-    // which in turn cascades to completions, attempts, streaks, and admin_roles.
+    // Deleting the auth user cascades to public.profiles, streaks, admin_roles, and push tokens.
+    // Completions, attempts, feedback, and certificate logs are kept (user_id set to null) for the
+    // BACB's 3-year record requirement; a trigger snapshots the learner's name and BACB number first.
     const { error } = await service.auth.admin.deleteUser(userId)
     if (error) return json({ error: error.message }, 400)
 

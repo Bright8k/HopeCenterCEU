@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { AceSettingsForm } from '@/components/admin/AceSettingsForm';
+import { AceExportButtons } from '@/components/admin/AceExportButtons';
 import { usePreferences } from '@/context/PreferencesContext';
 import { useAceChecklist, type AceChecklistItem } from '@/hooks/useAceChecklist';
 import { tapHaptic } from '@/lib/haptics';
@@ -103,6 +104,8 @@ export function AceChecklistCard() {
               accessibilityHint="Enter the ACE provider number, coordinator, and approval date"
             />
           )}
+
+          <AceExportButtons />
         </>
       )}
     </Card>

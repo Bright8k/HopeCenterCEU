@@ -205,13 +205,13 @@ export default function CourseEdit() {
   };
 
   const handleDelete = () => {
-    Alert.alert('Delete course', `"${title}" and all its questions, completions, and attempts will be permanently removed.`, [
+    Alert.alert('Delete course', `"${title}" and its questions will be permanently removed. Courses that learners have completed can't be deleted — archive them instead.`, [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         setDeleting(true);
         const { error } = await supabase.functions.invoke('delete-course', { body: { courseId: id } });
         setDeleting(false);
-        if (error) { Alert.alert('Delete failed', 'Unable to delete this course.'); return; }
+        if (error) { Alert.alert('Delete failed', await functionErrorMessage(error, 'Unable to delete this course.')); return; }
         router.back();
       }},
     ]);

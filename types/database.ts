@@ -129,7 +129,7 @@ export type Database = {
       course_feedback: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           course_id: string;
           rating: number;
           comments: string | null;
@@ -151,15 +151,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      certificate_issuances: {
+        Row: {
+          id: string;
+          completion_id: string;
+          user_id: string | null;
+          course_id: string;
+          storage_path: string;
+          snapshot: Record<string, string | number | null>;
+          issued_at: string;
+        };
+        // Written only by the issue-certificate Edge Function
+        Insert: { id?: string };
+        Update: { id?: string };
+        Relationships: [];
+      };
       completions: {
         Row: {
           id: string;
-          user_id: string;
+          /** Null once the learner's account is deleted; the record is kept for 3 years. */
+          user_id: string | null;
           course_id: string;
           score: number | null;
           passed: boolean;
           cert_url: string | null;
           completed_at: string;
+          participant_name: string | null;
+          participant_bacb: string | null;
         };
         Insert: {
           id?: string;
@@ -235,7 +253,7 @@ export type Database = {
       attempts: {
         Row: {
           id: string;
-          user_id: string;
+          user_id: string | null;
           question_id: string;
           selected: number | null;
           is_correct: boolean | null;

@@ -45,21 +45,35 @@ export function parseObjectives(text: string | null): string[] {
     .filter(Boolean);
 }
 
+export type ComplianceCode = 'increment' | 'instructor' | 'objectives' | 'questions' | 'duration';
+
+/**
+ * Rules a credit-bearing course must meet, in a fixed order. The server copy is
+ * supabase/functions/_shared/ace.ts (aceProblems); a parity test keeps them in step.
+ */
+export function courseComplianceCodes(course: CourseComplianceInput, questionCount: number): ComplianceCode[] {
+  if (!creditUnit(course.track) || course.ceu_value <= 0) return [];
+  const codes: ComplianceCode[] = [];
+  if (!isHalfIncrement(course.ceu_value)) codes.push('increment');
+  if (!course.instructor_name?.trim()) codes.push('instructor');
+  if (parseObjectives(course.learning_objectives).length === 0) codes.push('objectives');
+  if (questionCount < minQuestionsForCredits(course.ceu_value)) codes.push('questions');
+  const minutes = (course.duration_seconds ?? 0) / 60;
+  if (!minutes || course.ceu_value > maxCreditsForMinutes(minutes)) codes.push('duration');
+  return codes;
+}
+
 /** Problems that keep a credit-bearing course from meeting ACE event requirements. */
 export function courseComplianceIssues(course: CourseComplianceInput, questionCount: number): string[] {
-  if (!creditUnit(course.track) || course.ceu_value <= 0) return [];
-  const issues: string[] = [];
-  if (!isHalfIncrement(course.ceu_value)) issues.push('Credit must be in 0.5 increments');
-  if (!course.instructor_name?.trim()) issues.push('No instructor listed');
-  if (parseObjectives(course.learning_objectives).length === 0) issues.push('No learning objectives');
-  const minQuestions = minQuestionsForCredits(course.ceu_value);
-  if (questionCount < minQuestions) {
-    issues.push(`Needs at least ${minQuestions} quiz questions (has ${questionCount})`);
-  }
-  if (!course.duration_seconds) {
-    issues.push('No duration set');
-  } else if (course.ceu_value > maxCreditsForMinutes(course.duration_seconds / 60)) {
-    issues.push(`${Math.round(course.duration_seconds / 60)} min supports at most ${maxCreditsForMinutes(course.duration_seconds / 60)} credits`);
-  }
-  return issues;
+  const minutes = (course.duration_seconds ?? 0) / 60;
+  const messages: Record<ComplianceCode, string> = {
+    increment: 'Credit must be in 0.5 increments',
+    instructor: 'No instructor listed',
+    objectives: 'No learning objectives',
+    questions: `Needs at least ${minQuestionsForCredits(course.ceu_value)} quiz questions (has ${questionCount})`,
+    duration: minutes
+      ? `${Math.round(minutes)} min supports at most ${maxCreditsForMinutes(minutes)} credits`
+      : 'No duration set',
+  };
+  return courseComplianceCodes(course, questionCount).map((c) => messages[c]);
 }

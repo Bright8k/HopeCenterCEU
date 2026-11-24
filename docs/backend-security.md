@@ -13,7 +13,7 @@ The app uses Supabase as its backend. Security is enforced in Postgres (Row Leve
 | Table | Learners (authenticated) | Admins (`admin_roles`) |
 |---|---|---|
 | `profiles` | read/update own row | read/update all |
-| `courses` | read published courses | read/write all |
+| `courses` | read published courses, plus any course they completed (history stays intact after a course is drafted/archived) | read/write all |
 | `questions` | read questions on their track (or with no track) **without** `answer`/`explanation` (column privileges) | full rows via `admin_get_questions()` RPC; insert/update/delete |
 | `completions` | read own — **no writes** | read all |
 | `attempts` | read own — **no writes** | read all |
@@ -23,6 +23,14 @@ The app uses Supabase as its backend. Security is enforced in Postgres (Row Leve
 | `resources` | read | write |
 | `ace_settings` (single row) | read (provider name, coordinator contact) | update (provider number, coordinator, checklist) |
 | `course_feedback` | create/update/read own, only for completed courses | read all |
+| `certificate_issuances` | read own — **no writes** | read all |
+| Storage `ace-exports` | — | via `export-ace-records` signed URL only |
+
+## Record retention (BACB: 3 years)
+
+- Deleting a learner removes their account, profile, streaks, and push tokens, but **keeps** completions, quiz attempts, feedback, and certificate logs with `user_id` set to null. A `before delete` trigger on `profiles` copies the name and BACB number onto their completions first.
+- `delete-course` refuses courses that have completions; archive them instead.
+- Every certificate issued is logged in `certificate_issuances` with a snapshot of the printed fields and its own PDF (`certificates/<user>/<completion>/<issuance>.pdf`). A new version is created only when the printed details change.
 | Storage `certificates` | read own folder via signed URL | — |
 | Storage `course-slides` | read via signed URL | upload/remove |
 
@@ -34,6 +42,7 @@ The app uses Supabase as its backend. Security is enforced in Postgres (Row Leve
 | Grade exam practice | `submit_practice()` RPC | STUDENT accounts and STUDENT-track questions only; answers returned after submission |
 | Issue certificate PDF | `issue-certificate` Edge Function | Only for the caller's own passed completion; short-lived signed URL. Prints the BACB-required fields; RBT courses get a record of completion (PDUs must use the BACB form) |
 | Publish / review / delete courses | `publish-course`, `review-course`, `delete-course` | Admin only. Approving a CEU/PDU course requires an instructor, objectives, 3 questions per credit, and a duration that supports the credit |
+| Export ACE records (completions, feedback) as CSV | `export-ace-records` Edge Function | Admin only; 5-minute signed URL |
 | Invite, role changes, delete users, password reset | `invite-user`, `set-user-role`, `toggle-admin`, `delete-user`, `send-password-reset` | Admin only |
 
 RPCs callable by signed-in users each check the caller internally: `get_user_ceu_summary` (own totals, or any for admins), `is_user_admin` (only answers for admins), `get_leaderboard`, `admin_get_questions` (admins only), `submit_practice`.

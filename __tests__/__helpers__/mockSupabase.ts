@@ -10,7 +10,7 @@ function makeChain(result: DBResult) {
   const c: Record<string, unknown> = {};
   const noop = () => c;
   const methods = [
-    'select', 'eq', 'neq', 'or', 'gte', 'lte', 'not', 'is',
+    'select', 'eq', 'neq', 'or', 'gte', 'lte', 'not', 'is', 'in',
     'order', 'limit', 'single', 'maybeSingle', 'returns',
     'upsert', 'insert', 'update', 'delete', 'head',
   ];

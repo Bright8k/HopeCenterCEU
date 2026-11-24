@@ -1,5 +1,6 @@
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
 import { createServiceClient, requireAdmin } from '../_shared/auth.ts'
+import { aceProblems, maxCreditsForMinutes, type AceProblem } from '../_shared/ace.ts'
 
 type ReviewAction = 'submit' | 'approve' | 'reject' | 'archive' | 'unarchive'
 
@@ -24,9 +25,7 @@ function json(body: unknown, status = 200) {
   })
 }
 
-// BACB ACE Provider Handbook (2026) event requirements for courses that award CEUs/PDUs.
-// Mirrors courseComplianceIssues() in lib/ace.ts.
-async function aceProblems(service: ReturnType<typeof createServiceClient>, courseId: string): Promise<string[]> {
+async function approvalProblems(service: ReturnType<typeof createServiceClient>, courseId: string): Promise<string[]> {
   const { data: course } = await service
     .from('courses')
     .select('track, ceu_value, duration_seconds, instructor_name, learning_objectives')
@@ -34,24 +33,23 @@ async function aceProblems(service: ReturnType<typeof createServiceClient>, cour
     .single()
   if (!course) return ['course not found']
 
-  const credits = Number(course.ceu_value)
-  if (course.track === 'STUDENT' || credits <= 0) return []
-
   const { count } = await service
     .from('questions')
     .select('id', { count: 'exact', head: true })
     .eq('course_id', courseId)
 
-  const problems: string[] = []
-  if (!course.instructor_name?.trim()) problems.push('add an instructor')
-  const objectives = (course.learning_objectives ?? '').split('\n').filter((l: string) => l.trim())
-  if (objectives.length === 0) problems.push('add learning objectives')
-  const minQuestions = Math.ceil(credits * 3)
-  if ((count ?? 0) < minQuestions) problems.push(`add at least ${minQuestions} quiz questions (3 per credit)`)
-  const minutes = (course.duration_seconds ?? 0) / 60
-  if (!minutes) problems.push('set the course duration')
-  else if (credits > Math.floor(minutes / 25) * 0.5) problems.push(`${Math.round(minutes)} minutes supports at most ${Math.floor(minutes / 25) * 0.5} credits`)
-  return problems
+  const credits = Number(course.ceu_value)
+  const minutes = Math.round((course.duration_seconds ?? 0) / 60)
+  const messages: Record<AceProblem, string> = {
+    increment: 'use credit in 0.5 increments',
+    instructor: 'add an instructor',
+    objectives: 'add learning objectives',
+    questions: `add at least ${Math.ceil(credits * 3)} quiz questions (3 per credit)`,
+    duration: minutes
+      ? `${minutes} minutes supports at most ${maxCreditsForMinutes(minutes)} credits`
+      : 'set the course duration',
+  }
+  return aceProblems(course, count ?? 0).map((p) => messages[p])
 }
 
 Deno.serve(async (req) => {
@@ -69,7 +67,7 @@ Deno.serve(async (req) => {
     const service = createServiceClient()
 
     if (action === 'approve') {
-      const problems = await aceProblems(service, courseId)
+      const problems = await approvalProblems(service, courseId)
       if (problems.length) {
         return json({ error: `This course can't award credit yet: ${problems.join('; ')}.` }, 422)
       }

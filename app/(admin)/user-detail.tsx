@@ -211,7 +211,7 @@ export default function AdminUserDetailScreen() {
                 <Text style={styles.actionLabel}>{adminToggling ? 'Updating…' : isAdmin ? 'Revoke admin' : 'Grant admin'}</Text>
               </Pressable>
             )}
-            <Pressable onPress={() => setDeleteConfirmModal(true)} style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel="Delete learner account" accessibilityHint="Permanently deletes this user and all their data">
+            <Pressable onPress={() => setDeleteConfirmModal(true)} style={({ pressed }) => [styles.actionBtn, pressed && { opacity: 0.7 }]} accessibilityRole="button" accessibilityLabel="Delete learner account" accessibilityHint="Permanently deletes this user's account; their learning records are kept">
               <View style={[styles.actionIcon, { backgroundColor: withAlpha(colors.error, '14') }]}><Ionicons name="trash-outline" size={18} color={colors.error} /></View>
               <Text style={[styles.actionLabel, { color: colors.error }]}>Delete account</Text>
             </Pressable>
@@ -284,7 +284,7 @@ export default function AdminUserDetailScreen() {
             <View style={styles.deleteIconWrap}><Ionicons name="warning-outline" size={28} color={colors.error} /></View>
             <Text style={styles.modalTitle}>Delete account?</Text>
             <Text style={styles.deleteWarning}>
-              This will permanently delete <Text style={{ fontFamily: Typography.bodyBold }}>{detail.displayName}</Text>'s account, all completions, quiz history, and certificates. This cannot be undone.
+              This will permanently delete <Text style={{ fontFamily: Typography.bodyBold }}>{detail.displayName}</Text>'s account and sign-in. Their completions, quiz results, certificates, and feedback are kept for the BACB's 3-year record requirement, under their name and BACB number. This cannot be undone.
             </Text>
             <Button title={deleting ? 'Deleting…' : 'Yes, delete account'} onPress={handleDeleteUser} disabled={deleting} style={styles.deleteBtn} accessibilityLabel="Confirm delete account" />
             <Pressable onPress={() => setDeleteConfirmModal(false)} style={styles.cancelBtn} accessibilityRole="button" accessibilityLabel="Cancel">
